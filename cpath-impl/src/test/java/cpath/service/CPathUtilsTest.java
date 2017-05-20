@@ -4,6 +4,9 @@ package cpath.service;
 import static org.junit.Assert.*;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -58,14 +61,14 @@ public class CPathUtilsTest {
 	
 	@Test
 	public void testCopy() throws IOException {
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "testCopy.txt";
+		Path f = Paths.get(getClass().getClassLoader()
+				.getResource("").getPath(),"testCopy.txt");
 		byte[] testData = "<rdf>          </rdf>".getBytes(); 
 		ByteArrayInputStream is = new ByteArrayInputStream(testData);
-		CPathUtils.copy(is, new FileOutputStream(outFilename));	
+		CPathUtils.copy(is, Files.newOutputStream(f));
 		is.close();		
 		ByteArrayOutputStream os = new ByteArrayOutputStream();	
-		CPathUtils.copy(new FileInputStream(outFilename), os);		
+		CPathUtils.copy(Files.newInputStream(f), os);
         byte[] read = os.toByteArray();
         assertNotNull(read);
         assertTrue(Arrays.equals(testData, read)); 	
@@ -92,12 +95,11 @@ public class CPathUtilsTest {
 
 	@Test
 	public void testReadContent() throws IOException {
-		String location = "classpath:test2.owl.zip";	
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata("TEST", 
 				"Test;testReadContent", 
-				"N/A", 
-				location,  
+				"N/A",
+				"classpath:test2.owl.zip",
 				"",
 				"", 
 				Metadata.METADATA_TYPE.BIOPAX, 
@@ -106,8 +108,8 @@ public class CPathUtilsTest {
 				null,
 				"free"
 				);
-		CPathUtils.cleanupDirectory(new File(metadata.outputDir()));
 
+		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
 		assertTrue(metadata.getContent().isEmpty());		
 		CPathUtils.analyzeAndOrganizeContent(metadata);
 		

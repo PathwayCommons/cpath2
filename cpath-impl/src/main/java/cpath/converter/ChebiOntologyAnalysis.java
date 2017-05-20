@@ -87,14 +87,14 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			Pattern regex) throws IOException {
 
 		Collection<String> toReturn = new ArrayList<String>();
-		BufferedReader reader = new BufferedReader (new StringReader(entryBuffer.toString()));
+		Scanner scanner = new Scanner(entryBuffer.toString());
 
 		if (log.isDebugEnabled()) {
 			log.debug("getValue(), key: " + regex.toString());
 		}
 
-		String line = reader.readLine();
-		while (line != null) {
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
 			Matcher matcher = regex.matcher(line);
 			if (matcher.find()) {
 				String toAdd = "";
@@ -103,7 +103,6 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 				}
 				toReturn.add(toAdd.substring(0, toAdd.length() - 1));//to remove ending ':'
 			}
-			line = reader.readLine();
 		}
 
 		return toReturn;
@@ -117,15 +116,15 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			throw new IllegalArgumentException("The second parameter must be not null input stream");
 		
 		try {
-			BufferedReader reader = new BufferedReader(
-					new InputStreamReader(inputStream, "UTF-8"));			
-			
-			String line;
-			while ((line = reader.readLine()) != null) {
+			Scanner scanner = new Scanner(inputStream);
+
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
 				// start of entry
 				if (line.startsWith(CHEBI_OBO_ENTRY_START)) {
 					StringBuilder entryBuffer = new StringBuilder(line + "\n");
-					while ((line = reader.readLine()) != null) {
+					while (scanner.hasNextLine()) {
+						line = scanner.nextLine();
 						// keep reading until we reach last modified
 						if (line.isEmpty())
 							break;
@@ -136,8 +135,8 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 				}
 			}
 
-			if (reader != null)
-				reader.close();
+			scanner.close();
+
 		} catch (IOException e) {
 			log.error("is.close() failed." + e);
 		}

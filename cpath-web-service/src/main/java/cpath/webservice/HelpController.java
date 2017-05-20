@@ -1,10 +1,8 @@
 package cpath.webservice;
 
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Writer;
+import java.util.Scanner;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -65,16 +63,16 @@ public class HelpController extends BasicController {
     public void getSchema(Writer writer, HttpServletResponse response) 
     		throws IOException 
     {
-    	BufferedReader bis = new BufferedReader(new InputStreamReader(
-    		(new DefaultResourceLoader())
-    			.getResource("classpath:cpath/service/schema1.xsd")
-    				.getInputStream(), "UTF-8"));
+    	Scanner scanner = new Scanner((new DefaultResourceLoader())
+			.getResource("classpath:cpath/service/schema1.xsd")
+    			.getInputStream(), "UTF-8");
     	
     	response.setContentType("application/xml");
     	
     	final String newLine = System.getProperty("line.separator");
-    	String line = null;
-    	while((line = bis.readLine()) != null) {
+
+    	while(scanner.hasNextLine()) {
+			String line = scanner.nextLine();
     		writer.write(line + newLine);
     	}
     }    

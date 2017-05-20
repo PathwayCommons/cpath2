@@ -33,74 +33,70 @@ import java.io.*;
 final class UniprotConverter extends BaseConverter {
 
     private static final Logger log = LoggerFactory.getLogger(UniprotConverter.class);
-       
 
 	public void convert(InputStream is, OutputStream os) {
 		// ref to reader here so
 		// we can close in finally clause
-        InputStreamReader reader= null;
         Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
         model.setXmlBase(xmlBase);
-        
-        try {
-            reader = new InputStreamReader(is, "UTF-8");
-            BufferedReader bufferedReader = new BufferedReader(reader);
-            String line = bufferedReader.readLine();
-            final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
-           	log.info("convert(), starting to read data...");
-            long linesReadSoFar = 0;
-            while (line != null) {
-            	linesReadSoFar++;
-                if (line.startsWith ("//")) //reached the end of a Uniprot entry
-                {
-					// grab properties from the map and prepare for parsing
-                    String deField = dataElements.get("DE").toString();
-                    String organismName = dataElements.get("OS").toString(); //mostly occurs once per entry 
-                    String organismTaxId = dataElements.get("OX").toString(); //occurs once per entry 
-                    StringBuilder comments = dataElements.get("CC");
-                    StringBuilder geneName = dataElements.get("GN");
-                    String acNames = dataElements.get("AC").toString();
-                    StringBuilder xrefs = dataElements.get("DR");
-                    final String idLine = dataElements.get("ID").toString();
-                    StringBuilder sq = dataElements.get("SQ"); //SEQUENCE SUMMARY
-                    StringBuilder sequence = dataElements.get("  "); //SEQUENCE
-                    StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
-                    
-                    ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idLine, acNames, model);
-                    
-            		// add some external xrefs from DR fileds
-                    if (xrefs != null) setXRefsFromDRs(xrefs.toString(), proteinReference, model);
-                    setNameAndSynonyms(proteinReference, deField);
-                    setOrganism(organismName, organismTaxId, proteinReference, model);
-                    
-                    // GN gene symbols - to PR names and rel. xrefs
-                    if (geneName != null) {
-                    	Collection<String> geneNames = getGeneSymbols(geneName.toString(), proteinReference);
-                        // always use "HGNC Symbol" for rel. xrefs, despite it can be from MGI, RGD,.. (these are coordinated by HGNC)
-                    	// (cannot do this in setXRefsFromDRs: no gene synonyms there, and organism specific db names like MGI)
-                        for (String symbol : geneNames) {
-                        	// also add Gene Names to PR names (can be >1 due to isoforms)
-                        	proteinReference.addName(symbol);
-                        	RelationshipXref rXRef = CPathUtils
-                        		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model);
-                        	proteinReference.addXref(rXRef);
-                        }
-                    }
-                    
-                    //synonyms from GN
-                    if (geneName != null) {
-                    	Collection<String> geneSyns = getGeneSynonyms(geneName.toString(), proteinReference);
-                        for (String symbol : geneSyns) {
-                        	// also add gene synonyms to PR names but do not create xrefs 
-                        	// (these are not necessarily official HGNC Symbols and ambiguous)
-                        	proteinReference.addName(symbol);
-                        }
-                    }
-                                      
-                    // add some info from CC fields to BioPAX comments
-                    if (comments != null) {
-                        setComments (comments.toString(), proteinReference);
-                    }
+
+		Scanner scanner = new Scanner(is);
+		final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
+		log.info("convert(), starting to read data...");
+		long linesReadSoFar = 0;
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+			linesReadSoFar++;
+			if (line.startsWith ("//")) //reached the end of a Uniprot entry
+			{
+				// grab properties from the map and prepare for parsing
+				String deField = dataElements.get("DE").toString();
+				String organismName = dataElements.get("OS").toString(); //mostly occurs once per entry
+				String organismTaxId = dataElements.get("OX").toString(); //occurs once per entry
+				StringBuilder comments = dataElements.get("CC");
+				StringBuilder geneName = dataElements.get("GN");
+				String acNames = dataElements.get("AC").toString();
+				StringBuilder xrefs = dataElements.get("DR");
+				final String idLine = dataElements.get("ID").toString();
+				StringBuilder sq = dataElements.get("SQ"); //SEQUENCE SUMMARY
+				StringBuilder sequence = dataElements.get("  "); //SEQUENCE
+				StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
+
+				ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idLine, acNames, model);
+
+				// add some external xrefs from DR fileds
+				if (xrefs != null) setXRefsFromDRs(xrefs.toString(), proteinReference, model);
+				setNameAndSynonyms(proteinReference, deField);
+				setOrganism(organismName, organismTaxId, proteinReference, model);
+
+				// GN gene symbols - to PR names and rel. xrefs
+				if (geneName != null) {
+					Collection<String> geneNames = getGeneSymbols(geneName.toString(), proteinReference);
+					// always use "HGNC Symbol" for rel. xrefs, despite it can be from MGI, RGD,.. (these are coordinated by HGNC)
+					// (cannot do this in setXRefsFromDRs: no gene synonyms there, and organism specific db names like MGI)
+					for (String symbol : geneNames) {
+						// also add Gene Names to PR names (can be >1 due to isoforms)
+						proteinReference.addName(symbol);
+						RelationshipXref rXRef = CPathUtils
+								.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model);
+						proteinReference.addXref(rXRef);
+					}
+				}
+
+				//synonyms from GN
+				if (geneName != null) {
+					Collection<String> geneSyns = getGeneSynonyms(geneName.toString(), proteinReference);
+					for (String symbol : geneSyns) {
+						// also add gene synonyms to PR names but do not create xrefs
+						// (these are not necessarily official HGNC Symbols and ambiguous)
+						proteinReference.addName(symbol);
+					}
+				}
+
+				// add some info from CC fields to BioPAX comments
+				if (comments != null) {
+					setComments (comments.toString(), proteinReference);
+				}
 
 // won't store canonical sequences (in practice, it does not help and may even mislead: 
 // in fact, one usually needs to know an isoform sequence (variant) and its version exactly)
@@ -109,54 +105,44 @@ final class UniprotConverter extends BaseConverter {
 //                    	proteinReference.setSequence(seq);
 //                    	proteinReference.addComment(sq.toString()); //sequence summary
 //                    }
-                    
-                    //create modified residue features
-                    if(features != null)
-                    	createModResFeatures(features.toString(), proteinReference, model);
-                    
-                    // debug: write the one-protein-reference model
-                    log.debug("convert(). so far line# " + linesReadSoFar);
-                    
-                    dataElements.clear();
-                }
-				else { //continue read and collect current Uniprot entry lines
+
+				//create modified residue features
+				if(features != null)
+					createModResFeatures(features.toString(), proteinReference, model);
+
+				// debug: write the one-protein-reference model
+				log.debug("convert(). so far line# " + linesReadSoFar);
+
+				dataElements.clear();
+			}
+			else { //continue read and collect current Uniprot entry lines
 					/* The two-character line-type code that begins each line is
 					 * always followed by three blanks, so that the actual 
 					 * information begins with the sixth character.
 					 */
-                    String key = line.substring (0, 2);
-                    String data = line.substring(5);
-                    if (data.startsWith("-------") ||
-                    	data.startsWith("Copyrighted") ||
-                        	data.startsWith("Distributed")) 
-                    {
-                        //  do nothing
-                    } else {
-                    	//important for correct splitting DR rows
-                    	if(key.equals("DR"))
-                    		data += "\n"; 
-                        if (dataElements.containsKey(key)) {
-                        	//remove leading spaces from second and next lines in FT, CC, DE records
-                        	if(data.startsWith(" ")) //i.e, the sixth char on the line is space/blank
-                        		data = data.replaceAll("^\\s+", "");                       	
-                        	dataElements.get(key).append(data);
-                        } else {
-                            dataElements.put(key, new StringBuilder (data));
-						}
-                    }
-                }
-                line = bufferedReader.readLine();//it removes EOLs
-            }
-        }
-		catch(IOException e) {
-			throw new RuntimeException("Failed to convert UniProt data to BioPAX", e);
+				String key = line.substring (0, 2);
+				String data = line.substring(5);
+				if (data.startsWith("-------") ||
+						data.startsWith("Copyrighted") ||
+						data.startsWith("Distributed"))
+				{
+					//  do nothing
+				} else {
+					//important for correct splitting DR rows
+					if(key.equals("DR"))
+						data += "\n";
+					if (dataElements.containsKey(key)) {
+						//remove leading spaces from second and next lines in FT, CC, DE records
+						if(data.startsWith(" ")) //i.e, the sixth char on the line is space/blank
+							data = data.replaceAll("^\\s+", "");
+						dataElements.get(key).append(data);
+					} else {
+						dataElements.put(key, new StringBuilder (data));
+					}
+				}
+			}
 		}
-		finally {
-			log.debug("convert(), closing reader.");
-            if (reader != null) {
-				try { reader.close(); } catch (Exception e) {} //ignore
-            }
-        }       
+		scanner.close();
 
         log.info("convert(), repairing.");
         model.repair();

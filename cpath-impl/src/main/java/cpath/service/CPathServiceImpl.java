@@ -1,6 +1,8 @@
 package cpath.service;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -724,11 +726,10 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public void delete(Metadata metadata) {
     	metadataRepository.delete(metadata);
-		File dir = new File(metadata.outputDir());
-		if(dir.exists() && dir.isDirectory()) {
-			CPathUtils.cleanupDirectory(dir);
-			dir.delete();
-		}
+		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
+		try {
+			Files.delete(Paths.get(metadata.outputDir()));
+		} catch (IOException e) {}
 	}
 
 
@@ -803,7 +804,7 @@ public class CPathServiceImpl implements CPathService {
 
 	@Override
 	public synchronized Metadata clear(Metadata metadata) {
-		CPathUtils.cleanupDirectory(new File(metadata.outputDir()));
+		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
 		metadata.setNumInteractions(null);
 		metadata.setNumPathways(null);
 		metadata.setNumPhysicalEntities(null);

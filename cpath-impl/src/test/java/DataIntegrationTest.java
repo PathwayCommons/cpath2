@@ -1,9 +1,8 @@
-package cpath.service;
-
 import cpath.config.CPathSettings;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.*;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -48,8 +47,8 @@ import java.util.zip.GZIPOutputStream;
 		"classpath:META-INF/spring/applicationContext-jpa.xml",
 		"classpath:META-INF/spring/appContext-validator.xml"})
 @ActiveProfiles("dev")
-public class DataImportTest {
-	static final Logger log = LoggerFactory.getLogger(DataImportTest.class);
+public class DataIntegrationTest {
+	static final Logger log = LoggerFactory.getLogger(DataIntegrationTest.class);
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
 	static final String XML_BASE = CPathSettings.getInstance().getXmlBase();
 		
@@ -86,7 +85,8 @@ public class DataImportTest {
 		premerger.buildWarehouse(); //- also writes Warehouse archive
 		
 		//Some assertions about the initial biopax warehouse model (before the merger is run)	
-		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();		
+		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();
+		assertNotNull(warehouse);
 		assertFalse(warehouse.getObjects(ProteinReference.class).isEmpty());
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/P62158"));
 		assertFalse(warehouse.getObjects(SmallMoleculeReference.class).isEmpty());

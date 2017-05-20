@@ -126,7 +126,7 @@ public class BiopaxConverter {
     		tmpFile = tmpFilePath.toFile();
     		tmpFile.deleteOnExit();
 
-    		convert(m, format, options, new FileOutputStream(tmpFile)); //FOS gets closed in there
+    		convert(m, format, options, Files.newOutputStream(tmpFilePath)); //FOS gets closed in there
 
 			DataResponse dataResponse = new DataResponse();
 			dataResponse.setFormat(format);

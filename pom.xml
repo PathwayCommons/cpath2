@@ -210,6 +210,7 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
+						<forkCount>1</forkCount>
 						<argLine>
 						-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dspring.profiles.active=dev
 						</argLine>

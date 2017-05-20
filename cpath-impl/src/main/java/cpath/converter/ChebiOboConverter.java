@@ -1,8 +1,12 @@
 package cpath.converter;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,7 +15,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ChemicalStructure;
-import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.StructureFormatType;
@@ -52,21 +55,17 @@ class ChebiOboConverter extends BaseConverter
         model.setXmlBase(xmlBase); //important
         
         try {
-        	//read&copy the input stream content to a tmp file 
-        	//(this will uncompress if zip stream and make it re-usable)
-        	File f = File.createTempFile("chebi", "obo");
-        	f.deleteOnExit();
-        	FileOutputStream fos = new FileOutputStream(f);
-        	CPathUtils.copy(is, fos);
-        	fos.close();
-        	
-        	//First pass.
+        	//read&copy the input stream content to a tmp file
+        	//(this will allow to read it twice; see below)
+        	Path f = Files.createTempFile("chebi", "obo");
+        	CPathUtils.copy(is, Files.newOutputStream(f));
+
+        	//The first pass.
         	//Read each [TERM] data to create SMR with xrefs;
         	//Do NOT skip any terms, even those without InChIKey (e.g., pharma categories, pills, generics)
-        	BufferedReader reader = new BufferedReader(new FileReader(f));						
-			String line;
-			while ((line = reader.readLine()) != null) {
-				
+			Scanner scanner = new Scanner(Files.newInputStream(f));
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
 				if (!line.startsWith(_ENTRY_START)) {
 					log.debug("Skip: " + line);
 					continue;
@@ -74,7 +73,8 @@ class ChebiOboConverter extends BaseConverter
 
 				Map<String, String> chebiEntryMap = new HashMap<String, String>();
 				
-				while ((line = reader.readLine()) != null) {
+				while (scanner.hasNextLine()) {
+					line = scanner.nextLine();
 					if (line.isEmpty()) 
 						break;
 					// start of entry
@@ -103,14 +103,12 @@ class ChebiOboConverter extends BaseConverter
 				
 				buildSmallMoleculeReference(model, chebiEntryMap);
 			}
-
-			reader.close();
 			
-			//Second pass - to generate member relationships and rel. xrefs to other chebi classes
+			// The second pass -
+			// to generate member relationships and rel. xrefs to other chebi classes
 			ChebiOntologyAnalysis analysis = new ChebiOntologyAnalysis();
-			analysis.setInputStream(new FileInputStream(f));
+			analysis.setInputStream(Files.newInputStream(f,StandardOpenOption.DELETE_ON_CLOSE));
 			analysis.execute(model);
-			
         }
 		catch (Exception e) {
 			throw new RuntimeException("Failed to convert ChEBI OBO to BioPAX", e);

@@ -166,12 +166,9 @@ public final class Merger {
 				log.info("Merging: " + description);
 
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream;
-				try {
-					inputStream = new GZIPInputStream(new FileInputStream(pwdata.normalizedFile()));
-				} catch (IOException e) {
-					log.error("Skipped " + description + " - " +
-							"failed to read from " + pwdata.normalizedFile());
+				InputStream inputStream = CPathUtils.gzipInputStream(pwdata.normalizedFile());
+				if(inputStream == null) {
+					log.error("Skipped " + description + " - " + "cannot read " + pwdata.normalizedFile());
 					continue;
 				}
 
@@ -239,7 +236,7 @@ public final class Merger {
 	 * in the cpath2 downloads (in production) or tmp (tests)
 	 * directory.
 	 */
-	void save() {
+	public void save() {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel, 
 				new GZIPOutputStream(new FileOutputStream(
@@ -274,7 +271,7 @@ public final class Merger {
 	 * @param source input model
 	 * @param target model to merge into
 	 */
-	void merge(final String description, final Model source, final Model target) {	
+	public void merge(final String description, final Model source, final Model target) {
 		
 		final String srcModelInfo = "source: " + description;
 

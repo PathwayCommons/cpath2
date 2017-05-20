@@ -4,10 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -18,13 +17,17 @@ import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
 
+import cpath.config.CPathSettings;
 import cpath.service.*;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.jena.sparql.util.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,20 +156,20 @@ public abstract class BasicController {
 			}
 
 			if(dataResponse.getData() instanceof Path) {
-				File resultFile = ((Path) dataResponse.getData()).toFile();//this is some temp. file
-				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
-				response.setContentType(dataResponse.getFormat().getMediaType());
+				//get the temp file
+				Path resultFile = (Path) dataResponse.getData();
 				try {
-					FileReader reader = new FileReader(resultFile);
+					response.setHeader("Content-Length", String.valueOf(Files.size(resultFile)));
+					response.setContentType(dataResponse.getFormat().getMediaType());
 					Writer writer = response.getWriter();
-					IOUtils.copyLarge(reader, writer);
+					IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
 					writer.flush();
-					reader.close();
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR, String.format("Failed to process the (temporary) result file %s; %s.",
-						resultFile.getPath(), e.toString()), request, response, logEvents);
+					errorResponse(INTERNAL_ERROR,
+						String.format("Failed to process the (temporary) result file %s; %s.",
+							resultFile, e.toString()), request, response, logEvents);
 				} finally {
-					resultFile.delete();
+					try {Files.delete(resultFile);} catch (IOException e) {}
 				}
 			}
 			else if(dataResponse.isEmpty()) {
@@ -175,15 +178,22 @@ public abstract class BasicController {
 				try {
 					if(dataResponse.getFormat() == OutputFormat.BIOPAX) {
 						//output an empty BioPAX model as RDF+XML
+						Model emptyModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+						Provenance provenance = emptyModel.addNew(Provenance.class,
+								CPathSettings.getInstance().getXmlBase()+CPathSettings.NO_DATA_FOUND);
+						provenance.setDisplayName(CPathSettings.getInstance().getName());
+						provenance.addComment("version:" + CPathSettings.getInstance().getVersion());
+						provenance.addComment(CPathSettings.NO_DATA_FOUND);
 						ByteArrayOutputStream bos = new ByteArrayOutputStream();
-						new SimpleIOHandler().convertToOWL(BioPAXLevel.L3.getDefaultFactory().createModel(), bos);
+						new SimpleIOHandler().convertToOWL(emptyModel, bos);
 						response.getWriter().print(bos.toString("UTF-8"));
 					} else {
-						//cannot write a comment, e.g., "# no data" as SIF, GSEA do not support comment lines
-						response.getWriter().print("");
+						//technically, SIF, GSEA formats do not have any comments
+						response.getWriter().print(String.format("%s\\t%s\\t%s",
+								CPathSettings.NO_DATA_FOUND,CPathSettings.NO_DATA_FOUND,CPathSettings.NO_DATA_FOUND));
 					}
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR, String.format("Failed writing a 'no data found' response content: %s.",
+					errorResponse(INTERNAL_ERROR, String.format("Failed writing a 'no data found' response: %s.",
 							e.toString()), request, response, logEvents);
 				}
 			}

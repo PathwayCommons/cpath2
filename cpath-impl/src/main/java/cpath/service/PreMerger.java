@@ -103,7 +103,8 @@ public final class PreMerger {
 				metadata = service.clear(metadata);
 
 				//expand/re-pack/save or overwrite the original data files and create/recover Content db table rows
-				log.info("premerge(), " + metadata.getIdentifier() + ", expanding data files to " + metadata.outputDir());
+				log.info("premerge(), " + metadata.getIdentifier() + ", expanding data files to "
+						+ metadata.outputDir());
 				CPathUtils.analyzeAndOrganizeContent(metadata);
 
 				// Premerge for each pathway data: clean, convert, validate,
@@ -220,25 +221,26 @@ public final class PreMerger {
 	 * @return
 	 * @throws IOException 
 	 */
-	Set<Mapping> loadSimpleMapping(Content content) throws IOException {
-
+	Set<Mapping> loadSimpleMapping(Content content) throws IOException
+	{
 		Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		BufferedReader reader = new BufferedReader(
-				new InputStreamReader(new GZIPInputStream(new FileInputStream(content.originalFile()))));
+		Scanner scaner = new Scanner(new GZIPInputStream(new FileInputStream(content.originalFile())));
 
-		String line = reader.readLine(); //get the first, title line
+		String line = scaner.nextLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
 		String from = head[0].trim();
 		String to = head[1].trim();
-		while ((line = reader.readLine()) != null) {
+		while (scaner.hasNextLine()) {
+			line = scaner.nextLine();
 			String pair[] = line.split("\t");
 			String srcId = pair[0].trim();
 			String tgtId = pair[1].trim();
 			mappings.add(new Mapping(from, srcId, to, tgtId));
 		}
-		reader.close();
+
+		scaner.close();
 		
 		return mappings;
 	}

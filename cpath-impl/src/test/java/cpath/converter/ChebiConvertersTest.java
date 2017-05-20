@@ -1,7 +1,6 @@
 package cpath.converter;
 
 import cpath.config.CPathSettings;
-import cpath.service.CPathUtils;
 import cpath.service.Converter;
 import cpath.service.ImportFactory;
 
@@ -17,11 +16,12 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.ZipInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 
 /**
@@ -34,25 +34,24 @@ public class ChebiConvertersTest {
 	public void testConvertObo() throws IOException {
 		// convert test data
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
-				getClass().getResource("/chebi.obo.zip").getFile())), bos);
-		byte[] data = bos.toByteArray();
-		//run the new OBO converter
-		bos.reset(); //re-use
+
 		Converter converter = ImportFactory.newConverter("cpath.converter.ChebiOboConverter");
-		converter.setXmlBase(CPathSettings.getInstance().getXmlBase());		
-		converter.convert(new ByteArrayInputStream(data), bos);
-		
+		converter.setXmlBase(CPathSettings.getInstance().getXmlBase());
+
+		ZipFile zf = new ZipFile(getClass().getResource("/chebi.obo.zip").getFile());
+		assertTrue(zf.entries().hasMoreElements());
+		ZipEntry ze = zf.entries().nextElement();
+
+		converter.convert(zf.getInputStream(ze), bos);
+
 		Model model = new SimpleIOHandler().convertFromOWL(new ByteArrayInputStream(bos.toByteArray()));
 		assertNotNull(model);
 		assertFalse(model.getObjects().isEmpty());
 		
-		bos.close(); data=null;
-		
 		// dump owl for review
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-			+ File.separator + "testConvertChebiObo.out.owl";		
-		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, new FileOutputStream(outFilename));
+		Path outFilename = Paths
+			.get(getClass().getClassLoader().getResource("").getPath(),"testConvertChebiObo.out.owl");
+		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, Files.newOutputStream(outFilename));
 		
 		// get all small molecule references out
 		assertEquals(7, model.getObjects(SmallMoleculeReference.class).size());

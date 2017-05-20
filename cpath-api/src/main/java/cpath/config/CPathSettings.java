@@ -1,9 +1,7 @@
 package cpath.config;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -27,9 +25,10 @@ import cpath.service.Scope;
  * 
  * @author rodche
  */
-public final class CPathSettings {
+public final class CPathSettings
+{
 	private static final Logger LOG = LoggerFactory.getLogger(CPathSettings.class);
-	private static CPathSettings instance;
+    private static CPathSettings instance;
 	private Properties settings;
 	
 	/**
@@ -108,7 +107,9 @@ public final class CPathSettings {
 	public static final String PROVIDER_GA = "cpath2.provider.ga"; //Google Analytics code
 
 	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-	
+
+	public static final String NO_DATA_FOUND = "NOT FOUND";
+
 	/**
 	 * Private Constructor
 	 */
@@ -117,26 +118,22 @@ public final class CPathSettings {
 		String home = System.getProperty(HOME_DIR);
 		if(home==null || home.isEmpty())
 			throw new AssertionError("Java option " + HOME_DIR + " is undefined!");
-		
-		File f = new File(home);
-		if(!f.exists()) 
-			f.mkdir();
-		
+
 		// put default values
 		Properties defaults = new Properties();
-		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
+		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
 		defaults.put(PROVIDER_NAME, "Pathway Commons demo");
 		defaults.put(PROVIDER_VERSION, "0");
 		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
-		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
+		defaults.put(PROP_METADATA_LOCATION, homeDir() + FileSystems.getDefault().getSeparator() + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
-
+		//default settings
 		settings = new Properties(defaults);
-		
+		//load properties from file; overrides some of the defaults
 		loadCPathProperties();
 	}
 
@@ -150,6 +147,8 @@ public final class CPathSettings {
 	public static synchronized CPathSettings getInstance() {
 		if(instance == null) {
 			instance = new CPathSettings();
+			instance.subDir(""); //creates the home dir if it did not exist
+			instance.subDir(DATA_SUBDIR); //creates the data dir
 		}		
 		return instance;
 	}
@@ -354,9 +353,9 @@ public final class CPathSettings {
 	 * Reads cpath2 properties from the file.
 	 */
 	public void loadCPathProperties() {
-		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
+		Path file = Paths.get(homeDir(), CPATH_PROPERTIES_FILE);
 		try {
-			settings.load(new FileReader(file));
+			settings.load(Files.newBufferedReader(file));
 		} catch (IOException e) {
 			LOG.warn("Couldn't update cPath2 properties " +
 				"from " + file + "; will use defaults. " 
@@ -376,19 +375,19 @@ public final class CPathSettings {
 		if(!isAdminEnabled())
 			throw new IllegalStateException("Not in Maintenance mode.");
 		
-		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
+		Path path = Paths.get(homeDir(),CPATH2_GENERATED_COMMENT);	
 		try {
-			settings.store(new FileOutputStream(file), 
+			settings.store(Files.newOutputStream(path), 
 					"cPath2 server configuration properties");
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to write cPath2 properties " +
-					"to " + file, e);
+					"to " + path.toString(), e);
 		}		
 	}
 
 		
 	/**
-	 * Gets current Home Directory (full path).
+	 * Gets current Home Directory (full path; must exist).
 	 * 
 	 * The cpath2 home system environment variable 
 	 * (which must be set) overrides the java option, if any.
@@ -396,31 +395,41 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String homeDir() {		
-		return property(HOME_DIR);
+		String homedir = property(HOME_DIR);
+
+		return homedir;
 	}
 	
+	private String subDir(String subDirectoryName) {
+		Path path = Paths.get(homeDir(), subDirectoryName);
+
+		if(!Files.exists(path))
+			try {
+				Files.createDirectory(path);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot create directory: " + path, e);
+			}
+
+		return path.toString();
+	}
 	
 	/**
 	 * Gets the full path to the local directory 
 	 * where pathway and other data will be fetched and looked for.
 	 * 
-	 * @return
+	 * @return the data directory path
 	 */
 	public String dataDir() {
-		String path = homeDir() + File.separator + DATA_SUBDIR;
-		File f = new File(path);
-		if(!f.exists()) 
-			f.mkdir();
-		return path;
+		return subDir(DATA_SUBDIR);
 	}
-		
+	
 	/**
 	 * A full path to the default Lucene index.
 	 * 
 	 * @return
 	 */
 	public String indexDir() {
-		return homeDir() + File.separator + INDEX_SUBDIR;
+		return subDir(INDEX_SUBDIR);
 	}
 	
 	/**
@@ -430,7 +439,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String blacklistFile() {
-		return downloadsDir() + File.separator + BLACKLIST_FILE;
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + BLACKLIST_FILE;
 	}
 
 
@@ -440,7 +449,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String exportScriptFile() {
-		return downloadsDir() + File.separator + EXPORT_SCRIPT_FILE;
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + EXPORT_SCRIPT_FILE;
 	}
 
 	/**
@@ -506,11 +515,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String downloadsDir() {
-		String path = homeDir() + File.separator + DOWNLOADS_SUBDIR;
-		File f = new File(path);
-		if(!f.exists()) 
-			f.mkdir();
-		return path;
+		return subDir(DOWNLOADS_SUBDIR);
 	}
 	
 	
@@ -520,7 +525,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String cacheDir() {
-		return homeDir() + File.separator + CACHE_SUBDIR;
+		return subDir(CACHE_SUBDIR);
 	}
 	
 	
@@ -532,7 +537,7 @@ public final class CPathSettings {
 	 * @see #downloadsDir()
 	 */
 	public String biopaxFileNameFull(String name) {
-		return downloadsDir() + File.separator + biopaxFileName(name);
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + biopaxFileName(name);
 	}
 
 	/**

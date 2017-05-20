@@ -1,42 +1,14 @@
 package cpath.converter;
-/**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
-
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
@@ -51,7 +23,6 @@ import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.Test;
 
-import cpath.service.CPathUtils;
 import cpath.service.Converter;
 import cpath.service.ImportFactory;
 
@@ -68,20 +39,22 @@ public class UniprotConverterImplTest {
 	public void testConvert() throws IOException {
 		
 		//test the tricky FT prop first
-		assertEquals("AA-(test test)test", "AA-(test test)test (Bysimilarity)".replaceFirst("\\([^()]+?\\)$","").trim());	
-		
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
-				getClass().getResource("/test_uniprot_data.dat.zip").getFile())), bos);
-		bos.close();	
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "testConvertUniprot.out.owl";
+		assertEquals("AA-(test test)test", "AA-(test test)test (Bysimilarity)"
+				.replaceFirst("\\([^()]+?\\)$","").trim());
+
+		Path outFilename = Paths.get(getClass().getClassLoader()
+				.getResource("").getPath(),"testConvertUniprot.out.owl");
 		Converter converter = ImportFactory.newConverter("cpath.converter.UniprotConverter");
 		converter.setXmlBase(null);
-		converter.convert(new ByteArrayInputStream(bos.toByteArray()), new FileOutputStream(outFilename));
+
+		ZipFile zf = new ZipFile(getClass().getResource("/test_uniprot_data.dat.zip").getFile());
+		assertTrue(zf.entries().hasMoreElements());
+		ZipEntry ze = zf.entries().nextElement();
+
+		converter.convert(zf.getInputStream(ze), Files.newOutputStream(outFilename));
 
 		// read Model
-		Model model = new SimpleIOHandler().convertFromOWL(new FileInputStream(outFilename));
+		Model model = new SimpleIOHandler().convertFromOWL(Files.newInputStream(outFilename));
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());

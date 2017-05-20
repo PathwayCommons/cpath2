@@ -1,7 +1,7 @@
 package cpath.jpa;
 
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -306,8 +306,7 @@ public final class Metadata {
 	 */
     @Transient
     public String getDataArchiveName() {
-    	return CPathSettings.getInstance()
-    		.dataDir() + File.separator + identifier + ".zip";
+    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier + ".zip").toString();
     }
     public void setDataArchiveName(String path) {
     	//a fake bean property (for js, JSON)
@@ -323,7 +322,7 @@ public final class Metadata {
      */
     @Transient
     public String outputDir() {
-    	return CPathSettings.getInstance().dataDir() + File.separator + identifier;
+    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier).toString();
     }
     
     

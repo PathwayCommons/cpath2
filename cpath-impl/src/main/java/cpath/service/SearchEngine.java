@@ -368,7 +368,7 @@ public class SearchEngine implements Indexer, Searcher {
 				searcherManager = null;
 			}
 
-			CPathUtils.cleanupDirectory(indexFile.toFile());
+			CPathUtils.cleanupDirectory(indexFile.toString(), true);
 
 			IndexWriterConfig conf = new IndexWriterConfig(analyzer);
 			iw = new IndexWriter(FSDirectory.open(indexFile), conf);
