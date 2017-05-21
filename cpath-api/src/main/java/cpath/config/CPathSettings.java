@@ -108,7 +108,7 @@ public final class CPathSettings
 
 	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
-	public static final String NO_DATA_FOUND = "NOT FOUND";
+	public static final String NO_DATA_FOUND = "EMPTY";
 
 	/**
 	 * Private Constructor

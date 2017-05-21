@@ -159,11 +159,14 @@ public abstract class BasicController {
 				//get the temp file
 				Path resultFile = (Path) dataResponse.getData();
 				try {
-					response.setHeader("Content-Length", String.valueOf(Files.size(resultFile)));
 					response.setContentType(dataResponse.getFormat().getMediaType());
-					Writer writer = response.getWriter();
-					IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
-					writer.flush();
+					long size = Files.size(resultFile);
+					if(size > 13) { // a hack to skip for trivial/empty results
+						response.setHeader("Content-Length", String.valueOf(size));
+						Writer writer = response.getWriter();
+						IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
+						writer.flush();
+					}
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR,
 						String.format("Failed to process the (temporary) result file %s; %s.",
@@ -177,23 +180,17 @@ public abstract class BasicController {
 				response.setContentType(dataResponse.getFormat().getMediaType());
 				try {
 					if(dataResponse.getFormat() == OutputFormat.BIOPAX) {
-						//output an empty BioPAX model as RDF+XML
+						//output an empty trivial BioPAX model
 						Model emptyModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-						Provenance provenance = emptyModel.addNew(Provenance.class,
-								CPathSettings.getInstance().getXmlBase()+CPathSettings.NO_DATA_FOUND);
-						provenance.setDisplayName(CPathSettings.getInstance().getName());
-						provenance.addComment("version:" + CPathSettings.getInstance().getVersion());
-						provenance.addComment(CPathSettings.NO_DATA_FOUND);
 						ByteArrayOutputStream bos = new ByteArrayOutputStream();
 						new SimpleIOHandler().convertToOWL(emptyModel, bos);
 						response.getWriter().print(bos.toString("UTF-8"));
 					} else {
-						//technically, SIF, GSEA formats do not have any comments
-						response.getWriter().print(String.format("%s\\t%s\\t%s",
-								CPathSettings.NO_DATA_FOUND,CPathSettings.NO_DATA_FOUND,CPathSettings.NO_DATA_FOUND));
+						//SIF, GSEA formats do not have comments
+//						response.getWriter().print(""); //nothing
 					}
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR, String.format("Failed writing a 'no data found' response: %s.",
+					errorResponse(INTERNAL_ERROR, String.format("Failed writing 'no data found' response: %s.",
 							e.toString()), request, response, logEvents);
 				}
 			}
