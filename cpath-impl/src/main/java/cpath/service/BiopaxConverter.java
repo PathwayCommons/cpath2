@@ -188,7 +188,8 @@ public class BiopaxConverter {
 		GSEAConverter gseaConverter = new GSEAConverter(idType, true, true);
 		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		gseaConverter.setAllowedOrganisms(allowedTaxIds);
-		gseaConverter.setSkipOutsidePathways(true);
+		gseaConverter.setSkipOutsidePathways(false); //- because all Pathway objects were intentionally removed
+													// before a get/graph query result gets here to be converted.
 		gseaConverter.writeToGSEA(m, stream);
 	}
 
