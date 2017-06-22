@@ -57,13 +57,6 @@
 					<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span>
 					<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> participants</span>
 				</p>
-				<p ng-hide="ds.notPathwayData">
-					<em><a target="_blank" rel="nofollow" class="alert-success" ng-href='<spring:url
-       				  value="http://logs.pathwaycommons.org/app/kibana#/dashboard/6c5c1400-4fb8-11e7-a8dc-077d80a8e265
-       				  ?_g=(time:(from:now-30d,mode:quick,to:now))&_a=(query:(query_string:(analyze_wildcard:!t,
-       				  query:'cpath2.eventname:\"{{ds.name[1]||ds.name[0]}}\"')),
-       				  timeRestore:!t,title:'by data source',viewMode:view)"/>'>Access summary</a></em>
-				</p>
 				<p>
 					<em>Publication: </em>{{ds.citation}}
 					<a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">(PMID:{{ds.pubmedId}})</a>
