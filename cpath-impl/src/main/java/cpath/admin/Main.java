@@ -106,13 +106,16 @@ public final class Main {
 		}
 		else if (args[0].equals(Cmd.PREMERGE.toString())) {
 			boolean rebuildWarehouse = false;
+			boolean force = false;
 			if (args.length > 1) {
 				for(int i=1;i<args.length;i++) {
 					if(args[i].equalsIgnoreCase("--buildWarehouse"))
 						rebuildWarehouse = true;
+					if(args[i].equalsIgnoreCase("--force"))
+						force = true;
 				}
 			}
-			runPremerge(rebuildWarehouse);
+			runPremerge(rebuildWarehouse, force);
 		}
 		else if (args[0].equals(Cmd.MERGE.toString())) {
 
@@ -323,7 +326,7 @@ public final class Main {
 	 * @param rebuildWarehouse
      * @throws IllegalStateException when not maintenance mode
      */
-	public static void runPremerge(boolean rebuildWarehouse) {
+	public static void runPremerge(boolean rebuildWarehouse, boolean force) {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");		
 		
@@ -342,7 +345,7 @@ public final class Main {
             		});
 		CPathService service = context.getBean(CPathService.class);
 		Validator validator = (Validator) context.getBean("validator");
-        PreMerger premerger = new PreMerger(service, validator);
+        PreMerger premerger = new PreMerger(service, validator, force);
         premerger.premerge();
 
 		// create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
@@ -466,7 +469,7 @@ public final class Main {
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(Cmd.METADATA.toString() + " <url> (fetch Metadata configuration (default: " +
 				"use metadata.conf file in current directory))" + NEWLINE);
-		toReturn.append(Cmd.PREMERGE.toString() + " [--buildWarehouse] " +
+		toReturn.append(Cmd.PREMERGE.toString() + " [--buildWarehouse] [--force]" +
 				"(organize, clean, convert, normalize input data;" +
 				" create metadata db and create or rebuild the BioPAX utility type objects Warehouse)" + NEWLINE);
 		toReturn.append(Cmd.MERGE.toString() + " (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);

@@ -112,13 +112,7 @@ public final class Metadata {
     private String availability;
     private Integer numPathways;  
     private Integer numInteractions;
-    private Integer numPhysicalEntities;    
-    
-    //extra (jpa transient) fields
-    @Transient
-    private Boolean uploaded;
-    @Transient
-    private Boolean premerged;
+    private Integer numPhysicalEntities;
 
     
 	/**
@@ -447,21 +441,6 @@ public final class Metadata {
 	public void setIconUrl(String iconUrl) {
 		this.iconUrl = iconUrl;
 	}
-
-	public Boolean getUploaded() {
-		return uploaded;
-	}
-	public void setUploaded(Boolean uploaded) {
-		this.uploaded = uploaded;
-	}
-
-	public Boolean getPremerged() {
-		return premerged;
-	}
-	public void setPremerged(Boolean premerged) {
-		this.premerged = premerged;
-	}
-	
 
 	@Transient
 	public boolean isNotPathwayData() {

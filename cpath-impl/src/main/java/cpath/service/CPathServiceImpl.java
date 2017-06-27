@@ -809,7 +809,6 @@ public class CPathServiceImpl implements CPathService {
 		metadata.setNumPathways(null);
 		metadata.setNumPhysicalEntities(null);
 		metadata.getContent().clear();
-		metadata.setPremerged(null);
 		return save(metadata);
 	}
 

@@ -2,26 +2,20 @@ package cpath.webservice;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
 import cpath.service.CPathUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
-import cpath.service.Status;
 import cpath.webservice.args.binding.MetadataTypeEditor;
 
-import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -89,14 +83,8 @@ public class MetadataController extends BasicController {
 		for(Metadata m : service.metadata().findAll()) {
 			//set dynamic extra fields
 			if(m.isNotPathwayData()) {
-				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				wh.add(m);
-			} else {		
-//don't query for logs (web pages are slow)
-//				m.setNumAccessed(service.log().downloads(m.standardName()));
-//				m.setNumUniqueIps(service.log().uniqueIps(m.standardName()));				
-				m.setUploaded((new File(m.getDataArchiveName()).exists()));
-				m.setPremerged(!m.getContent().isEmpty());
+			} else {
 				ds.add(m);
 			}
 		}
@@ -112,18 +100,6 @@ public class MetadataController extends BasicController {
 		Metadata m = service.metadata().findByIdentifier(identifier);
 		if(m==null)
 			return null;
-		
-		//set dynamic extra fields
-		if(m.isNotPathwayData()) {
-			m.setUploaded((new File(m.getDataArchiveName()).exists()));
-		} else {
-			//don't query for logs (web pages are slow)
-//			m.setNumAccessed(service.log().downloads(m.standardName()));
-//			m.setNumUniqueIps( service.log().uniqueIps(m.standardName()));
-			m.setUploaded((new File(m.getDataArchiveName()).exists()));
-			m.setPremerged(!m.getContent().isEmpty());
-		}
-		
     	return m;
     }
 

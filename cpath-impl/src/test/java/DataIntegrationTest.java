@@ -80,7 +80,7 @@ public class DataIntegrationTest {
 		assertNotNull(ds);
 		service.clear(ds);
 
-		PreMerger premerger = new PreMerger(service, validator);
+		PreMerger premerger = new PreMerger(service, validator, true);
 		premerger.premerge();		
 		premerger.buildWarehouse(); //- also writes Warehouse archive
 		

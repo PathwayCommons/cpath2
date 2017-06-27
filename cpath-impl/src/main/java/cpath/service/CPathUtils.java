@@ -203,24 +203,26 @@ public final class CPathUtils {
 				}
 				
 				// create pathway data object
-				LOGGER.info("analyzeAndOrganizeContent(), adding new Content: " 
-					+ entryName + " of " + metadata.getIdentifier());
+				LOGGER.info("analyzeAndOrganizeContent(), adding " + entryName + " of " + metadata.getIdentifier());
 				Content content = new Content(metadata, entryName);
 				// add object to return collection
 				contentCollection.add(content);
 
 				// expand original contend and save to the gzip output file
-				OutputStream gzos = new GZIPOutputStream(new FileOutputStream(content.originalFile()));
-				copy(zipFile.getInputStream(entry), gzos); //auto-closes streams
+				Path out = Paths.get(content.originalFile());
+				if(!Files.exists(out)) {
+					copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out))); //auto-close
+				}
             }           
 		} catch (IOException e) {
 			throw new RuntimeException("analyzeAndOrganizeContent(), " +
 					"failed reading from: " + metadata.getIdentifier() , e);
 		}
 		
-		if(contentCollection != null && !contentCollection.isEmpty())
+		if(contentCollection != null && !contentCollection.isEmpty()) {
+			metadata.getContent().clear();
 			metadata.getContent().addAll(contentCollection);
-		else
+		} else
 			LOGGER.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
     }
 

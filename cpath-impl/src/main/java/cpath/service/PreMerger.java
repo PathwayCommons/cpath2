@@ -19,6 +19,8 @@ import org.biopax.validator.impl.IdentifierImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -35,19 +37,21 @@ public final class PreMerger {
 
 	private final String xmlBase;
 	private final Validator validator;
+	private final boolean overwrite;
 
 	private CPathService service;
 
 	/**
 	 * Constructor.
-	 *
 	 * @param service   cpath2 service (provides data query methods)
 	 * @param validator Biopax Validator
+	 * @param overwrite whether to re-do for all input files from scratch or to continue, true/false (default).
 	 */
-	public PreMerger(CPathService service, Validator validator) {
+	public PreMerger(CPathService service, Validator validator, boolean overwrite) {
 		this.service = service;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
+		this.overwrite = overwrite;
 	}
 
 	/**
@@ -56,18 +60,22 @@ public final class PreMerger {
 	public void premerge() {
 		// If premerge was previously run, there're some output files
 		// in the corresponding data sub-folder, which will stay untouched ( if there was a problem with a data source,
-		// we'd like to re-run to continue premerging instead of doing all over and over again for all data;
+		// we'd like to continue premerging instead of doing over and over again for all data;
 		// you can cleanup a sub-directory under /data manually if re-doing is required due to previous errors/failure).
 
-		// Iterate over all metadata:
+		// Iterate over all metadata
 		for (Metadata metadata : service.metadata().findAll())
 		{
-			final File dir = new File(metadata.outputDir());
-			if(dir.isDirectory() && dir.list().length>0) {
-				log.warn("premerge(), skipped non-empty data directory: " + metadata.outputDir() +
-					" (clean-up and restart if you want to premerge again)");
-				continue;
+			if(overwrite || !Files.isDirectory(Paths.get(metadata.outputDir()))) {
+				metadata = service.clear(metadata); //empties the corresponding directory and db entries
 			}
+
+			//read and analyze the input data archive
+			log.info("premerge(), " + metadata.getIdentifier());
+			CPathUtils.analyzeAndOrganizeContent(metadata);
+			metadata = service.save(metadata); //inserts content file names into the db table
+			log.debug("premerge(), " + metadata.getIdentifier() + " contains "
+					+ metadata.getContent().size() + " files");
 
 			try {
 				log.info("premerge(), processing " + metadata.getIdentifier());
@@ -99,24 +107,11 @@ public final class PreMerger {
 					log.info("premerge(), no Converter class was specified; continue...");
 				}
 
-				// clear
-				metadata = service.clear(metadata);
-
-				//expand/re-pack/save or overwrite the original data files and create/recover Content db table rows
-				log.info("premerge(), " + metadata.getIdentifier() + ", expanding data files to "
-						+ metadata.outputDir());
-				CPathUtils.analyzeAndOrganizeContent(metadata);
-
 				// Premerge for each pathway data: clean, convert, validate,
 				// and then update premergeData, validationResults db fields.
 				for (Content content : new HashSet<Content>(metadata.getContent())) {
 					pipeline(metadata, content, cleaner, converter);
 				}
-
-				// save/update validation status
-				metadata = service.save(metadata);
-				log.debug("premerge(), " + metadata.getIdentifier() + ": saved "
-						+ metadata.getContent().size() + " files");
 
 			} catch (Exception e) {
 				log.error("premerge(), failed to do " + metadata.getIdentifier(), e);
@@ -372,7 +367,11 @@ public final class PreMerger {
 
 		// Validate & auto-fix and normalize: e.g., synonyms in xref.db may be replaced
 		// with the primary db name, as in Miriam, some URIs get normalized, etc.
-		checkAndNormalize(info, new GZIPInputStream(new FileInputStream(inputFile)), metadata, content);
+		if(Files.exists(Paths.get(content.normalizedFile()))) {
+			log.warn("checkAndNormalize, skip validation/normalization - use existing data files.");
+		} else {
+			checkAndNormalize(info, new GZIPInputStream(new FileInputStream(inputFile)), metadata, content);
+		}
 	}
 
 	
@@ -401,7 +400,7 @@ public final class PreMerger {
 			//get the cleaned/converted model; skip validation
 			model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
 //			content.setValid(true);
-		} else { //validate/normalize pathway data (cleaned, converted biopax data)
+		} else { //validate/normalize cleaned, converted biopax data
 			try {
 				log.info("checkAndNormalize, validating "	+ title);
 				// create a new empty validation (options: auto-fix=true, report all) and associate with the model
