@@ -220,7 +220,6 @@ public final class CPathUtils {
 		}
 		
 		if(contentCollection != null && !contentCollection.isEmpty()) {
-			metadata.getContent().clear();
 			metadata.getContent().addAll(contentCollection);
 		} else
 			LOGGER.warn("analyzeAndOrganizeContent(), no data found for " + metadata);

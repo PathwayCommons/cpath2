@@ -68,6 +68,9 @@ public final class PreMerger {
 		{
 			if(overwrite || !Files.isDirectory(Paths.get(metadata.outputDir()))) {
 				metadata = service.clear(metadata); //empties the corresponding directory and db entries
+			} else {
+				metadata.getContent().clear();
+				metadata = service.save(metadata);
 			}
 
 			//read and analyze the input data archive
