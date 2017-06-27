@@ -402,7 +402,6 @@ public final class PreMerger {
 		} else if(metadata.isNotPathwayData()) { //that's Warehouse data
 			//get the cleaned/converted model; skip validation
 			model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
-//			content.setValid(true);
 		} else { //validate/normalize cleaned, converted biopax data
 			try {
 				log.info("checkAndNormalize, validating "	+ title);
@@ -427,7 +426,8 @@ public final class PreMerger {
 					+ validation.getComment().toString() + "; " + validation.toString());
 
 			} catch (Exception e) {
-				throw new RuntimeException("checkAndNormalize(), failed " + title, e);
+				log.error("checkAndNormalize(), failed " + title + "; " + e);
+				return;
 			}
 		}
 
