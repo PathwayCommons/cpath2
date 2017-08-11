@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ##
-# cPath2 ${version} web service start script.
+# cPath2 ${version} console or web service start script.
 #
 # Please set the CPATH2_HOME environment variable first.
 #
@@ -27,8 +27,11 @@ CPATH2_PROFILING_OPTS="-agentpath:/data/local/jprofiler6/bin/linux-x64/libjprofi
 
 CPATH2_DEBUG_OPTS="-Dlogback.configurationFile=$CPATH2_HOME/logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 
-if [ -z "$1" ]; then 
-	$JAVA_HOME/bin/java -jar cpath2-server.jar --help
+if [ -z "$1" ]; then
+    $JAVA_HOME/bin/java -jar cpath2-cli.jar --help
+#	$JAVA_HOME/bin/java -jar cpath2-server.jar --help
 else
-	$JAVA_HOME/bin/java  -server $CPATH2_TUNING_OPTS $CPATH2_OPTS -jar cpath2-server.jar $1 $2 $3 $4 $5 $6
+    $JAVA_HOME/bin/java $CPATH2_OPTS -jar cpath2-cli.jar "$1" "$2" "$3" "$4" "$5"
+#	$JAVA_HOME/bin/java  -server $CPATH2_TUNING_OPTS $CPATH2_OPTS -jar cpath2-server.jar $1 $2 $3 $4 $5 $6
 fi
+

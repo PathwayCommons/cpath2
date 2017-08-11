@@ -55,14 +55,14 @@ public final class Content {
     /**
      * Create a Content domain object (value object).
      * 
-     * @param metadata must be output provider for normalized data and validation reports
+     * @param provider must be output provider for normalized data and validation reports
      * @param filename file name base (prefix for the normalized data and validation report file names)
      */
-    public Content(Metadata metadata, String filename) 
+    public Content(Metadata provider, String filename)
     {    	
-        Assert.notNull(metadata);
-    	Assert.notNull(filename);
-    	this.provider = metadata.getIdentifier();
+        Assert.notNull(provider,"provider cannot be null");
+    	Assert.notNull(filename, "filename cannot be null");
+    	this.provider = provider.getIdentifier();
         this.filename = filename.replaceAll("[^a-zA-Z0-9.-]", "_");
     }
 

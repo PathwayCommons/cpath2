@@ -23,14 +23,15 @@ the cpath2 configuration and data files:
 - hibernate.properties (can be overwritten by the corresponding properties in the Spring configuration);
 - logback.xml (optional; alternative logging can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
 
-Run the cpath2-cli.sh script, where specific system and JVM options are defined, 
+Edit and run the cpath2.sh script, where specific system and JVM options are defined,
 to execute a series of commands to create a new cpath2 instance (import metadata, 
 clean/convert/normalize input data, build the warehouse, build the main BioPAX model, Lucene index, and downloads).
-Try the sh cpath2-cli.sh (without arguments) to see what's available.
+Try the sh cpath2.sh (without arguments) to see what's available.
 
-Once a new instance is configured and created, one can also run the service using cpath2-server.sh script that kicks the executable cpath2-server.jar, instead of deploying the cpath2.war on a Tomcat, e.g., as follows:
+Once a new instance is configured and created, one can also run the service using cpath2.sh script
+that kicks the executable cpath2-server.jar, instead of deploying the cpath2.war on a Tomcat, e.g., as follows:
 
-    nohup sh cpath2-server.sh -httpPort 8080 -ajpPort 8009 2>&1 &
+    nohup sh cpath2.sh -httpPort 8080 -ajpPort 8009 2>&1 &
 
 (And then check the nohup.out and cpath2 logs periodically; port numbers are just an example.)
 
@@ -108,40 +109,26 @@ long-going commands, especially premerge, create-downloads,
 are beter start with nohup in a separate process.)
 
 Set "cpath2.admin.enabled=true" in the cpath properties (or via JVM option: "-Dcpath2.admin.enabled=true").
-Run cpath2-cli.sh without arguments to see about the commands and parameters.
+Run cpath2.sh without arguments to see about the commands and parameters.
 
 The following sequence of cpath2 commands is normally required 
 to create a new cPAth2 instance from scratch: 
- - -metadata (sh cpath2-cli.sh -fetch-metadata)
+ - -metadata (sh cpath2.sh -metadata)
  - -premerge 
- - -create-warehouse
  - -merge
  - -index
  - -export
+ - -pack
 
-Extras/other steps (optional):
+Other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
   e.g., to post-fix something in the merged biopax model/db or to produce some output; 
   if it does modify the model though, i.e. not a read-only analysis, 
-  you are to run -dbindex and following steps again.)
- - -export (if used with parameters, gets a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
- - -log --import (or --export)
-
-Highly recommended is to generate the 'blacklist' (soon after the -merge stage)
-The graph queries and format converter algorithms will not
-traverse through the entities in this list and the entity references in the
-list will be eliminated from the SIF exports. The blacklist is generated 
-solely based on the number of degrees of an entity (number of interactions 
-and complexes an entity (grouped by entity reference) participates). 
-A high-degree entity causes unnecessary traversing during the graph queries 
--- hence not wanted. However, the following command will keep the entities 
-that control more than a threshold number of reactions out of the blacklist 
-since this type of entities are often biologically relevant -- for more, see 
-the blacklist.* options in the cpath2.properties:
+  you are to run -index etc. steps again.)
+ - -export, when used with parameters, generates a sub-model using absolute URIs
+ (Unfortunately, Jena library based OWL/RDF parsers and systems, such Virtuoso,
+ incorrectly process xml:base and rdf:ID)
 
 ## Backup
 To backup, simply archive the configuration and data files, index directory, and cpath2.h2.db files.
-To backup/move the important Web Service Access Log DB, use: -export-log / -import-log commands.
 
-## Contact
-Feel free to contact the developers, or email pc-info AT pathwaycommons.org if you need help.

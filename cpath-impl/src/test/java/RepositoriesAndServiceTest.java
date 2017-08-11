@@ -118,7 +118,7 @@ public class RepositoriesAndServiceTest {
         //cleanup previous tests data if any
         md = service.clear(md);
         
-        Content content = new Content(md, "test0");
+        Content content = new Content(md, "test 0"); //space will be replaced
         md.getContent().add(content);
         //add the second pd (for the tests at the end of this method)
         final Content pd = new Content(md, "test1");
@@ -133,7 +133,7 @@ public class RepositoriesAndServiceTest {
         //we want test0 for following assertions
         if("test1".equals(content.getFilename()))
         	content = it.next();
-        assertEquals("test0",content.getFilename());    
+        assertEquals("test_0",content.getFilename());
         
         //even if we update from the db, data must not be empty
         md = service.metadata().findByIdentifier(md.getIdentifier());
@@ -145,7 +145,7 @@ public class RepositoriesAndServiceTest {
         //we want test0 for following assertions
         if("test1".equals(content.getFilename()))
         	content =it.next();
-        assertEquals("test0",content.getFilename());      
+        assertEquals("test_0",content.getFilename());
 
         // add validation result());  
         for(Content o : md.getContent())

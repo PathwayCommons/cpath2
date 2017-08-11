@@ -52,6 +52,7 @@ public final class Main {
     	INDEX("-index"),
 		EXPORT("-export"),
         ANALYSIS("-run-analysis"),
+		PACKAGE("-pack"),
 		;
         //name to use as the application's command line argument
         private String command;
@@ -156,6 +157,9 @@ public final class Main {
 				executeAnalysis(args[1], false);
 		
 		}
+		else if (args[0].equals(Cmd.PACKAGE.toString())) {
+			pack();
+		}
 		else {
 			System.err.println(usage());
 		}
@@ -201,55 +205,33 @@ public final class Main {
  			
 	}
 
-    public static void exportLog(String filename) throws IOException {
+    public static void pack() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
- 		
+
+		//backup and purge the cpath2 intermediate id-mapping db to save disk space
+// 		String h2db = cpath.dataDir() + File.separator + "cpath2.h2.db"; //make a copy?
+ 		String idmap = cpath.dataDir() + File.separator + "idmapping.csv";
  		Connection conn = null;
  		try {
 			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection("jdbc:h2:"+cpath.homeDir()+"/cpath2", "sa", "");
-			new Csv()
-				.write(conn, filename, "select * from logentity", "UTF-8");
-			LOG.info("Saved current access log DB to " + filename);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		} finally {
-			try {conn.close();} catch (Exception e) {}
-		}
-	}
-
-    public static void importLog(String filename) throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
- 		
- 		//load cpath2 access db from a CSV file
- 		String backup = cpath.dataDir() + File.separator + "logentity.csv.bak";
- 		Connection conn = null;
- 		try {
- 			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection("jdbc:h2:"+cpath.homeDir()+"/cpath2", "sa", "");
-			
+			conn = DriverManager.getConnection("jdbc:h2:" + cpath.homeDir() + "/cpath2", "sa", "");
 			//backup
-			new Csv().write(conn, backup, "select * from logentity", "UTF-8");
-			LOG.info("Saved current access log DB to " + backup);
-			
-			//clear all existing data
-			conn.createStatement().executeUpdate("delete from logentity;");
-			LOG.info("Cleared access log DB");
-			
-			conn.createStatement().executeUpdate("insert into logentity " +
-	 				"select * from CSVREAD('"+ filename +"')");	 		
-	 		conn.commit();
-	        LOG.info("Imported access log entries from " + filename);
-		} catch (Exception e) {
+			new Csv().write(conn, idmap, "select * from mappings", "UTF-8");
+			//clear all mapping data
+			conn.createStatement().executeUpdate("delete from mappings;");
+			conn.commit();
+		}catch (Exception e) {
 			try {conn.rollback(); conn.close();} catch (Exception ex) {}
 			throw new RuntimeException(e);
 		} finally {
 			try {conn.close();} catch (Exception e) {}
 		}
+
+		//TODO generate downloads.zip (move almost all files from cpath2 /data and /downloads folders to the archive)
+
 	}
-    
+
 	private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
         	"Invalid cpath2 command: " +  Arrays.toString(args)
@@ -488,6 +470,9 @@ public final class Main {
 				"will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE);
 		toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
 				"if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
+		toReturn.append(Cmd.PACKAGE.toString() + " (final cleaning and packaging: moves all result and intermediate data " +
+				"files into <prefix>.downloads.zip and only keeps data and files required for running the cpath2 server; " +
+				"so, please backup )" + NEWLINE);
 		return toReturn.toString();
 	}
 
