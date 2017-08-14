@@ -180,10 +180,11 @@ public final class Merger {
 			log.info("Normalizing generics (" + metadata.getIdentifier() + ")...");
 			ModelUtils.normalizeGenerics(providerModel);
 
-			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
-			log.info("Merging equivalent entity groups...");
-			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
-			ModelUtils.mergeEquivalentInteractions(providerModel);
+//			//merge some Entities within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+//			log.info("Merging equivalent physical entities...");
+//			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
+//			log.info("Merging equivalent interactions...");
+//			ModelUtils.mergeEquivalentInteractions(providerModel);
 
 			log.info("Done merging " + metadata);
 		} else {
