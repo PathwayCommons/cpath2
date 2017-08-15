@@ -218,10 +218,11 @@ public final class Main {
 			conn = DriverManager.getConnection("jdbc:h2:" + cpath.homeDir() + "/cpath2", "sa", "");
 			//backup
 			new Csv().write(conn, idmap, "select * from mappings", "UTF-8");
-			//clear all mapping data
-			conn.createStatement().executeUpdate("delete from mappings;");
-			conn.commit();
+//			//clear all mapping data TODO: it hangs...
+//			conn.createStatement().executeUpdate("delete from mappings;");
+//			conn.commit();
 		}catch (Exception e) {
+ 			LOG.error("pack(), rolling back due to an exception...", e);
 			try {conn.rollback(); conn.close();} catch (Exception ex) {}
 			throw new RuntimeException(e);
 		} finally {
@@ -229,7 +230,6 @@ public final class Main {
 		}
 
 		//TODO generate downloads.zip (move almost all files from cpath2 /data and /downloads folders to the archive)
-
 	}
 
 	private static void fail(String[] args, String details) {
