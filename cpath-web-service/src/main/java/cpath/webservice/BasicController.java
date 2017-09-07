@@ -147,7 +147,6 @@ public abstract class BasicController {
 			if(!providers.isEmpty())
 				logEvents.addAll(LogEvent.providers(providers));
 			
-			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
 			try {
 				service.log(logEvents, clientIpAddress(request));
@@ -161,7 +160,7 @@ public abstract class BasicController {
 				try {
 					response.setContentType(dataResponse.getFormat().getMediaType());
 					long size = Files.size(resultFile);
-					if(size > 13) { // a hack to skip for trivial/empty results
+					if(size > 13) { // TODO: why, a hack to skip for trivial/empty results
 						response.setHeader("Content-Length", String.valueOf(size));
 						Writer writer = response.getWriter();
 						IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
@@ -172,7 +171,7 @@ public abstract class BasicController {
 						String.format("Failed to process the (temporary) result file %s; %s.",
 							resultFile, e.toString()), request, response, logEvents);
 				} finally {
-					try {Files.delete(resultFile);} catch (IOException e) {}
+					try {Files.delete(resultFile);}catch(IOException e){}
 				}
 			}
 			else if(dataResponse.isEmpty()) {

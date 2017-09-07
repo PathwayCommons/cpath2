@@ -92,9 +92,12 @@ public class BiopaxConverter {
 	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
 		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX, null);
 		JsonldConverter converter = new JsonldBiopaxConverter();
-		Path inp = (Path) dr.getData();
-		converter.convertToJsonld(new FileInputStream(inp.toFile()), os);
-		inp.toFile().delete();
+		Path data = (Path) dr.getData();
+		try {
+			converter.convertToJsonld(new FileInputStream(data.toFile()), os);
+		} finally {
+			try{Files.delete(data);}catch(Exception ex){}
+		}
 	}
 
 
@@ -120,28 +123,23 @@ public class BiopaxConverter {
 		// otherwise, convert, return a new DataResponse
     	// (can contain up to ~ 1Gb unicode string data)
     	// a TMP File is used instead of a byte array; set the file path as dataResponse.data value
-    	File tmpFile = null;
+    	Path tmpPath = null;
 		try {
-    		Path tmpFilePath = Files.createTempFile("cpath2", format.getExt());
-    		tmpFile = tmpFilePath.toFile();
-    		tmpFile.deleteOnExit();
-
-    		convert(m, format, options, Files.newOutputStream(tmpFilePath)); //FOS gets closed in there
-
+    		tmpPath = Files.createTempFile("cpath2", format.getExt());
+    		tmpPath.toFile().deleteOnExit();
+    		convert(m, format, options, Files.newOutputStream(tmpPath)); //FOS gets closed in there
 			DataResponse dataResponse = new DataResponse();
 			dataResponse.setFormat(format);
-			dataResponse.setData(tmpFilePath);
+			dataResponse.setData(tmpPath);
 			// extract and save data provider names
 			dataResponse.setProviders(providers(m));
-
 			return dataResponse;
 		}
         catch (Exception e) {
-        	if(tmpFile != null)
-        		tmpFile.delete();
+			try{Files.delete(tmpPath);}catch(Exception ex){}
         	return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-    }
+	}
 
 
     /**
