@@ -4,11 +4,17 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.6.RELEASE</version>
+	</parent>
 
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
+	<artifactId>parent</artifactId>
 	<version>8.0.0-SNAPSHOT</version>
 	<description>cPath2 parent (multi-mudule) project (biological pathway data integration/querying)</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
@@ -140,8 +146,8 @@
 	<modules>
 		<module>cpath-api</module>
 		<module>cpath-client</module>
-		<module>cpath-impl</module>
-		<module>cpath-web-service</module>
+		<module>cpath-cli</module>
+		<module>cpath-ws</module>
 	</modules>
 
 	<properties>
