@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="${cpath.name}" />
 <meta name="description" content="${cpath.name} web services, version ${cpath.version}, 
-powered by cPath2 software, version ${project.version}" />
+powered by cPath2 software, version @project.version@" />
 <meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, web service, 
 BioPAX, pathway, network, biological pathways, bioinformatics, computational biology, 
 pathway commons, baderlab, toronto, mskcc, cbio, graph query, data integration, 

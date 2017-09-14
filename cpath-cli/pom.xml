@@ -11,7 +11,7 @@
 	<artifactId>cpath-cli</artifactId>
 	<packaging>jar</packaging>
 
-	<name>cPath2 - Implementation</name>
+	<name>cPath2 - console</name>
 	<description>cPath2 - bio pathway data integration, search/index/query, export to other formats</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 

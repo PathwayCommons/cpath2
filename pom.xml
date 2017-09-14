@@ -713,11 +713,6 @@
 				<version>${logback.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-access</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.springframework.data</groupId>
 				<artifactId>spring-data-jpa</artifactId>
 				<version>${spring-data-jpa.version}</version>

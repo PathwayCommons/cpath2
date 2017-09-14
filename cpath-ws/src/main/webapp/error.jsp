@@ -10,7 +10,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="author" content="${cpath.name}" />
 	<meta name="description" content="${cpath.name} web services, version ${cpath.version},
-	powered by cPath2 software, version ${project.version}" />
+	powered by cPath2 software, version @project.version@" />
 	<link href="<spring:url value='/resources/css/bootstrap.min.css'/>" rel="stylesheet" />
 	<%-- <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"> --%>
 	<link href="<spring:url value='/resources/css/pc.css'/>" rel="stylesheet" />
@@ -65,8 +65,8 @@
 <footer class="footer">
 	<div id="footer_navbar" class="navbar navbar-default navbar-fixed-bottom">
 		<div class="container">
-			<p class="navbar-text navbar-left"> <%--project.version is a Maven var.--%>
-				<small><a target="_blank" href="https://pathwaycommons.github.io/cpath2/">cPath2</a> v${project.version}.
+			<p class="navbar-text navbar-left"> <%--project.version is a Maven var. to inject--%>
+				<small><a target="_blank" href="https://pathwaycommons.github.io/cpath2/">cPath2</a> v@project.version@.
 				 &copy; 2006-2016 <a href="http://baderlab.org/" target="_blank">Bader Lab</a> (UofT),
 				<a href="http://www.sanderlab.org" target="_blank">cBio</a> (MSKCC; DFCI, HMS) and Demir Lab (OHSU).
 				</small>

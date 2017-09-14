@@ -41,25 +41,25 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<!-- resource filtering - inject project variables into JSP pages -->
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<configuration>
-					<webResources>
-						<resource>
-							<filtering>true</filtering>
-							<targetPath>WEB-INF/views</targetPath>
-							<directory>src/main/webapp</directory>
-							<includes>
-								<include>*.jsp</include>
-							</includes>
-						</resource>
-					</webResources>
-					<!-- <attachClasses>true</attachClasses> -->
-					<!-- <archiveClasses>true</archiveClasses> -->
-				</configuration>
-			</plugin>
+			<!--<plugin>--><!--with spring-boot, resource filtering should work by default-->
+				<!--&lt;!&ndash; resource filtering - inject project variables into JSP pages &ndash;&gt;-->
+				<!--<groupId>org.apache.maven.plugins</groupId>-->
+				<!--<artifactId>maven-war-plugin</artifactId>-->
+				<!--<configuration>-->
+					<!--<webResources>-->
+						<!--<resource>-->
+							<!--<filtering>true</filtering>-->
+							<!--<targetPath>WEB-INF/</targetPath>-->
+							<!--<directory>src/main/webapp</directory>-->
+							<!--<includes>-->
+								<!--<include>*.jsp</include>-->
+							<!--</includes>-->
+						<!--</resource>-->
+					<!--</webResources>-->
+					<!--&lt;!&ndash; <attachClasses>true</attachClasses> &ndash;&gt;-->
+					<!--&lt;!&ndash; <archiveClasses>true</archiveClasses> &ndash;&gt;-->
+				<!--</configuration>-->
+			<!--</plugin>-->
 			<plugin>
            		<artifactId>maven-deploy-plugin</artifactId>
            		<version>${maven-deploy-plugin.version}</version>
@@ -76,10 +76,10 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<!-- not required - actuator -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter-actuator</artifactId>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>
@@ -94,6 +94,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-jasper</artifactId>
 			<scope>provided</scope>
@@ -103,7 +108,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-api</artifactId>
