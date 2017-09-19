@@ -1,4 +1,4 @@
-package cpath.admin;
+package cpath;
 
 import static cpath.config.CPathSettings.*;
 
@@ -229,7 +229,7 @@ public final class Main {
 			try {conn.close();} catch (Exception e) {}
 		}
 
-		//TODO generate downloads.zip (move almost all files from cpath2 /data and /downloads folders to the archive)
+		//TODO: generate downloads.zip (move almost all files from cpath2 /data and /downloads folders to the archive)
 	}
 
 	private static void fail(String[] args, String details) {

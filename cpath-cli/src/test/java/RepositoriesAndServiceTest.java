@@ -24,13 +24,13 @@ import cpath.service.Status;
 import static org.junit.Assert.*;
 
 /**
- * 
+ *
  * @author rodche
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
 		"classpath:META-INF/spring/applicationContext-jpa.xml"})
-@ActiveProfiles("dev")
+//@ActiveProfiles("default") //develop
 public class RepositoriesAndServiceTest {
 	
 	@Autowired

@@ -46,7 +46,7 @@ import java.util.zip.GZIPOutputStream;
 @ContextConfiguration(locations={
 		"classpath:META-INF/spring/applicationContext-jpa.xml",
 		"classpath:META-INF/spring/appContext-validator.xml"})
-@ActiveProfiles("dev")
+//@ActiveProfiles("default") //develop
 public class DataIntegrationTest {
 	static final Logger log = LoggerFactory.getLogger(DataIntegrationTest.class);
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
