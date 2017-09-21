@@ -3,7 +3,6 @@ package cpath.jpa;
 
 import java.util.List;
 
-//import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 import org.springframework.data.repository.CrudRepository;
 
 

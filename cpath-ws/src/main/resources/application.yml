@@ -2,8 +2,6 @@
 server:
   port: 8080
   context-path: /pc2
-#  tomcat:
-#    additional-tld-skip-patterns: *.jar
 
 spring:
   datasource:
@@ -26,19 +24,11 @@ spring:
 ---
 
 spring:
-  profiles: cli
-  main:
-    web-environment: false
-    banner-mode: off
-
----
-
-spring:
   profiles: prod
   datasource:
-      url: jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE
-      username: sa
-      password:
-      driverClassName: org.h2.Driver
+    url: jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE
+    username: sa
+    password:
+    driverClassName: org.h2.Driver
 server:
   port: 8280

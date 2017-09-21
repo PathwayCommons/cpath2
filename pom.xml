@@ -153,7 +153,6 @@
 		<hibernate.version>5.2.9.Final</hibernate.version>
 		<lucene.version>6.5.0</lucene.version>
 		<h2.version>1.4.196</h2.version>
-		<querydsl.version>4.1.4</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
@@ -697,11 +696,6 @@
 				<groupId>org.aspectj</groupId>
 				<artifactId>aspectjrt</artifactId>
 				<version>${aspectjrt.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.querydsl</groupId>
-				<artifactId>querydsl-jpa</artifactId>
-				<version>${querydsl.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
