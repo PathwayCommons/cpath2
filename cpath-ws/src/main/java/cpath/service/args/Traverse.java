@@ -1,4 +1,4 @@
-package cpath.webservice.args;
+package cpath.service.args;
 
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;

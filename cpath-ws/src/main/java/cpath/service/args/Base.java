@@ -1,4 +1,4 @@
-package cpath.webservice.args;
+package cpath.service.args;
 
 /**
  * Created by igor on 23/06/16.

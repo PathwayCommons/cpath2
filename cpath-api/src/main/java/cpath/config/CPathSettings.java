@@ -116,8 +116,11 @@ public final class CPathSettings
 	private CPathSettings() {
 		// check if cpath2 home directory JVM property is defined
 		String home = System.getProperty(HOME_DIR);
-		if(home==null || home.isEmpty())
-			throw new AssertionError("Java option " + HOME_DIR + " is undefined!");
+		if(home==null || home.isEmpty()) {
+			home = System.getProperty("java.io.tmpdir")+"/cpath2_home";
+			System.setProperty(HOME_DIR, home);
+			LOG.error("Java option: " + HOME_DIR + " is undefined! Using: " + home);
+		}
 
 		// put default values
 		Properties defaults = new Properties();

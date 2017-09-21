@@ -1,4 +1,4 @@
-package cpath.webservice.args.binding;
+package cpath.service.args.binding;
 
 import org.biopax.paxtools.query.algorithm.Direction;
 

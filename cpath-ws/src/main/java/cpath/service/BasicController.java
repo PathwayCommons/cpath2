@@ -1,4 +1,4 @@
-package cpath.webservice;
+package cpath.service;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -17,17 +17,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
 
-import cpath.config.CPathSettings;
-import cpath.service.*;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.jena.sparql.util.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Provenance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

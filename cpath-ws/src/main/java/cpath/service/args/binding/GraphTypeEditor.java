@@ -1,22 +1,22 @@
-package cpath.webservice.args.binding;
+package cpath.service.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import org.biopax.paxtools.query.algorithm.Direction;
+import cpath.service.GraphType;
 
 
 /**
  * @author rodche
  *
  */
-public class DirectionEditor extends PropertyEditorSupport {
+public class GraphTypeEditor extends PropertyEditorSupport {
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
 	public void setAsText(String arg0) {
-		setValue(Direction.valueOf(arg0.trim().toUpperCase()));
+		setValue(GraphType.valueOf(arg0.trim().toUpperCase()));
 	}
 	
 }

@@ -1,4 +1,4 @@
-package cpath.webservice;
+package cpath.service;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -8,14 +8,12 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import cpath.config.CPathSettings;
-import cpath.service.CPathUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
-import cpath.webservice.args.binding.MetadataTypeEditor;
+import cpath.service.args.binding.MetadataTypeEditor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,20 +21,18 @@ import org.springframework.web.bind.annotation.*;
  * 
  * @author rodche
  */
-@Controller
+@RestController
+//@CrossOrigin //enabled, allowed *, get/post/head by default for a spring-boot app
 public class MetadataController extends BasicController {
     
 	private static final Logger log = LoggerFactory.getLogger(MetadataController.class);   
-	
-    
+
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
 	}
     
     
-	//JSP Views
-	
     /*
      * Makes current cpath2 instance properties 
      * available to the JSP views.
@@ -49,7 +45,7 @@ public class MetadataController extends BasicController {
 
 
     @RequestMapping("/metadata/logo/{identifier}")
-    public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier)
+    public byte[] queryForLogo(@PathVariable String identifier)
     		throws IOException
     {	
     	Metadata ds = service.metadata().findByIdentifier(identifier);
@@ -73,7 +69,7 @@ public class MetadataController extends BasicController {
     
     // to return a xml or json data http response
     @RequestMapping("/metadata/datasources")
-    public  @ResponseBody List<Metadata> queryForDatasources() {
+    public List<Metadata> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	//pathway/interaction data sources
 		List<Metadata> ds = new ArrayList<Metadata>();
@@ -96,7 +92,7 @@ public class MetadataController extends BasicController {
     }
     
     @RequestMapping("/metadata/datasources/{identifier}")
-    public  @ResponseBody Metadata datasource(@PathVariable String identifier) {
+    public Metadata datasource(@PathVariable String identifier) {
 		Metadata m = service.metadata().findByIdentifier(identifier);
 		if(m==null)
 			return null;
@@ -150,5 +146,5 @@ public class MetadataController extends BasicController {
 			this.files = files;
 		}
     }
-        
+
 }

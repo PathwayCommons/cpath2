@@ -221,12 +221,6 @@ public interface CPathService {
     
     MetadataRepository metadata();
 
-    /**
-     * Loads or re-loads the main BioPAX Model 
-     * and blacklist from archive.
-     */
-	void init();
-	
 
 	/**
 	 * Creates:

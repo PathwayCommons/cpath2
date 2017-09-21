@@ -1,4 +1,4 @@
-package cpath.webservice;
+package cpath.service;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -7,9 +7,7 @@ import java.util.Scanner;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.service.jaxb.*;
-import cpath.service.GraphType;
-import cpath.service.OutputFormat;
-import cpath.webservice.args.binding.*;
+import cpath.service.args.binding.*;
 
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
@@ -18,7 +16,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
  * 
  * @author rodche
  */
-@Controller
+@RestController
 public class HelpController extends BasicController {  
 	
 	public HelpController() {
@@ -84,7 +81,7 @@ public class HelpController extends BasicController {
 	 * @return
 	 */
     @RequestMapping("/help/formats")
-    public @ResponseBody Help getFormats() {
+    public Help getFormats() {
     	Help help = new Help();
     	for(OutputFormat f : OutputFormat.values()) {
     		//skip obsolete ones
@@ -100,7 +97,7 @@ public class HelpController extends BasicController {
 
     
     @RequestMapping("/help/formats/{fmt}")
-    public @ResponseBody Help getFormat(@PathVariable OutputFormat fmt) {
+    public Help getFormat(@PathVariable OutputFormat fmt) {
     	if(fmt == null) return getFormats();
     	Help help = new Help();
     	help.setId(fmt.name());
@@ -115,7 +112,7 @@ public class HelpController extends BasicController {
 	 * @return
 	 */
     @RequestMapping("/help/types")
-    public @ResponseBody Help getBiopaxTypes() {
+    public Help getBiopaxTypes() {
     	Help help = new Help();
     	
     	for(Class<? extends BioPAXElement> t : 
@@ -137,7 +134,7 @@ public class HelpController extends BasicController {
     
     
     @RequestMapping("/help/types/{type}") 
-    public @ResponseBody Help getBiopaxType(@PathVariable Class<? extends BioPAXElement> type) {
+    public Help getBiopaxType(@PathVariable Class<? extends BioPAXElement> type) {
     	if(type == null) return getBiopaxTypes();
     	
     	Help h = new Help(type.getSimpleName());
@@ -149,7 +146,7 @@ public class HelpController extends BasicController {
 
     
     @RequestMapping("/help/types/{type}/properties") 
-    public @ResponseBody Help getBiopaxTypeProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    public Help getBiopaxTypeProperties(@PathVariable Class<? extends BioPAXElement> type) {
     	final String id = type.getSimpleName() + " properties";
     	Help h = new Help(id);
     	h.setTitle(id);
@@ -165,7 +162,7 @@ public class HelpController extends BasicController {
     
     
     @RequestMapping("/help/types/properties") 
-    public @ResponseBody Help getBiopaxTypesProperties() {
+    public Help getBiopaxTypesProperties() {
     	Help h = new Help("properties");
     	h.setTitle("BioPAX Properites");
     	h.setInfo("The list of all BioPAX properties");
@@ -184,7 +181,7 @@ public class HelpController extends BasicController {
     }
     
     @RequestMapping("/help/types/{type}/inverse_properties") 
-    public @ResponseBody Help getBiopaxTypeInverseProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    public Help getBiopaxTypeInverseProperties(@PathVariable Class<? extends BioPAXElement> type) {
     	final String id = type.getSimpleName() + " inverse_properties";
     	Help h = new Help(id);
     	h.setTitle(id);
@@ -200,7 +197,7 @@ public class HelpController extends BasicController {
     
     
     @RequestMapping("/help/types/inverse_properties") 
-    public @ResponseBody Help getBiopaxTypesInverseProperties() {
+    public Help getBiopaxTypesInverseProperties() {
     	Help h = new Help("inverse_properties");
     	h.setTitle("Paxtools inverse properites");
     	h.setInfo("The list of all inverse (Paxtools) properties");
@@ -224,7 +221,7 @@ public class HelpController extends BasicController {
 	 * @return
 	 */
     @RequestMapping("/help/kinds")
-    public @ResponseBody Help getGraphTypes() {
+    public Help getGraphTypes() {
     	Help help = new Help();
     	for(GraphType type : GraphType.values()) {
     		help.addMember(getGraphType(type));
@@ -238,7 +235,7 @@ public class HelpController extends BasicController {
 
     
     @RequestMapping("/help/kinds/{kind}")
-    public @ResponseBody Help getGraphType(@PathVariable GraphType kind) {
+    public Help getGraphType(@PathVariable GraphType kind) {
     	if(kind == null) return getGraphTypes();
     	Help help = new Help();
     	help.setTitle(kind.name());
@@ -254,7 +251,7 @@ public class HelpController extends BasicController {
 	 * @return
 	 */
     @RequestMapping("/help/directions")
-    public @ResponseBody Help getDirectionTypes() {
+    public Help getDirectionTypes() {
     	Help help = new Help();
     	for(Direction direction : Direction.values()) {
     		help.addMember(getDirectionType(direction));
@@ -268,7 +265,7 @@ public class HelpController extends BasicController {
 
 
     @RequestMapping("/help/directions/{direction}")
-    public @ResponseBody Help getDirectionType(@PathVariable Direction direction) {
+    public Help getDirectionType(@PathVariable Direction direction) {
     	if(direction == null) return getDirectionTypes();
     	Help help = new Help();
     	help.setTitle(direction.name());

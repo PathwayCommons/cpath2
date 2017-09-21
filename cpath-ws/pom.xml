@@ -2,11 +2,6 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!--<parent>-->
-		<!--<artifactId>parent</artifactId>-->
-		<!--<groupId>pathwaycommons.cpath</groupId>-->
-		<!--<version>8.0.0-SNAPSHOT</version>-->
-	<!--</parent>-->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -22,24 +17,13 @@
 	<description>Pathway Commons web service and info pages</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>apache-snapshots</id>
-			<name>Apache snapshots</name>
-			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-			<snapshots><enabled>true</enabled></snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
 	<properties>
 		<java.version>1.8</java.version>
-		<license.licenseName>lgpl_v3</license.licenseName>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<ehcache-core.version>2.6.11</ehcache-core.version>
+		<!--<ehcache-core.version>2.6.11</ehcache-core.version>-->
 	</properties>
 
 	<build>
+		<finalName>cpath2-server</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -58,11 +42,17 @@
 			</plugin>
 			<plugin>
            		<artifactId>maven-deploy-plugin</artifactId>
-           		<version>${maven-deploy-plugin.version}</version>
            		<configuration>
              		<skip>true</skip>
           		</configuration>
         	</plugin>
+			<plugin>
+				<artifactId>maven-site-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+					<skipDeploy>true</skipDeploy>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -71,7 +61,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<!-- not required - actuator -->
 		<!--<dependency>-->
 			<!--<groupId>org.springframework.boot</groupId>-->
 			<!--<artifactId>spring-boot-starter-actuator</artifactId>-->
@@ -111,6 +100,7 @@
 		<!--<dependency>-->
 			<!--<groupId>net.sf.ehcache</groupId>-->
 			<!--<artifactId>ehcache-core</artifactId>-->
+			<!--<version>${ehcache-core.version}</version>-->
 			<!--<scope>runtime</scope>-->
 		<!--</dependency>-->
 		<dependency>

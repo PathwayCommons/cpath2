@@ -1,4 +1,4 @@
-package cpath.webservice.args;
+package cpath.service.args;
 
 import javax.validation.constraints.Min;
 

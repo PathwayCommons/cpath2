@@ -1,16 +1,15 @@
-package cpath.webservice;
+package cpath.service;
 
 import java.io.IOException;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import cpath.service.*;
 import cpath.service.jaxb.*;
-import cpath.webservice.args.Get;
-import cpath.webservice.args.Graph;
-import cpath.webservice.args.Search;
-import cpath.webservice.args.Traverse;
-import cpath.webservice.args.binding.*;
+import cpath.service.args.Get;
+import cpath.service.args.Graph;
+import cpath.service.args.Search;
+import cpath.service.args.Traverse;
+import cpath.service.args.binding.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.model.level3.Protein;
@@ -19,7 +18,7 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
+
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +32,7 @@ import javax.validation.Valid;
  * 
  * @author rodche
  */
-@Controller
+@RestController
 public class BiopaxModelController extends BasicController {
 
 	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
@@ -134,7 +133,7 @@ public class BiopaxModelController extends BasicController {
 
 
 	@RequestMapping("/top_pathways")
-    public @ResponseBody SearchResponse topPathways(
+    public SearchResponse topPathways(
 			@RequestParam(required=false) String q,
     		@RequestParam(required=false) String[] datasource,
 			@RequestParam(required=false) String[] organism,
@@ -164,7 +163,7 @@ public class BiopaxModelController extends BasicController {
     
     
     @RequestMapping("/traverse")
-    public @ResponseBody TraverseResponse traverse(@Valid Traverse args,
+    public TraverseResponse traverse(@Valid Traverse args,
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -249,7 +248,7 @@ public class BiopaxModelController extends BasicController {
 	
 	
     @RequestMapping(value="/search")
-    public @ResponseBody SearchResponse search(@Valid Search args, BindingResult bindingResult,
+    public SearchResponse search(@Valid Search args, BindingResult bindingResult,
 											   HttpServletRequest request, HttpServletResponse response)
     {		
 		// Prepare service assess events

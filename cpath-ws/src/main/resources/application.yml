@@ -1,0 +1,42 @@
+#spring.profiles: default
+server:
+  port: 8080
+  context-path: /pc2
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+      javax:
+        persistence:
+          sharedCache:
+            mode: ALL
+    hibernate:
+      ddl-auto: update
+  mvc:
+    view:
+      prefix: /
+      suffix: .jsp
+
+---
+
+spring:
+  profiles: cli
+  main:
+    web-environment: false
+    banner-mode: off
+
+---
+
+spring:
+  profiles: prod
+  datasource:
+      url: jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE
+      username: sa
+      password:
+      driverClassName: org.h2.Driver
+server:
+  port: 8280
