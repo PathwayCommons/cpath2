@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+//import org.springframework.boot.autoconfigure.web.ErrorController;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,7 +24,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import cpath.config.CPathSettings;
 
 @Controller
-public class PagesController extends BasicController {
+public class PagesController extends BasicController
+//		implements ErrorController
+{
 	private static final Logger LOG = LoggerFactory.getLogger(PagesController.class);
 	
 	private final CPathSettings cpath;
@@ -55,17 +58,20 @@ public class PagesController extends BasicController {
     	return "formats";
     }
 
-    
     @RequestMapping("/datasources")
     public String datasources() {
     	return "datasources";
     }
-       
-    @RequestMapping("/error")
-    public String error() {
-    	return "error";
-    }
-
+//
+//	//TODO: handle error responses: error.jsp
+//    @RequestMapping("/error")
+//    public String error() {
+//    	return "error";
+//    }
+//	@Override
+//	public String getErrorPath() {
+//		return "/error";
+//	}
 
     @RequestMapping("/downloads")
     public String downloads(Model model, HttpServletRequest request) {
@@ -135,5 +141,4 @@ public class PagesController extends BasicController {
 				"Disallow: /help\n" +
 				"Disallow: /metadata\n";
 	}
-
 }

@@ -11,22 +11,22 @@
 	<meta name="author" content="${cpath.name}" />
 	<meta name="description" content="${cpath.name} web services, version ${cpath.version},
 	powered by cPath2 software, version @project.version@" />
-	<link href="<spring:url value='/resources/css/bootstrap.min.css'/>" rel="stylesheet" />
+	<link href="<spring:url value='/css/bootstrap.min.css'/>" rel="stylesheet" />
 	<%-- <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"> --%>
-	<link href="<spring:url value='/resources/css/pc.css'/>" rel="stylesheet" />
+	<link href="<spring:url value='/css/pc.css'/>" rel="stylesheet" />
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-	<%-- <script src="<spring:url value='/resources/scripts/jquery.min.js'/>"></script> --%>
+	<%-- <script src="<spring:url value='/scripts/jquery.min.js'/>"></script> --%>
 	<%-- <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script> --%>
-	<script src="<spring:url value='/resources/scripts/bootstrap.min.js'/>"></script>
-	<script src="<spring:url value='/resources/scripts/jquery.placeholder.js'/>"></script>
-	<script src="<spring:url value='/resources/scripts/pc.js'/>"></script>
+	<script src="<spring:url value='/scripts/bootstrap.min.js'/>"></script>
+	<script src="<spring:url value='/scripts/jquery.placeholder.js'/>"></script>
+	<script src="<spring:url value='/scripts/pc.js'/>"></script>
 	<!--[if lt IE 8]>
-	<script src="<spring:url value='/resources/scripts/icon-font-ie7.js'/>"></script>
-	<script src="<spring:url value='/resources/scripts/lte-ie7-24.js'/>"></script>
+	<script src="<spring:url value='/scripts/icon-font-ie7.js'/>"></script>
+	<script src="<spring:url value='/scripts/lte-ie7-24.js'/>"></script>
 	<![endif]-->
 	<%-- HTML5 shim, for IE6-8 support of HTML5 elements --%>
 	<!--[if lt IE 9]>
-	<script src="<spring:url value='/resources/scripts/html5shiv.js'/>"></script>
+	<script src="<spring:url value='/scripts/html5shiv.js'/>"></script>
 	<![endif]-->
 	<title>cPath2::Error (${cpath.name})</title>
 	<script>

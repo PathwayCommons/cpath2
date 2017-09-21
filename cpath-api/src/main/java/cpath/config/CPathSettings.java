@@ -114,14 +114,6 @@ public final class CPathSettings
 	 * Private Constructor
 	 */
 	private CPathSettings() {
-		// check if cpath2 home directory JVM property is defined
-		String home = System.getProperty(HOME_DIR);
-		if(home==null || home.isEmpty()) {
-			home = System.getProperty("java.io.tmpdir")+"/cpath2_home";
-			System.setProperty(HOME_DIR, home);
-			LOG.error("Java option: " + HOME_DIR + " is undefined! Using: " + home);
-		}
-
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
@@ -397,10 +389,14 @@ public final class CPathSettings
 	 * 
 	 * @return
 	 */
-	public String homeDir() {		
-		String homedir = property(HOME_DIR);
-
-		return homedir;
+	public String homeDir() {
+		String home = System.getProperty(HOME_DIR);
+		if(home==null || home.isEmpty()) {
+			home = System.getProperty("java.io.tmpdir")+"/cpath2_home";
+			System.setProperty(HOME_DIR, home);
+			LOG.warn("'" + HOME_DIR + "' is UNDEFINED (using: '" + home + "')");
+		}
+		return home;
 	}
 	
 	private String subDir(String subDirectoryName) {

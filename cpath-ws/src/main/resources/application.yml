@@ -2,6 +2,8 @@
 server:
   port: 8080
   context-path: /pc2
+#  tomcat:
+#    additional-tld-skip-patterns: *.jar
 
 spring:
   datasource:

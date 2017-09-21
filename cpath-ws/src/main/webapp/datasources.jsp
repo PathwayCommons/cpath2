@@ -6,7 +6,7 @@
 <html>
 <head>
 	<jsp:include page="head.jsp" />
-	<script src="<spring:url value='/resources/scripts/datasources.js'/>"></script>
+	<script src="<spring:url value='/scripts/datasources.js'/>"></script>
 	<title>cPath2::Datasources (${cpath.name})</title>
 </head>
 <body>

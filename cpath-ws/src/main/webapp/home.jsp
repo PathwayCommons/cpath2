@@ -10,7 +10,7 @@ or the fat JAR with embedded application server was started) -->
 <html>
 <head>
 	<jsp:include page="head.jsp" />
-	<script src="<spring:url value='/resources/scripts/help.js'/>"></script>
+	<script src="<spring:url value='/scripts/help.js'/>"></script>
 	<title>cPath2::Info (${cpath.name})</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -481,21 +481,6 @@ or the fat JAR with embedded application server was started) -->
 		<ul id="inverse_properties" class="hidden"></ul>
 	</div>
 	</div>
-</div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>	
-<div class="row nav-target" id="errors">
-	<h2>Error Response</h2>
-	<p>
-		If an error occurs while processing a user's request,
-		the client will receive an HTTP error response, which status code
-		is not 200 (OK), and a message (browsers usually display an error page; other
-		web clients should normally check the status code before processing the results).
-		Specifically, the following HTTP errors can be sent by this service:</p>
-	<ul>
-	  <li>400 - Bad Request (missing or illegal query arguments).</li>
-	  <li>500 - Internal Server Error (usually, a java exception).</li>
-	  <li>503 - Server is temporarily unavailable (due to maintenance or when re-starting).</li>
-	</ul>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>

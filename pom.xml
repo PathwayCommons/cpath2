@@ -211,7 +211,7 @@
 					<configuration>
 						<forkCount>1</forkCount>
 						<argLine>
-						-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea
+						-Xmx2048m -Dfile.encoding=UTF-8 -ea
 						</argLine>
 					</configuration>
 				</plugin>

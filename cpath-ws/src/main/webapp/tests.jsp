@@ -5,10 +5,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  	<link rel="stylesheet" media="screen" href="<spring:url value='/resources/css/qunit.css'/>" />
+  	<link rel="stylesheet" media="screen" href="<spring:url value='/css/qunit.css'/>" />
 	<jsp:include page="head.jsp"/>
-	<script src="<spring:url value='/resources/scripts/qunit.js'/>"></script>
-	<script src="<spring:url value='/resources/scripts/tests.js'/>"></script>
+	<script src="<spring:url value='/scripts/qunit.js'/>"></script>
+	<script src="<spring:url value='/scripts/tests.js'/>"></script>
 	<title>cPath2::QUnit Tests  (${cpath.name})</title>
 	<meta name="robots" content="noindex,nofollow" />
 </head>

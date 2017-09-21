@@ -71,8 +71,7 @@ public final class Main {
      * @param params String[]
      */    
     public static void main(String[] params) throws Exception {
-    	// "CPATH2_HOME" system option must be set (except for unit testing)
-    	Assert.hasText(cpath.property(HOME_DIR)); 
+    	Assert.hasText(System.getProperty(HOME_DIR),"CPATH2_HOME java option is undefined!");
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
 			LOG.error("Default Charset, " + Charset.defaultCharset() +

@@ -50,7 +50,7 @@ public final class Metadata {
     private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
 	
 	// METADATA_TYPE Enum
-    public static enum METADATA_TYPE {
+    public enum METADATA_TYPE {
         // data types
         PSI_MI(true), // interactions to be converted to BioPAX L3 format
         PSI_MITAB(true), // interactions to be converted to PSI-MI then to BioPAX L3 format
@@ -61,7 +61,7 @@ public final class Metadata {
         
         private final boolean pathwayData;
         
-        private METADATA_TYPE(boolean isPathwayData) {
+        METADATA_TYPE(boolean isPathwayData) {
 			this.pathwayData = isPathwayData;
 		}
         
