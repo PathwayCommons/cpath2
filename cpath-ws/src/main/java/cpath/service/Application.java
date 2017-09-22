@@ -2,8 +2,8 @@ package cpath.service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
@@ -21,15 +21,15 @@ import javax.sql.DataSource;
 import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
-@EnableCaching //(proxyTargetClass = true)
+@EnableCaching(proxyTargetClass = true)
 @PropertySource(value = "file:cpath2.properties", ignoreResourceNotFound = true)
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = {"cpath.jpa"})
-@ComponentScan(basePackages = {"cpath.service"})
 public class Application extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+        context.getBean(CPathService.class).init();
     }
 
     //enable content negotiation -

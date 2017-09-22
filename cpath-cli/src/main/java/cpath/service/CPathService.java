@@ -221,6 +221,7 @@ public interface CPathService {
     
     MetadataRepository metadata();
 
+    void init(); //only in production - to load the main biopax model from file
 
 	/**
 	 * Creates:

@@ -28,9 +28,6 @@ import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -90,9 +87,7 @@ public class CPathServiceImpl implements CPathService {
 	 * This is not required (is useless) during the data import (in premerge, merge, index, etc.);
 	 * it is to be called only after the web service is up.
 	 */
-	@EventListener
-	@Profile("prod")
-	synchronized public void init(ContextRefreshedEvent event) {
+	synchronized public void init() {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(

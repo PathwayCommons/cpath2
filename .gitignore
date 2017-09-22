@@ -6,3 +6,5 @@ target
 .idea
 *.iml
 cpath2.log
+cpath2.properties
+run.sh

@@ -62,8 +62,8 @@ public class PagesController extends BasicController
     public String datasources() {
     	return "datasources";
     }
-//
-//	//TODO: handle error responses: error.jsp
+
+//	//handle error responses: error.jsp
 //    @RequestMapping("/error")
 //    public String error() {
 //    	return "error";
