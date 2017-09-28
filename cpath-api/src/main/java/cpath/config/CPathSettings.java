@@ -342,7 +342,7 @@ public final class CPathSettings
 	 * Reads cpath2 properties from the file.
 	 */
 	public void loadCPathProperties() {
-		Path file = Paths.get(homeDir(), CPATH_PROPERTIES_FILE);
+		Path file = Paths.get(CPATH_PROPERTIES_FILE);
 		try {
 			settings.load(Files.newBufferedReader(file));
 		} catch (IOException e) {

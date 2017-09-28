@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-//import org.springframework.boot.autoconfigure.web.ErrorController;
+import org.springframework.boot.autoconfigure.web.ErrorController;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -25,7 +25,7 @@ import cpath.config.CPathSettings;
 
 @Controller
 public class PagesController extends BasicController
-//		implements ErrorController
+		implements ErrorController
 {
 	private static final Logger LOG = LoggerFactory.getLogger(PagesController.class);
 	
@@ -43,17 +43,17 @@ public class PagesController extends BasicController
     }
 
 	@RequestMapping("/")
-	public String contextRoot() {
+	public String wroot() {
 		return "home";
 	}
 
 	@RequestMapping("/home")
-    public String home() {
-    	return "home";
-    }	    
-    
-    @RequestMapping("/formats")
-    public String getOutputFormatsDescr() 
+	public String home() {
+		return "home";
+	}
+
+	@RequestMapping("/formats")
+    public String getOutputFormatsDescr()
     {
     	return "formats";
     }
@@ -63,15 +63,15 @@ public class PagesController extends BasicController
     	return "datasources";
     }
 
-//	//handle error responses: error.jsp
-//    @RequestMapping("/error")
-//    public String error() {
-//    	return "error";
-//    }
-//	@Override
-//	public String getErrorPath() {
-//		return "/error";
-//	}
+	//handle error responses
+    @RequestMapping("/error")
+    public String error() {
+    	return "error";
+    }
+	@Override
+	public String getErrorPath() {
+		return "/error";
+	}
 
     @RequestMapping("/downloads")
     public String downloads(Model model, HttpServletRequest request) {
