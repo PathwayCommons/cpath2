@@ -126,7 +126,7 @@ public class BiopaxConverter {
     	Path tmpPath = null;
 		try {
     		tmpPath = Files.createTempFile("cpath2", format.getExt());
-    		tmpPath.toFile().deleteOnExit();
+//    		tmpPath.toFile().deleteOnExit();
     		convert(m, format, options, Files.newOutputStream(tmpPath)); //FOS gets closed in there
 			DataResponse dataResponse = new DataResponse();
 			dataResponse.setFormat(format);
