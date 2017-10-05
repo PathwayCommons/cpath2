@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>cpath-ws</artifactId>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 
 	<name>cPath2 - Service</name>
 	<description>Pathway Commons web service and info pages</description>
@@ -17,7 +17,9 @@
 
 	<properties>
 		<java.version>1.8</java.version>
+		<maven-war-plugin.version>2.6</maven-war-plugin.version>
 		<start-class>cpath.service.Application</start-class>
+		<!--<tomcat.version>7.0.52</tomcat.version>-->
 	</properties>
 
 	<build>
@@ -33,6 +35,12 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-war-plugin</artifactId>
+				<configuration>
+					<failOnMissingWebXml>false</failOnMissingWebXml>
+				</configuration>
 			</plugin>
 			<plugin>
            		<artifactId>maven-deploy-plugin</artifactId>
@@ -68,14 +76,15 @@
 			<artifactId>tomcat-embed-jasper</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter-tomcat</artifactId>-->
+			<!--<scope>provided</scope>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.validation</groupId>
-			<artifactId>validation-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
@@ -98,6 +107,13 @@
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-cli</artifactId>
 			<version>${project.version}</version>
+			<exclusions>
+				<!--embedded tomcat fails if there is a versions conflict somewhere ...-->
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
