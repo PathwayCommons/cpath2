@@ -31,7 +31,7 @@
 			<list>
 				<value>rules</value>
 				<value>codes</value>
-				<value>file:${CPATH2_HOME}/validation</value> <!-- overrides validation profiles -->
+				<value>validation</value> <!-- overrides validation profiles -->
 			</list>
 		</property>
 	</bean>

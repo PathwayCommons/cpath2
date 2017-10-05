@@ -3,15 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.7.RELEASE</version>
-		<relativePath></relativePath>
+		<artifactId>parent</artifactId>
+		<groupId>pathwaycommons.cpath</groupId>
+		<version>8.0.0-SNAPSHOT</version>
 	</parent>
 
-	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>cpath-ws</artifactId>
-	<version>8.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>cPath2 - Service</name>
@@ -20,23 +17,19 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<ehcache-core.version>2.6.11</ehcache-core.version>
+		<start-class>cpath.service.Application</start-class>
 	</properties>
 
 	<build>
-		<finalName>cpath2-server</finalName>
+		<finalName>cpath2</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-failsafe-plugin</artifactId>
 				<executions>
 					<execution>
 						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
+							<goal>repackage</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -66,39 +59,20 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-		<!--<dependency>-->
-			<!--<groupId>org.springframework.boot</groupId>-->
-			<!--<artifactId>spring-boot-starter-cache</artifactId>-->
-		<!--</dependency>-->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>jstl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-			<!--<scope>provided</scope>-->
-		</dependency>
-		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-jasper</artifactId>
-			<!--<scope>provided</scope>-->
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!--<dependency>-->
-			<!--<groupId>org.apache.httpcomponents</groupId>-->
-			<!--<artifactId>httpclient</artifactId>			-->
-		<!--</dependency>-->
-		<!--<dependency>-->
-			<!--<groupId>net.sf.ehcache</groupId>-->
-			<!--<artifactId>ehcache-core</artifactId>-->
-			<!--<version>${ehcache-core.version}</version>-->
-			<!--<scope>runtime</scope>-->
-		<!--</dependency>-->
 		<dependency>
 			<groupId>javax.validation</groupId>
 			<artifactId>validation-api</artifactId>
@@ -126,5 +100,18 @@
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<!-- Import dependency management from Spring Boot -->
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>1.5.7.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 </project>
