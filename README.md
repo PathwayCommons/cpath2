@@ -10,6 +10,8 @@ The long-term vision is to achieve a complete computable map of the cell across 
 
 This effort builds on the recent emergence of a diverse and active community of pathway databases, the development in this community of a common language for biological pathway data exchange ([BioPAX](http://www.biopax.org)) and work in the Sander and Bader groups since late 2002 in building infrastructure for managing, integrating, and analyzing pathway information.
 
+See also: [how to build a PC instance](work/README.md)
+
 ## Funding ##
 
 Pathway Commons: Research Resource for Biological Pathways, PIs: Chris Sander, Gary Bader, 1U41HG006623 (formerly 1 P41 P41HG04118)

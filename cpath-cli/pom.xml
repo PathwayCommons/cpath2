@@ -30,7 +30,7 @@
 						<configuration>
 							<shadedClassifierName>exec-jar</shadedClassifierName>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<finalName>cpath2-cli</finalName>
+							<finalName>cpath2</finalName>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>cpath.Main</mainClass>

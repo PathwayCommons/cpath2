@@ -5,6 +5,8 @@
 target
 .idea
 *.iml
-cpath2.log
-cpath2.properties
-run.sh
+*.log
+data
+downloads
+index
+*.db
