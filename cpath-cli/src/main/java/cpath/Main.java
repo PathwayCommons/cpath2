@@ -71,8 +71,6 @@ public final class Main {
      * @param params String[]
      */    
     public static void main(String[] params) throws Exception {
-    	Assert.hasText(System.getProperty(HOME_DIR),"CPATH2_HOME java option is undefined!");
-
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
 			LOG.error("Default Charset, " + Charset.defaultCharset() +
 					" (is NOT 'UTF-8'); problems with input data are possible...");
@@ -531,7 +529,7 @@ public final class Main {
 		writer = new PrintWriter(cpath.exportScriptFile());
 		writer.println("#!/bin/sh");
 		writer.println("# An auto-generated script for converting the BioPAX data archives");
-		writer.println("# in the CPATH2_HOME/downloads directory to other formats.");
+		writer.println("# in the downloads directory to other formats.");
 		writer.println("# There must be blacklist.txt and paxtools.jar files already.");
 		writer.println("# Change to the downloads/ and run as:");
 		writer.println("# sh export.sh &");

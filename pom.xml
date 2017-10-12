@@ -208,9 +208,7 @@
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
 						<forkCount>1</forkCount>
-						<argLine>
-						-Xmx2048m -Dfile.encoding=UTF-8 -ea
-						</argLine>
+						<argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
 					</configuration>
 				</plugin>
 				<plugin>

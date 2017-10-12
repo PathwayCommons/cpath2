@@ -33,7 +33,6 @@ public class PagesController extends BasicController
 	
 	public PagesController() {
 		cpath = CPathSettings.getInstance();
-		LOG.info("Using CPATH2_HOME=" + cpath.homeDir());
 	}
 	
 	

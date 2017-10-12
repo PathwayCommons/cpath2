@@ -366,12 +366,12 @@ public final class CPathSettings
 		if(homedir == null || homedir.isEmpty()) {
 			homedir = System.getenv(HOME_DIR);
 			if (homedir == null || homedir.isEmpty()) {
-				homedir = Paths.get(System.getProperty("java.io.tmpdir"), "cpath2_home").toString();
-				LOG.warn("'" + HOME_DIR + "' is UNDEFINED (using: '" + homedir + "')");
+				homedir = Paths.get(System.getProperty("java.io.tmpdir"), "cpath2").toString();
 			}
 			System.setProperty(HOME_DIR, homedir);
 		}
 
+		LOG.info("Working ('home') directory: " + homedir);
 		return homedir;
 	}
 	
