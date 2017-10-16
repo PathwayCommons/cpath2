@@ -99,11 +99,9 @@ public class BiopaxConverter {
 		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX, null);
 		JsonldConverter converter = new JsonldBiopaxConverter();
 		Path data = (Path) dr.getData();
-		try {
-			converter.convertToJsonld(Files.newInputStream(data, StandardOpenOption.DELETE_ON_CLOSE), os);
-		} finally { //to make sure no intermediate tmp files left...
-			try{Files.delete(data);}catch(Exception ex){log.error(ex.toString());}
-		}
+		InputStream is = Files.newInputStream(data, StandardOpenOption.DELETE_ON_CLOSE);
+		converter.convertToJsonld(is, os);
+		is.close();
 	}
 
 
