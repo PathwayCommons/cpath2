@@ -52,13 +52,10 @@ or the fat JAR with embedded application server was started) -->
 	</p>
 	<ul>
 		<li>XML schema, BioPAX types and properties, e.g., /help/schema, /help/types;</li>
-		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
-		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
-		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.
-		</li>
+		<li><em>/metadata/datasources</em> - gets the metadata in JSON format;</li>
+		<li><em>/metadata/datasources/reactome</em> - gets the data source (e.g., reactome) metadata;</li>
 	</ul>
-	<p>Fore more information, please contact us.
-	</p>
+	<p>Fore more information, please contact us.</p>
   </div>
   
 	<div class="row" id="notes">
@@ -71,9 +68,10 @@ or the fat JAR with embedded application server was started) -->
 		generated ${cpath.xmlBase}<em>&lt;localID&gt;</em> URLs (for most BioPAX Entities and Xrefs).
 		BioPAX object URIs used by this service are not easy to guess; thus, they should be discovered using
 		web service commands, such as search, top_pathways, or from our archive files.
-		For example, despite knowing current URI namespace ${cpath.xmlBase} and the service location,
-		one should not guess /foo, ${cpath.xmlBase}foo, or get?uri=${cpath.xmlBase}foo
-		unless the BioPAX individual actually there exists (find existing object URIs of interest first).
+		For example, despite knowing PC URI namespace ${cpath.xmlBase} or Identifiers.org prefix,
+		one should not build a query by guessing uri like '/get?uri=${cpath.xmlBase}foo' or
+		'/get?uri=http://identifiers.org/something/foo', respectively,
+		unless the BioPAX individual there exists (instead, search for existing objects of interest first).
 		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer)
 		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance
 		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene),
@@ -124,7 +122,7 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>page=N</em> [Optional] (N&gt;=0, default is 0). Search results are paginated to avoid 
 		overloading the search response. This sets the search result page number.
 		</li>
-		<li><em>datasource=</em> [Optional] filter by data source (use names or URIs 
+		<li><em>datasource=</em> [Optional] filjsonter by data source (use names or URIs
 			of <a href="datasources">pathway data sources</a> or of any existing Provenance object). 
 			If multiple data source values are specified, a union of hits from specified sources is returned. For example, 
 			<em>datasource=reactome&amp;datasource=pid</em> returns hits associated with Reactome or PID.

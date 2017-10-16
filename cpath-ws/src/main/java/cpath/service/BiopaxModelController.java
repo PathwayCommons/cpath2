@@ -1,6 +1,5 @@
 package cpath.service;
 
-import java.io.IOException;
 import java.util.*;
 
 import cpath.config.CPathSettings;
@@ -58,50 +57,6 @@ public class BiopaxModelController extends BasicController {
 		binder.registerCustomEditor(SIFType.class, new SIFTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
-
-
-	/**
-	 * A very simple description of a BioPAX object;
-	 * works only for those BioPAX objects that have URIs
-	 * based on xml:base (namespace) which is the URL (or proxy)
-	 * for this web service endpoint.
-	 *
-	 * TODO: make a human-readable rich description page with links and images...
-	 *
-	 * @param localId - the part of URI following xml:base
-	 * @param request web request
-	 * @param response web response
-	 */
-	@RequestMapping(method= RequestMethod.GET, value="/{localId}")
-	public void cpathIdInfo(@PathVariable String localId, HttpServletRequest request, HttpServletResponse response)
-			throws IOException
-	{
-		/* A hack
-		 * (works for some clients/browsers;
-		 * a better solution would be to never generate biopax URIs
-		 * that contain url-encoded sharps, colons, spaces, etc.)
-		 *
-		 * The localId value gets here url-un-encoded;
-		 * so, we have to url-encode ":","#"," " back - replace with
-		 * '%3A', '%23', "+" respectively - to recover the original PC URI
-		 * (were we simply concatenate xml:base + localId, the
-		 * result would be not the original URI in some cases).
-		 */
-		if(localId.startsWith("#"))
-			localId = localId.substring(1);
-
-		if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
-			localId = localId.replaceAll(":", "%3A").replaceAll("#", "%23").replaceAll(" ", "+");
-
-		String maybeUri = xmlBase + localId;
-		log.debug("trying /get?uri=" + maybeUri);
-
-		ServiceResponse result = service.fetch(OutputFormat.JSONLD, null, false, maybeUri);
-		Set<LogEvent> events = new HashSet<LogEvent>();
-		events.add(LogEvent.format(OutputFormat.JSONLD));
-		events.add(LogEvent.command(Cmd.GET));
-		stringResponse(result, request, response, events);
-	}
 
 	// Get by ID (URI) command
     @RequestMapping("/get")
