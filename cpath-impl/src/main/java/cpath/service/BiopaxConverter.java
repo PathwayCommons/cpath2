@@ -3,6 +3,7 @@ package cpath.service;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import cpath.config.CPathSettings;
@@ -63,43 +64,46 @@ public class BiopaxConverter {
 						 OutputStream os) throws IOException
     {
 		Assert.notNull(m,"Model is null");
-    	switch (format) {
-			case BIOPAX: //to OWL (RDF/XML)
-				new SimpleIOHandler().convertToOWL(m, os);
-				break;
-			case BINARY_SIF:
-			case SIF:
-				convertToSIF(m, os, false, options);
-				break;
-			case EXTENDED_BINARY_SIF:
-			case TXT:
-				convertToSIF(m, os, true, options);
-				break;
-			case GSEA:
-				convertToGSEA(m, os, options);
-				break;
-            case SBGN:
-                convertToSBGN(m, os, blacklist, CPathSettings.getInstance().isSbgnLayoutEnabled());
-                break;
-			case JSONLD:
-				convertToJsonLd(m, os);
-				break;
-			default: throw new UnsupportedOperationException(
-					"convert, yet unsupported format: " + format);
-			}
-    }
-
-	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
-		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX, null);
-		JsonldConverter converter = new JsonldBiopaxConverter();
-		Path data = (Path) dr.getData();
 		try {
-			converter.convertToJsonld(new FileInputStream(data.toFile()), os);
+			switch (format) {
+				case BIOPAX: //to OWL (RDF/XML)
+					new SimpleIOHandler().convertToOWL(m, os);
+					break;
+				case BINARY_SIF:
+				case SIF:
+					convertToSIF(m, os, false, options);
+					break;
+				case EXTENDED_BINARY_SIF:
+				case TXT:
+					convertToSIF(m, os, true, options);
+					break;
+				case GSEA:
+					convertToGSEA(m, os, options);
+					break;
+				case SBGN:
+					convertToSBGN(m, os, blacklist, CPathSettings.getInstance().isSbgnLayoutEnabled());
+					break;
+				case JSONLD:
+					convertToJsonLd(m, os);
+					break;
+				default:
+					throw new UnsupportedOperationException(
+							"convert, yet unsupported format: " + format);
+			}
 		} finally {
-			try{Files.delete(data);}catch(Exception ex){}
+			os.close();
 		}
 	}
 
+	private void convertToJsonLd(Model m, OutputStream os) throws IOException
+	{
+		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX, null);
+		JsonldConverter converter = new JsonldBiopaxConverter();
+		Path data = (Path) dr.getData();
+		InputStream is = Files.newInputStream(data, StandardOpenOption.DELETE_ON_CLOSE);
+		converter.convertToJsonld(is, os);
+		is.close();
+	}
 
 	/**
      * Converts not too large BioPAX model 
@@ -126,8 +130,8 @@ public class BiopaxConverter {
     	Path tmpPath = null;
 		try {
     		tmpPath = Files.createTempFile("cpath2", format.getExt());
-//    		tmpPath.toFile().deleteOnExit();
-    		convert(m, format, options, Files.newOutputStream(tmpPath)); //FOS gets closed in there
+    		tmpPath.toFile().deleteOnExit(); //to make sure...
+    		convert(m, format, options, Files.newOutputStream(tmpPath)); //OutputStream gets closed inside there.
 			DataResponse dataResponse = new DataResponse();
 			dataResponse.setFormat(format);
 			dataResponse.setData(tmpPath);

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -163,15 +164,16 @@ public abstract class BasicController {
 					if(size > 13) { // TODO: why, a hack to skip for trivial/empty results
 						response.setHeader("Content-Length", String.valueOf(size));
 						Writer writer = response.getWriter();
-						IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
-						writer.flush();
+						BufferedReader bufferedReader = Files.newBufferedReader(resultFile);
+						IOUtils.copyLarge(bufferedReader, writer);
+						bufferedReader.close();
 					}
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR,
 						String.format("Failed to process the (temporary) result file %s; %s.",
 							resultFile, e.toString()), request, response, logEvents);
 				} finally {
-					try {Files.delete(resultFile);}catch(IOException e){}
+					try {Files.delete(resultFile);}catch(IOException e){log.error(e.toString());}
 				}
 			}
 			else if(dataResponse.isEmpty()) {
