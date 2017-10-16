@@ -160,14 +160,13 @@ public abstract class BasicController {
 						response.setHeader("Content-Length", String.valueOf(size));
 						Writer writer = response.getWriter();
 						IOUtils.copyLarge(Files.newBufferedReader(resultFile), writer);
-						writer.flush();
 					}
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR,
 						String.format("Failed to process the (temporary) result file %s; %s.",
 							resultFile, e.toString()), request, response, logEvents);
 				} finally {
-					try {Files.delete(resultFile);}catch(IOException e){}
+					try {Files.delete(resultFile);}catch(Exception e){log.error(e.toString());}
 				}
 			}
 			else if(dataResponse.isEmpty()) {

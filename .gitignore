@@ -6,6 +6,7 @@ target
 .idea
 *.iml
 *.log
+*.log.gz
 data
 downloads
 index
