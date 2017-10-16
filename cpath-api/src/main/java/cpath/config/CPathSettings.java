@@ -108,6 +108,8 @@ public final class CPathSettings
 	 * Private Constructor
 	 */
 	private CPathSettings() {
+		final String homeDir = homeDir();
+		LOG.info("Working ('home') directory: " + homeDir);
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
@@ -116,7 +118,7 @@ public final class CPathSettings
 		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
-		defaults.put(PROP_METADATA_LOCATION, homeDir() + FileSystems.getDefault().getSeparator() + METADATA_FILE);
+		defaults.put(PROP_METADATA_LOCATION, homeDir + FileSystems.getDefault().getSeparator() + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
@@ -370,8 +372,6 @@ public final class CPathSettings
 			}
 			System.setProperty(HOME_DIR, homedir);
 		}
-
-		LOG.info("Working ('home') directory: " + homedir);
 		return homedir;
 	}
 	
