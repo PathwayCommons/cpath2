@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+       http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
+
+	<context:property-placeholder location="file:cpath2.properties" ignore-resource-not-found="true"/>
+
+	<tx:annotation-driven/>
+
+	<!-- auto-create and init spring-data repositories -->
+	<jpa:repositories base-package="cpath.jpa" />
+	
+	<!-- auto-create and init spring service beans -->
+	<context:component-scan base-package="cpath.service" />
+
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="metaDataSource" />
+		<property name="packagesToScan" value="cpath.jpa" />
+		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter" />
+	</bean>
+
+	<beans profile="default">
+		<bean id="hibernateJpaVendorAdapter"
+			  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+			<property name="database" value="H2" />
+			<property name="generateDdl" value="true" />
+		</bean>
+
+		<jdbc:embedded-database id="metaDataSource" type="H2" />
+	</beans>
+
+	<beans profile="prod">
+		<bean id="hibernateJpaVendorAdapter"
+			class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+			<property name="database" value="H2" />
+		</bean>
+
+		<bean id="metaDataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+		  <constructor-arg>
+			<bean class="org.h2.jdbcx.JdbcDataSource">
+				<property name="URL" value="jdbc:h2:./cpath2;MV_STORE=FALSE;MVCC=FALSE" />
+				<!-- MVStore is disabled, for it uses 10-100 times more disk space! -->
+				<property name="user" value="sa" />
+				<property name="password" value="" />
+			</bean>
+		  </constructor-arg>
+		</bean>
+	</beans>
+
+</beans>

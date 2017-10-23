@@ -4,13 +4,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
-	<version>7.0.0-SNAPSHOT</version>
-	<description>cPath2 parent (multi-mudule) project (biological pathway data integration/querying)</description>
+	<artifactId>parent</artifactId>
+	<version>8.0.0-SNAPSHOT</version>
+	<description>cPath2 parent project</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 	<inceptionYear>2009</inceptionYear>
 
@@ -140,9 +140,8 @@
 	<modules>
 		<module>cpath-api</module>
 		<module>cpath-client</module>
-		<module>cpath-impl</module>
-		<module>cpath-web-service</module>
-		<module>distribution</module>
+		<module>cpath-cli</module>
+		<module>cpath-ws</module>
 	</modules>
 
 	<properties>
@@ -154,7 +153,6 @@
 		<hibernate.version>5.2.9.Final</hibernate.version>
 		<lucene.version>6.5.0</lucene.version>
 		<h2.version>1.4.196</h2.version>
-		<querydsl.version>4.1.4</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
@@ -169,10 +167,9 @@
 		<jackson.version>2.8.9</jackson.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<logback.version>1.2.2</logback.version>
-		<spring-data-jpa.version>1.11.1.RELEASE</spring-data-jpa.version>
+		<spring-data-jpa.version>1.11.7.RELEASE</spring-data-jpa.version>
 		<aspectjrt.version>1.8.10</aspectjrt.version>
 		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
-		<maven-war-plugin.version>2.6</maven-war-plugin.version>
 		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
 		<maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
 		<maven-jar-plugin.version>2.6</maven-jar-plugin.version>
@@ -211,9 +208,7 @@
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
 						<forkCount>1</forkCount>
-						<argLine>
-						-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dspring.profiles.active=dev
-						</argLine>
+						<argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -241,11 +236,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>${maven-javadoc-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-war-plugin</artifactId>
-					<version>${maven-war-plugin.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -382,24 +372,6 @@
 					<skipDeploy>true</skipDeploy>
 				</configuration>
 			</plugin>
-<!--			<plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>site-maven-plugin</artifactId>
-				<configuration>
-					<message>Creating site for ${project.artifactId}, ${project.version}</message>
-					<path>${project.distributionManagement.site.url}</path>
-					<merge>true</merge>
-				</configuration>
-				<executions>
-					<execution>
-						<id>github-site</id>
-						<goals>
-							<goal>site</goal>
-						</goals>
-						<phase>site-deploy</phase>
-					</execution>
-				</executions>
-			</plugin>-->
 		</plugins>
 	</build>
 
@@ -708,11 +680,6 @@
 				<version>${logback.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-access</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.springframework.data</groupId>
 				<artifactId>spring-data-jpa</artifactId>
 				<version>${spring-data-jpa.version}</version>
@@ -721,11 +688,6 @@
 				<groupId>org.aspectj</groupId>
 				<artifactId>aspectjrt</artifactId>
 				<version>${aspectjrt.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.querydsl</groupId>
-				<artifactId>querydsl-jpa</artifactId>
-				<version>${querydsl.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
@@ -759,16 +721,6 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>

@@ -5,3 +5,11 @@
 target
 .idea
 *.iml
+*.log
+*.log.gz
+data
+downloads
+index
+*.db
+*.swp
+cpath2.properties

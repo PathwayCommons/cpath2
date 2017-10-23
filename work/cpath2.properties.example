@@ -1,0 +1,34 @@
+# user should be allowed to create/drop databases 
+# during data import and junit tests
+
+#cpath2.admin.enabled=true
+#cpath2.debug.enabled=true
+
+cpath2.maxSearchHitsPerPage=100
+cpath2.xml.base=http://pathwaycommons.org/pc2/
+cpath2.provider.version=9
+cpath2.provider.name=Pathway Commons
+cpath2.provider.url=http://pathwaycommons.org
+cpath2.provider.downloads.url=http://www.pathwaycommons.org/archives/
+cpath2.provider.logo.url=http://pathwaycommons.github.io/about/images/brand/pc_logo.png
+# provider's Google Analytics code
+cpath2.provider.ga=UA-43341809-3
+cpath2.provider.description=\
+Pathway Commons integrates a number of pathway and molecular interaction databases \
+supporting BioPAX and PSI-MI formats into one large BioPAX model, which can be \
+queried using our web API (documented below). This API can be used by computational \
+biologists to download custom subsets of pathway data for analysis, or can be used to \
+incorporate powerful biological pathway and network information retrieval and query \
+functionality into websites and software. \
+For computational biologists looking for comprehensive biological pathway data, \
+we also make available data archives in several formats. \
+Try not to exceed ten concurrent connections, several hits per second, \
+from one IP address to avoid being banned. We can add capacity based on demand. \
+For more information and help, please visit our homepage at beta.pathwaycommons.org. \
+Feel free to tell us more about yourself and your project. \
+
+# NAME1 (taxonomyId1),NAME2 (taxonomyId2),.. - comma-separated list of supported organisms;
+# these (names, IDs) be used in filters and to create by-organism output data archives (downloads);
+cpath2.provider.organisms=Homo sapiens (9606)
+cpath2.sbgn.layout.enabled=true
+

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+	updateCheck="false" name="cpath-hibernate-cache">
+	<!-- See http://ehcache.sourceforge.net/documentation/configuration.html -->
+
+	<!-- the default - for Hibernate 2nd-level cache -->
+	<defaultCache eternal="false" maxElementsInMemory="10000"
+		overflowToDisk="false" diskPersistent="false" 
+		timeToIdleSeconds="120" timeToLiveSeconds="360" />
+
+</ehcache>

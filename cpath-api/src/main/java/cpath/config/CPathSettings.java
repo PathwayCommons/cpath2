@@ -2,8 +2,6 @@ package cpath.config;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,19 +104,12 @@ public final class CPathSettings
 	public static final String PROVIDER_DOWNLOADS_URL = "cpath2.provider.downloads.url";
 	public static final String PROVIDER_GA = "cpath2.provider.ga"; //Google Analytics code
 
-	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-
-	public static final String NO_DATA_FOUND = "EMPTY";
-
 	/**
 	 * Private Constructor
 	 */
 	private CPathSettings() {
-		// check if cpath2 home directory JVM property is defined
-		String home = System.getProperty(HOME_DIR);
-		if(home==null || home.isEmpty())
-			throw new AssertionError("Java option " + HOME_DIR + " is undefined!");
-
+		final String homeDir = homeDir();
+		LOG.info("Working ('home') directory: " + homeDir);
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
@@ -127,14 +118,12 @@ public final class CPathSettings
 		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
-		defaults.put(PROP_METADATA_LOCATION, homeDir() + FileSystems.getDefault().getSeparator() + METADATA_FILE);
+		defaults.put(PROP_METADATA_LOCATION, homeDir + FileSystems.getDefault().getSeparator() + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
 		//default settings
 		settings = new Properties(defaults);
-		//load properties from file; overrides some of the defaults
-		loadCPathProperties();
 	}
 
 	
@@ -149,6 +138,8 @@ public final class CPathSettings
 			instance = new CPathSettings();
 			instance.subDir(""); //creates the home dir if it did not exist
 			instance.subDir(DATA_SUBDIR); //creates the data dir
+			//load properties from file; overrides some of the defaults
+			instance.loadCPathProperties();
 		}		
 		return instance;
 	}
@@ -353,7 +344,7 @@ public final class CPathSettings
 	 * Reads cpath2 properties from the file.
 	 */
 	public void loadCPathProperties() {
-		Path file = Paths.get(homeDir(), CPATH_PROPERTIES_FILE);
+		Path file = Paths.get(CPATH_PROPERTIES_FILE);
 		try {
 			settings.load(Files.newBufferedReader(file));
 		} catch (IOException e) {
@@ -362,30 +353,7 @@ public final class CPathSettings
 					+ e.toString());
 		}
 	}
-	
 
-	/**
-	 * Stores cpath2 properties back to the file 
-	 * (overwrites).
-	 * 
-	 * @throws IllegalStateException when maintenance mode is disabled
-	 */
-	public void saveCPathProperties() {
-		
-		if(!isAdminEnabled())
-			throw new IllegalStateException("Not in Maintenance mode.");
-		
-		Path path = Paths.get(homeDir(),CPATH2_GENERATED_COMMENT);	
-		try {
-			settings.store(Files.newOutputStream(path), 
-					"cPath2 server configuration properties");
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to write cPath2 properties " +
-					"to " + path.toString(), e);
-		}		
-	}
-
-		
 	/**
 	 * Gets current Home Directory (full path; must exist).
 	 * 
@@ -394,9 +362,16 @@ public final class CPathSettings
 	 * 
 	 * @return
 	 */
-	public String homeDir() {		
-		String homedir = property(HOME_DIR);
+	public String homeDir() {
+		String homedir = System.getProperty(HOME_DIR);
 
+		if(homedir == null || homedir.isEmpty()) {
+			homedir = System.getenv(HOME_DIR);
+			if (homedir == null || homedir.isEmpty()) {
+				homedir = Paths.get(System.getProperty("java.io.tmpdir"), "cpath2").toString();
+			}
+			System.setProperty(HOME_DIR, homedir);
+		}
 		return homedir;
 	}
 	
