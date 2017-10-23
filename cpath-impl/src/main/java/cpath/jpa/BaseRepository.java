@@ -9,7 +9,7 @@ import org.springframework.data.repository.Repository;
 /**
  * Base interface to expose only required spring-data repository methods
  * instead of all; i,e., the main repository interface will extend this 
- * rather than CrudRepository<LogEntity, Long>.
+ * rather than CrudRepository<T, Long>.
  * 
  * Methods here follow spring-data naming and signature conventions;
  * these must match exactly the names and signatures of spring-data ones.

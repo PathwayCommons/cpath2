@@ -38,8 +38,6 @@
 		<property name="exceptionAttribute"><value>convertedException</value></property>
 	</bean>
 
-	<!--<mvc:view-controller path="/" view-name="home" />-->
-
 	<bean id="viewResolver"
 		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
 		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
@@ -62,12 +60,6 @@
             	xml=application/xml
         	</value>
     	</property>
-	</bean>
-
-    <!-- serves the file uploading, using Apache commons-fileuploader -->
-	<bean id="multipartResolver"
-		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
 	</bean>
 
 	<mvc:resources mapping="/resources/**" location="/resources/" />

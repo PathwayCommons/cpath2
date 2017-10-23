@@ -4,10 +4,10 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileReader;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,13 +17,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.jpa.LogEvent;
-import cpath.service.CPathService;
-import cpath.service.ErrorResponse;
-import cpath.service.Status;
+
+import cpath.config.CPathSettings;
+import cpath.service.*;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.jena.sparql.util.ModelUtils;
+import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,23 +59,22 @@ public abstract class BasicController {
      * @param detailedMsg
      * @param request
      * @param response
-     * @param updateCountsFor
-     * @throws IOException
+     * @param logEvents
      */
 	protected final void errorResponse(Status status, String detailedMsg,
-			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) {
+			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> logEvents) {
 		
-		if(updateCountsFor == null)
-			updateCountsFor = new HashSet<LogEvent>();
+		if(logEvents == null)
+			logEvents = new HashSet<LogEvent>();
 		
 		// to count the error (code), also add -
-		updateCountsFor.add(LogEvent.from(status));
+		logEvents.add(LogEvent.error(status));
 		
 		//problems with logging subsystem should not fail the entire service
 		try {
-			service.log(updateCountsFor, clientIpAddress(request));
+			service.log(logEvents, clientIpAddress(request));
 		} catch (Throwable ex) {
-			log.error("LogUtils.log failed" + ex);
+			log.error("service.log failed" + ex);
 		}
 
 		errorResponse(status, status.getErrorMsg() + "; " + detailedMsg, response);
@@ -83,7 +87,7 @@ public abstract class BasicController {
 	 * @param detailedMsg
 	 * @param response
 	 */
-	protected final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
+	private final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
 		try {
 			log.warn(status.getErrorCode() + "; " + status.getErrorMsg() + "; " + detailedMsg);
 			response.sendError(status.getErrorCode(), status.getErrorMsg() + "; " + detailedMsg);
@@ -127,62 +131,79 @@ public abstract class BasicController {
 	 * @param serviceResp
 	 * @param request
 	 * @param response
-	 * @param updateCountsFor
-	 * @throws IOException
+	 * @param logEvents
 	 */
 	protected final void stringResponse(ServiceResponse serviceResp, HttpServletRequest request,
-										HttpServletResponse response, Set<LogEvent> updateCountsFor)
+										HttpServletResponse response, Set<LogEvent> logEvents)
 	{
 		if(serviceResp instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse) serviceResp).getStatus(), serviceResp.toString(), request, response,
-					updateCountsFor);
-		} 
-		else if(serviceResp.isEmpty()) {
-			log.warn("stringResponse: I got an empty ServiceResponce " +
-				"(must be already converted to the ErrorResponse)");
-			errorResponse(NO_RESULTS_FOUND, "no results found", 
-					request, response, updateCountsFor);
+					logEvents);
 		} 
 		else if (serviceResp instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) serviceResp;
 
 			// take care to count provider's data accessed events
 			Set<String> providers = dataResponse.getProviders();
-			updateCountsFor.addAll(LogEvent.fromProviders(providers));
+			if(!providers.isEmpty())
+				logEvents.addAll(LogEvent.providers(providers));
 			
-			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
 			try {
-				service.log(updateCountsFor, clientIpAddress(request));
+				service.log(logEvents, clientIpAddress(request));
 			} catch (Throwable ex) {
-				log.error("LogUtils.log failed", ex);
+				log.error("service.log failed", ex);
 			}
-			
+
 			if(dataResponse.getData() instanceof Path) {
-				File resultFile = ((Path) dataResponse.getData()).toFile();//this is some temp. file
-				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
-				response.setContentType(dataResponse.getFormat().getMediaType());
-				log.debug("QUERY RETURNED " + dataResponse.getData().toString().length() + " chars");
+				//get the temp file
+				Path resultFile = (Path) dataResponse.getData();
 				try {
-					FileReader reader = new FileReader(resultFile);
-					Writer writer = response.getWriter();
-					IOUtils.copyLarge(reader, writer);
-					writer.flush();
-					reader.close();
+					response.setContentType(dataResponse.getFormat().getMediaType());
+					long size = Files.size(resultFile);
+					if(size > 13) { // TODO: why, a hack to skip for trivial/empty results
+						response.setHeader("Content-Length", String.valueOf(size));
+						Writer writer = response.getWriter();
+						BufferedReader bufferedReader = Files.newBufferedReader(resultFile);
+						IOUtils.copyLarge(bufferedReader, writer);
+						bufferedReader.close();
+					}
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR, String.format("Failed to process the (temporary) result file %s; %s.",
-						resultFile.getPath(), e.toString()), request, response, updateCountsFor);
+					errorResponse(INTERNAL_ERROR,
+						String.format("Failed to process the (temporary) result file %s; %s.",
+							resultFile, e.toString()), request, response, logEvents);
 				} finally {
-					resultFile.delete();
+					try {Files.delete(resultFile);}catch(IOException e){log.error(e.toString());}
 				}
-			} else { //it's probably a re-factoring bug -
-				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
-					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()), request, response,
-						updateCountsFor);
+			}
+			else if(dataResponse.isEmpty()) {
+				//return empty result (a trivial biopax rdf/xml or empty string)
+				response.setContentType(dataResponse.getFormat().getMediaType());
+				try {
+					if(dataResponse.getFormat() == OutputFormat.BIOPAX) {
+						//output an empty trivial BioPAX model
+						Model emptyModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+						ByteArrayOutputStream bos = new ByteArrayOutputStream();
+						new SimpleIOHandler().convertToOWL(emptyModel, bos);
+						response.getWriter().print(bos.toString("UTF-8"));
+					} else {
+						//SIF, GSEA formats do not have comments
+//						response.getWriter().print(""); //nothing
+					}
+				} catch (IOException e) {
+					errorResponse(INTERNAL_ERROR, String.format("Failed writing 'no data found' response: %s.",
+							e.toString()), request, response, logEvents);
+				}
+			}
+			else { //it's probably a bug -
+				errorResponse(INTERNAL_ERROR, String.format(
+					"BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
+					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()),
+						request, response, logEvents);
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, updateCountsFor);
+				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, logEvents);
 		}
 	}
 

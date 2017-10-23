@@ -12,6 +12,9 @@ public class TraverseResponse extends ServiceResponse {
     @XmlAttribute
     private String propertyPath;
 
+	@XmlAttribute
+	private String version;
+
     private List<TraverseEntry> traverseEntry;
     
 	public TraverseResponse() {
@@ -22,6 +25,13 @@ public class TraverseResponse extends ServiceResponse {
 	}
 	public void setPropertyPath(String propertyPath) {
 		this.propertyPath = propertyPath;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
 	public List<TraverseEntry> getTraverseEntry() {

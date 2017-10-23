@@ -3,6 +3,7 @@ package cpath.webservice.args;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -12,7 +13,7 @@ import cpath.service.OutputFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Graph {
+public class Graph extends Base {
 	@NotNull(message="Parameter 'kind' is required.")
 	private GraphType kind; //required!
 	
@@ -32,11 +33,15 @@ public class Graph {
 	private String[] organism;
 	
 	private String[] datasource;
-	
-	
+
+	private SIFType[] pattern;
+
+	private boolean subpw;
+
 	public Graph() {
 		format = OutputFormat.BIOPAX; // default
 		limit = 1;
+		subpw = false;
 	}
 
 	public OutputFormat getFormat() {
@@ -122,5 +127,21 @@ public class Graph {
 	public void setDatasource(String[] datasource) {
 		this.datasource = datasource;
 	}
-	
+
+	//SIF Types
+	public SIFType[] getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(SIFType[] pattern) {
+		this.pattern = pattern;
+	}
+
+	public boolean getSubpw() {
+		return subpw;
+	}
+
+	public void setSubpw(boolean subpw) {
+		this.subpw = subpw;
+	}
 }

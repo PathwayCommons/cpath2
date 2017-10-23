@@ -38,7 +38,7 @@ import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.psidev.ontology_manager.impl.OntologyTermImpl;
 import org.junit.Test;
 
-import cpath.dao.OntologyManagerCvRepository;
+import cpath.service.OntologyManagerCvRepository;
 
 /**
  * This tests are for CVs only (not using DAO);
@@ -70,10 +70,10 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
+	 * {@link OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
-	public final void testOntologyTermsToUris() {
+	public void testOntologyTermsToUris() {
 		OntologyTermI term = new OntologyTermImpl("GO", "GO:0005654", "nucleoplasm");
 		Set<OntologyTermI> terms = new HashSet<OntologyTermI>();
 		terms.add(term);
@@ -86,31 +86,31 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
+	 * {@link OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
-	public final void testSearchForTermByAccession() {
+	public void testSearchForTermByAccession() {
 		OntologyTermI term = cvRepository.findTermByAccession("GO:0005654");
 		assertNotNull(term);
 		assertEquals("nucleoplasm", term.getPreferredName());
 	}
 
 	@Test
-	public final void testSearchMODForTermByAccession() {
+	public void testSearchMODForTermByAccession() {
 		OntologyTermI term = cvRepository.findTermByAccession("MOD:00046");
 		assertNotNull(term);
 		assertEquals("MOD", term.getOntologyId());
 	}
 	
 	@Test
-	public final void testGetDirectChildren() {
+	public void testGetDirectChildren() {
 		Set<String> dc = cvRepository.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("http://identifiers.org/go/GO:0044451"));
 	}
 
 	@Test
-	public final void testGetDirectAllChildren() {
+	public void testGetAllChildren() {
 		Set<String> dc = cvRepository.getAllChildren("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("http://identifiers.org/go/GO:0044451"));
@@ -119,14 +119,14 @@ public class WarehouseCVsTest {
 	}
 
 	@Test
-	public final void testGetDirectParents() {
+	public void testGetDirectParents() {
 		Set<String> dc = cvRepository.getDirectParents("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("http://identifiers.org/go/GO:0031981"));
 	}
 
 	@Test
-	public final void testGetAllParents() {
+	public void testGetAllParents() {
 		Set<String> dc = cvRepository.getAllParents("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("http://identifiers.org/go/GO:0031981"));
@@ -136,7 +136,7 @@ public class WarehouseCVsTest {
 
 
 	@Test // using correct ID(s)
-	public final void testGetObject() {
+	public void testGetObject() {
 		CellularLocationVocabulary cv = cvRepository.getControlledVocabulary(
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
@@ -151,14 +151,14 @@ public class WarehouseCVsTest {
 	}
 	
 	@Test // using bad ID (with 'X' in it)
-	public final void testGetObject2() {
+	public void testGetObject2() {
 		CellularLocationVocabulary cv = cvRepository.getControlledVocabulary(
 				"urn:miriam:obo.go:GO%3A0005737X",CellularLocationVocabulary.class);
 		assertNull(cv);
 	}
 
 	@Test 
-	public final void testEscapeChars() {
+	public void testEscapeChars() {
 		ControlledVocabulary cv = cvRepository.getControlledVocabulary(
 				"http://identifiers.org/obo.psi-mod/MOD:00048",SequenceModificationVocabulary.class);
 		assertNotNull(cv);

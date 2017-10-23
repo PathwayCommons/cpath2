@@ -3,7 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat 
+<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat
 or the fat JAR with embedded application server was started) -->
 
 <!DOCTYPE html>
@@ -29,9 +29,7 @@ or the fat JAR with embedded application server was started) -->
   <div class="row">	
 	<div class="jumbotron">
 	<h3>Web service commands</h3>
-	<p><small>(unique clients: <span class="badge alert-info pc2_tip"></span>;&nbsp;
-		successful queries: <span class="badge alert-info pc2_tok"></span>)</small></p>
-	<blockquote><p>To query the integrated biological pathway database, 
+	<blockquote><p>To query the integrated biological pathway database,
 	application developers can use the following commands:</p></blockquote>
 	<ul id="commands" title="Main commands">
 		<li><a href="#search">SEARCH</a></li>
@@ -53,9 +51,7 @@ or the fat JAR with embedded application server was started) -->
 		this website. Nevertheless, advanced users may find the following examples useful:
 	</p>
 	<ul>
-		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
-		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
-		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
+		<li>XML schema, BioPAX types and properties, e.g., /help/schema, /help/types;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
 		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
 		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.
@@ -78,9 +74,9 @@ or the fat JAR with embedded application server was started) -->
 		For example, despite knowing current URI namespace ${cpath.xmlBase} and the service location,
 		one should not guess /foo, ${cpath.xmlBase}foo, or get?uri=${cpath.xmlBase}foo
 		unless the BioPAX individual actually there exists (find existing object URIs of interest first).
-		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer) 
-		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance 
-		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene), 
+		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer)
+		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance
+		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene),
 		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
 		As a rule of thumb, using full URIs makes a precise query, whereas using the identifiers makes a
 		more exploratory one, which depends on full-text search (index) and id-mapping.
@@ -103,8 +99,9 @@ or the fat JAR with embedded application server was started) -->
 	<h3>SEARCH:</h3>
 	<blockquote><p>
 		A full-text search in this BioPAX database using the <a
-			href="http://lucene.apache.org/core/3_6_2/queryparsersyntax.html"> Lucene query syntax</a>.
-		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefdb, xrefid, dataSource, organism</em> 
+		href="http://lucene.apache.org/core/4_10_4/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#package_description">
+		Lucene query syntax</a>.
+		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefid, datasource, organism</em>
 		(some of these are BioPAX properties, while others are composite relationships), can be optionally used in a query string.
 		For example, the <em>pathway</em> index field helps find pathway participants by keywords that match their parent pathway  
 		names or identifiers; <em>xrefid</em> finds objects by matching its direct or 'attached to a child element' Xrefs;
@@ -123,7 +120,7 @@ or the fat JAR with embedded application server was started) -->
 	</p>
 	<h4 id="search_parameters">Parameters:</h4>
 	<ul>
-		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string.</li>
+		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string. </li>
 		<li><em>page=N</em> [Optional] (N&gt;=0, default is 0). Search results are paginated to avoid 
 		overloading the search response. This sets the search result page number.
 		</li>
@@ -150,6 +147,10 @@ or the fat JAR with embedded application server was started) -->
 			"Q06609" only in the 'xrefid' index field in XML </a></li>
 		<li><a rel="nofollow" href="search.json?q=Q06609&type=pathway">Search for
 			Pathways containing "Q06609" (search all fields), return JSON</a></li>
+		<li><a rel="nofollow" href='search?q=xrefid:"BMP2"&type=pathway&datasource=reactome'>Search for
+			Reactome pathways containing a participant with xref.id="BMP2" (search 'xrefid' index field only)</a></li>
+		<li><a rel="nofollow" href="search?q=xrefid:CHEBI?16236&type=pathway">Search for
+			Pathways associated with "CHEBI:16236" participant (search specifically in 'xrefid' index)</a></li>
 		<li><a rel="nofollow"
 		       href='search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid'>Search
 			for ProteinReference entries that contain "brca2" keyword in any indexed field, return only human
@@ -172,9 +173,9 @@ or the fat JAR with embedded application server was started) -->
 			. </a></li>
 		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
 			all Reactome pathways</a></li>
-		<li><a rel="nofollow" href="search?q=*&type=biosource">This query lists all organisms,
-			including secondary organisms such as pathogens or model organisms listed in the evidence or
-			interaction objects</a></li>
+		<li>A search query using &type=biosource (and other BioPAX Utility classes, e.g., Score, Evidence)
+		do not result in any hits anymore; do search for Entities, such as Pathway, Control,
+			Protein, or EntityReferences, such as ProteinReference, etc.</li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -188,15 +189,23 @@ or the fat JAR with embedded application server was started) -->
 	to obtain parent elements).</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
-		<li><em>uri=</em> [Required] valid/existing BioPAX element's URI 
-			(RDF ID; for utility classes that were "normalized", such as entity
-			refereneces and controlled vocabularies, it is usually an 
-			Identifiers.org URL. Multiple identifierss are allowed per query, for
+		<li><em>uri=</em> [Required] valid/existing BioPAX element's absolute URI
+			(for utility classes that were "normalized", such as entity
+			references and controlled vocabularies, it is usually an
+			Identifiers.org URL. Multiple identifiers are allowed per query, for
 			example, 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
 			<a href="#about_uris">See also</a> note about URIs and IDs.
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
 				href="#output_formats">values</a>)
+		</li>
+		<li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+			see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
+			by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
+		</li>
+		<li>
+			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways when we
+			auto-complete and clone the requested BioPAX element(s) into a reasonable sub-model.
 		</li>
 	</ul>
 	<h4>Output:</h4> BioPAX (default) representation for the record(s) pointed to by the given URI(s) is returned. 
@@ -263,9 +272,18 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>format=</em> [Optional] output format (<a
 				href="#graph_formats">values</a>)
 		</li>
+		<li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+			see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
+			by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
+		</li>
 		<li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
+		</li>
+		<li>
+			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways;
+			it does not affect the graph search algorithm, but - only how we auto-complete and clone BioPAX elements
+			to make a reasonable sub-model from the result set.
 		</li>
 	</ul>
 	<h4>Output:</h4> 
@@ -277,7 +295,7 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4> 
 	Neighborhood of COL5A1 (P20908, CO5A1_HUMAN):
 	<ol>
-		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=BINARY_SIF">
+		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=SIF">
 			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
 			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
 		<li><a rel="nofollow" href="graph?source=P20908&kind=neighborhood">
@@ -317,15 +335,17 @@ or the fat JAR with embedded application server was started) -->
 	</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
-		<li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
-			<a href="#get">'GET' command above</a>). Multiple IDs are
-			allowed (uri=...&amp;uri=...&amp;uri=...).
-		</li>
 		<li><em>path=</em> [Required] a BioPAX property path in the form of
-			property1[:type1]/property2[:type2];  see <a href="#biopax_properties">properties</a>,
+			type0/property1[:type1]/property2[:type2];  see <a href="#biopax_properties">properties</a>,
 			<a href="#biopax_inverse_properties">inverse properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
 			<a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
 			org.biopax.paxtools.controller.PathAccessor</a>.
+		</li>
+		<li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
+			<a href="#get">'GET' command above</a>). Multiple URIs are
+			allowed (uri=...&amp;uri=...&amp;uri=...). Standard gene/chemical IDs can now be used along with absolute URIs,
+			which makes such request equivalent to two queries combined: 1) <i>search</i> for the specified biopax type objects
+			by IDs in the 'xrefid' index field; 2) <i>traverse</i> - using URIs of objects found in the first step and the path.
 		</li>
 	</ul>
 	<h4>Output:</h4>
@@ -466,27 +486,18 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="errors">
 	<h2>Error Response</h2>
 	<p>
-		If an error or no results happens while processing a user's request,
-		the client will receive a standard HTTP error response with а corresponding status code 
-		(not 200 OK) and message (browsers usually display an error page; 
-		web clients should normally check the status before processing the results). 
-		In addition to general use of standard HTTP errors, the following four 
-		important error responses, by design, are:</p>
+		If an error occurs while processing a user's request,
+		the client will receive an HTTP error response, which status code
+		is not 200 (OK), and a message (browsers usually display an error page; other
+		web clients should normally check the status code before processing the results).
+		Specifically, the following HTTP errors can be sent by this service:</p>
 	<ul>
-	  <li>452 - Bad Request (illegal or no arguments).</li>		
-	  <li>460 - No Results (e.g., when a search or graph query found no data).</li>
-	  <li>500 - Internal Server Error (usually a java exception).</li>
-	  <li>503 - Server is temporarily unavailable due to regular maintenance.</li>
+	  <li>400 - Bad Request (missing or illegal query arguments).</li>
+	  <li>500 - Internal Server Error (usually, a java exception).</li>
+	  <li>503 - Server is temporarily unavailable (due to maintenance or when re-starting).</li>
 	</ul>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>
-
-<script>
-	// update the number of successful requests (excluding errors);
-	$.getJSON('log/totalok', function(tok) {$('.pc2_tok').text(tok);}).error(function() {$('.pc2_tok').text(0);});
-	// update the number of unique client IPs;
-	$.getJSON('log/totalip', function(tip) {$('.pc2_tip').text(tip);}).error(function() {$('.pc2_tip').text(0);});
-</script>
 </body>
 </html>

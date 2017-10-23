@@ -35,9 +35,9 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				|| requestUri.contains("/metadata/")
 				|| requestUri.contains("/favicon")
 				|| requestUri.contains("/logback")
-				|| requestUri.contains("/log")
 				|| requestUri.contains("/formats")
 				|| requestUri.contains("/downloads")
+				|| requestUri.contains("/robots")
 				)
 		)
 		{
@@ -45,7 +45,7 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				response.sendError(503, CPathSettings.getInstance().property(CPathSettings.PROVIDER_NAME)
 						+ " service maintenance.");
 			} catch (Exception e) {
-				LOG.error("preHandle: response.sendError failed" + e);
+				LOG.error("preHandle: request URI: " + requestUri + "; response.sendError failed" + e);
 			}
 
 			return false;

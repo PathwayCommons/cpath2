@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>6.1.0-SNAPSHOT</version>
+		<version>7.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>distribution</artifactId>
@@ -12,10 +12,6 @@
 	<name>cPath2 - Distribution</name>
 	<description>cPath2 server distribution (executable jars, war, scripts, etc.)</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
-
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
 
 	<build>
 		<plugins>
@@ -51,17 +47,9 @@
 					<skipDeploy>true</skipDeploy>
 					<generateReports>false</generateReports> 
 				</configuration>
-			</plugin> 
-			<!--<plugin>-->
-				<!--<groupId>com.github.github</groupId>-->
-				<!--<artifactId>site-maven-plugin</artifactId>-->
-				<!--<configuration>-->
-					<!--<skip>true</skip>-->
-				<!--</configuration>-->
-			<!--</plugin>-->
+			</plugin>
 		</plugins>
 	</build>
-
 
 	<dependencies>
 		<dependency>

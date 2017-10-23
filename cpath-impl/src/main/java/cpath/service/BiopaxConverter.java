@@ -3,6 +3,7 @@ package cpath.service;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import cpath.config.CPathSettings;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ServiceResponse;
+import org.springframework.util.Assert;
+
 import static cpath.service.Status.*;
 
 /**
@@ -50,68 +53,57 @@ public class BiopaxConverter {
 	/**
      * Converts the BioPAX data into the other format.
      * 
-     * @param m paxtools model
+     * @param m paxtools model (not null)
      * @param format output format
-     * @param os output stream
-     * @param args optional format-specific parameters
-	 * @throws IOException when an error occurs while writing to the output stream
+     * @param options format options
+	 * @param os output stream
      */
-    private void convert(Model m, OutputFormat format, OutputStream os, Object... args)
-    		throws IOException 
+    private void convert(Model m,
+						 OutputFormat format,
+						 Map<String, String> options,
+						 OutputStream os) throws IOException
     {
+		Assert.notNull(m,"Model is null");
+		try {
 			switch (format) {
-			case BIOPAX: //to OWL (RDF/XML)
-				new SimpleIOHandler().convertToOWL(m, os);
-				break;
-			case BINARY_SIF:
-				String db = "hgnc symbol"; //default
-				if (args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				convertToBinarySIF(m, os, false, db);
-				break;
-			case EXTENDED_BINARY_SIF:
-				db = "hgnc symbol";
-				if (args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				convertToBinarySIF(m, os, true, db);
-				break;
-			case GSEA:
-				db = "uniprot"; //default
-				if (args.length > 0 && args[0] instanceof String)
-					db = ((String) args[0]).trim().toLowerCase();
-				boolean skipOutsidePathways = true;
-				if (args.length > 1) {
-					skipOutsidePathways = (args[1] instanceof Boolean)
-						? ((Boolean)args[1]).booleanValue()
-							: Boolean.parseBoolean(String.valueOf(args[1]));
-				}
-				// GSEA/GMT converter's skipSubPathways option is a different beast from the web api's 'subpw'!
-				// Given a sub-model, no matter how it's cut from the main model, there is still choice:
-				// to include gene IDs from sub-pathways into parent pathway's record or not; i.e.,
-				// whether to recursively collect participants (IDs) via traversing pathway component
-				// and order/step interactions, not going into any sub-pathways, or not...
-				convertToGSEA(m, os, db, skipOutsidePathways, true);
-				//TODO: GSEA skipSubPathways=true always? (makes sense for now)
-				break;
-            case SBGN:
-                convertToSBGN(m, os, blacklist, true);
-                break;
-			case JSONLD:
-				convertToJsonLd(m, os);
-				break;
-			default: throw new UnsupportedOperationException(
-					"convert, yet unsupported format: " + format);
+				case BIOPAX: //to OWL (RDF/XML)
+					new SimpleIOHandler().convertToOWL(m, os);
+					break;
+				case BINARY_SIF:
+				case SIF:
+					convertToSIF(m, os, false, options);
+					break;
+				case EXTENDED_BINARY_SIF:
+				case TXT:
+					convertToSIF(m, os, true, options);
+					break;
+				case GSEA:
+					convertToGSEA(m, os, options);
+					break;
+				case SBGN:
+					convertToSBGN(m, os, blacklist, CPathSettings.getInstance().isSbgnLayoutEnabled());
+					break;
+				case JSONLD:
+					convertToJsonLd(m, os);
+					break;
+				default:
+					throw new UnsupportedOperationException(
+							"convert, yet unsupported format: " + format);
 			}
-    }
-
-	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
-		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX);
-		JsonldConverter converter = new JsonldBiopaxConverter();
-		Path inp = (Path) dr.getData();
-		converter.convertToJsonld(new FileInputStream(inp.toFile()), os);
-		inp.toFile().delete();
+		} finally {
+			os.close();
+		}
 	}
 
+	private void convertToJsonLd(Model m, OutputStream os) throws IOException
+	{
+		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX, null);
+		JsonldConverter converter = new JsonldBiopaxConverter();
+		Path data = (Path) dr.getData();
+		InputStream is = Files.newInputStream(data, StandardOpenOption.DELETE_ON_CLOSE);
+		converter.convertToJsonld(is, os);
+		is.close();
+	}
 
 	/**
      * Converts not too large BioPAX model 
@@ -119,38 +111,39 @@ public class BiopaxConverter {
      * 
      * @param m a sub-model (not too large), e.g., a get/graph query result
      * @param format output format
-     * @param args optional format-specific parameters
-     * @return data response with the converted data (up to 1Gb utf-8 string) or {@link ErrorResponse}.
+     * @param options format options
      */
-    public ServiceResponse convert(Model m, OutputFormat format, Object... args)
+    public ServiceResponse convert(Model m,
+								   OutputFormat format,
+								   Map<String, String> options)
     {
     	if(m == null || m.getObjects().isEmpty()) {
-			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
+    		//build an empty data response
+			DataResponse r = new DataResponse();
+			r.setFormat(format);
+			return r;
 		}
     	
 		// otherwise, convert, return a new DataResponse
     	// (can contain up to ~ 1Gb unicode string data)
     	// a TMP File is used instead of a byte array; set the file path as dataResponse.data value
-    	File tmpFile = null;
+    	Path tmpPath = null;
 		try {
-    		Path tmpFilePath = Files.createTempFile("cpath2", format.getExt());
-    		tmpFile = tmpFilePath.toFile();
-    		tmpFile.deleteOnExit();
-        	OutputStream os = new FileOutputStream(tmpFile);
-    		convert(m, format, os, args); //os gets auto-closed there		
-    		DataResponse dataResponse = new DataResponse();
+    		tmpPath = Files.createTempFile("cpath2", format.getExt());
+    		tmpPath.toFile().deleteOnExit(); //to make sure...
+    		convert(m, format, options, Files.newOutputStream(tmpPath)); //OutputStream gets closed inside there.
+			DataResponse dataResponse = new DataResponse();
 			dataResponse.setFormat(format);
-			dataResponse.setData(tmpFilePath);
+			dataResponse.setData(tmpPath);
 			// extract and save data provider names
-			dataResponse.setProviders(providers(m));			
+			dataResponse.setProviders(providers(m));
 			return dataResponse;
 		}
         catch (Exception e) {
-        	if(tmpFile != null)
-        		tmpFile.delete();
+			try{Files.delete(tmpPath);}catch(Exception ex){}
         	return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-    }
+	}
 
 
     /**
@@ -180,42 +173,41 @@ public class BiopaxConverter {
 	 * 
      * @param m paxtools model
      * @param stream output stream
-	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
-	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
+	 * @param options format options
 	 * @throws IOException when there is an output stream writing error
 	 */
-	private void convertToGSEA(Model m, OutputStream stream, String outputIdType,
-							   boolean skipOutsidePathways, boolean skipSubPathways)
-			throws IOException 
-	{	
-		if(outputIdType==null || outputIdType.isEmpty())
-			outputIdType = "uniprot";
+	private void convertToGSEA(Model m, OutputStream stream, Map<String,String> options)
+			throws IOException
+	{
+		String idType;
+		if((idType = options.get("db"))==null)
+			idType = "uniprot"; //default; curr. one value is expected
 
-		// convert (make per pathway entries; won't traverse into sub-pathways of a pathway; only pre-selected organisms)
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathways);
+		// It won't traverse into sub-pathways; will use only pre-defined organisms.
+		// GSEAConverter's 'skipSubPathways' option is a different beast from the PC web api's 'subpw':
+		// given sub-model (no matter how it was cut from the main model), there is still choice
+		// to include gene IDs from sub-pathways (if there're any) into parent pathway's record or not.
+		GSEAConverter gseaConverter = new GSEAConverter(idType, true, true);
 		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		gseaConverter.setAllowedOrganisms(allowedTaxIds);
-		gseaConverter.setSkipOutsidePathways(skipOutsidePathways);
+		gseaConverter.setSkipOutsidePathways(false); //- because all Pathway objects were intentionally removed
+													// before a get/graph query result gets here to be converted.
 		gseaConverter.writeToGSEA(m, stream);
 	}
 
 	
-	/**
+	/*
 	 * Converts a not empty BioPAX Model (contained in the service bean) 
 	 * to the SIF or <strong>single-file</strong> extended SIF format.
-	 * 
-	 * This method is primarily designed for the web service.
-	 * 
-     * @param m biopax paxtools to convert
-     * @param out stream
-     * @param extended if true, calls SIFNX else - SIF
-	 * @param db - either 'uniprot', 'hgnc', etc.; if null - 'HGNC symbol' is the default.
-	 * 
-	 * @throws IOException when there is an output stream writing error
+	 * This is mainly for calling internally through the web service api.
 	 */
-	private void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db)
-			throws IOException 
+	private void convertToSIF(Model m, OutputStream out,
+							  boolean extended, Map<String,String> options) throws IOException
 	{
+		String db;
+		if ((db = options.get("db"))==null)
+			db = "hgnc symbol"; //default
+
 		ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
 		idFetcher.chemDbStartsWithOrEquals("chebi");
 
@@ -228,9 +220,24 @@ public class BiopaxConverter {
 			idFetcher.seqDbStartsWithOrEquals(db);
 		}
 
-		final Collection<SIFType> sifTypes = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
-		sifTypes.remove(SIFEnum.NEIGHBOR_OF); //exclude NEIGHBOR_OF
-		SIFSearcher searcher = new SIFSearcher(idFetcher, sifTypes.toArray(new SIFType[sifTypes.size()]));
+		SIFType[] sifTypes;
+		if(options.containsKey("pattern"))
+		{
+			String[] sifNames = options.get("pattern").split(",");
+			sifTypes = new SIFType[sifNames.length];
+			int i=0;
+			for(String t : sifNames)
+				sifTypes[i++] = SIFEnum.typeOf(t);
+		}
+		else
+		{
+			//default: apply all SIF rules but neighbor_of
+			Collection<SIFType> c = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
+			c.remove(SIFEnum.NEIGHBOR_OF); //exclude NEIGHBOR_OF
+			sifTypes = c.toArray(new SIFType[c.size()]);
+		}
+
+		SIFSearcher searcher = new SIFSearcher(idFetcher, sifTypes);
 		searcher.setBlacklist(blacklist);
 
 		if(extended) {

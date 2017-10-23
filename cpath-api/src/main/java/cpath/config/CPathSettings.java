@@ -1,44 +1,15 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
 package cpath.config;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.*;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.WordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,14 +20,15 @@ import cpath.service.Scope;
  * CPath2 server-side instance-specific 
  * configuration constants and properties.
  * Singleton.
- * 
+ *
  * But this is not for cpath2 clients to care.
  * 
  * @author rodche
  */
-public final class CPathSettings {
+public final class CPathSettings
+{
 	private static final Logger LOG = LoggerFactory.getLogger(CPathSettings.class);
-	private static CPathSettings instance;
+    private static CPathSettings instance;
 	private Properties settings;
 	
 	/**
@@ -92,10 +64,12 @@ public final class CPathSettings {
 	
 	/**
 	 * cpath2 internal "blacklist" (of the ubiquitous molecules
-	 * to be excluded by some queries and format converters).
+	 * to be excluded by graph queries and data converters/exporters).
 	 */
 	public static final String BLACKLIST_FILE = "blacklist.txt";
-	
+
+	public static final String EXPORT_SCRIPT_FILE ="export.sh";
+
 	/**
 	 * cpath2 Metadata configuration default file name.
 	 */
@@ -121,6 +95,7 @@ public final class CPathSettings {
 	public static final String PROP_MAX_SEARCH_HITS_PER_PAGE = "cpath2.maxSearchHitsPerPage";
 	public static final String PROP_DEBUG_ENABLED = "cpath2.debug.enabled";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
+	public static final String PROP_SBGN_LAYOUT_ENABLED = "cpath2.sbgn.layout.enabled";
 	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
 	public static final String PROVIDER_DESCRIPTION = "cpath2.provider.description";
@@ -131,13 +106,10 @@ public final class CPathSettings {
 	public static final String PROVIDER_DOWNLOADS_URL = "cpath2.provider.downloads.url";
 	public static final String PROVIDER_GA = "cpath2.provider.ga"; //Google Analytics code
 
-	//properties to set the default global start/end dates for all the access log timeline queries;
-	//These may be ignored if another range is set via web api (per query)
-	public static final String PROP_LOG_START = "cpath2.log.start"; //e.g., "2015-01-01"
-	public static final String PROP_LOG_END = "cpath2.log.end"; //e.g., "2015-12-31"
-
 	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-	
+
+	public static final String NO_DATA_FOUND = "EMPTY";
+
 	/**
 	 * Private Constructor
 	 */
@@ -146,26 +118,22 @@ public final class CPathSettings {
 		String home = System.getProperty(HOME_DIR);
 		if(home==null || home.isEmpty())
 			throw new AssertionError("Java option " + HOME_DIR + " is undefined!");
-		
-		File f = new File(home);
-		if(!f.exists()) 
-			f.mkdir();
-		
+
 		// put default values
 		Properties defaults = new Properties();
-		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
-		defaults.put(PROVIDER_NAME, "cPath2 Demo");
+		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
+		defaults.put(PROVIDER_NAME, "Pathway Commons demo");
 		defaults.put(PROVIDER_VERSION, "0");
-		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
+		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
-		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
+		defaults.put(PROP_METADATA_LOCATION, homeDir() + FileSystems.getDefault().getSeparator() + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
-		//PROP_LOG_START and PROP_LOG_END are null - queries will use current-year, current dates
-
+		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
+		//default settings
 		settings = new Properties(defaults);
-		
+		//load properties from file; overrides some of the defaults
 		loadCPathProperties();
 	}
 
@@ -179,6 +147,8 @@ public final class CPathSettings {
 	public static synchronized CPathSettings getInstance() {
 		if(instance == null) {
 			instance = new CPathSettings();
+			instance.subDir(""); //creates the home dir if it did not exist
+			instance.subDir(DATA_SUBDIR); //creates the data dir
 		}		
 		return instance;
 	}
@@ -383,9 +353,9 @@ public final class CPathSettings {
 	 * Reads cpath2 properties from the file.
 	 */
 	public void loadCPathProperties() {
-		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
+		Path file = Paths.get(homeDir(), CPATH_PROPERTIES_FILE);
 		try {
-			settings.load(new FileReader(file));
+			settings.load(Files.newBufferedReader(file));
 		} catch (IOException e) {
 			LOG.warn("Couldn't update cPath2 properties " +
 				"from " + file + "; will use defaults. " 
@@ -405,19 +375,19 @@ public final class CPathSettings {
 		if(!isAdminEnabled())
 			throw new IllegalStateException("Not in Maintenance mode.");
 		
-		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
+		Path path = Paths.get(homeDir(),CPATH2_GENERATED_COMMENT);	
 		try {
-			settings.store(new FileOutputStream(file), 
+			settings.store(Files.newOutputStream(path), 
 					"cPath2 server configuration properties");
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to write cPath2 properties " +
-					"to " + file, e);
+					"to " + path.toString(), e);
 		}		
 	}
 
 		
 	/**
-	 * Gets current Home Directory (full path).
+	 * Gets current Home Directory (full path; must exist).
 	 * 
 	 * The cpath2 home system environment variable 
 	 * (which must be set) overrides the java option, if any.
@@ -425,31 +395,41 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String homeDir() {		
-		return property(HOME_DIR);
+		String homedir = property(HOME_DIR);
+
+		return homedir;
 	}
 	
+	private String subDir(String subDirectoryName) {
+		Path path = Paths.get(homeDir(), subDirectoryName);
+
+		if(!Files.exists(path))
+			try {
+				Files.createDirectory(path);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot create directory: " + path, e);
+			}
+
+		return path.toString();
+	}
 	
 	/**
 	 * Gets the full path to the local directory 
 	 * where pathway and other data will be fetched and looked for.
 	 * 
-	 * @return
+	 * @return the data directory path
 	 */
 	public String dataDir() {
-		String path = homeDir() + File.separator + DATA_SUBDIR;
-		File f = new File(path);
-		if(!f.exists()) 
-			f.mkdir();
-		return path;
+		return subDir(DATA_SUBDIR);
 	}
-		
+	
 	/**
 	 * A full path to the default Lucene index.
 	 * 
 	 * @return
 	 */
 	public String indexDir() {
-		return homeDir() + File.separator + INDEX_SUBDIR;
+		return subDir(INDEX_SUBDIR);
 	}
 	
 	/**
@@ -459,10 +439,19 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String blacklistFile() {
-		return downloadsDir() + File.separator + BLACKLIST_FILE;
-	}	
-	
-	
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + BLACKLIST_FILE;
+	}
+
+
+	/**
+	 * Gets the full path to the to-be-generated script.
+	 *
+	 * @return
+	 */
+	public String exportScriptFile() {
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + EXPORT_SCRIPT_FILE;
+	}
+
 	/**
 	 * Sets or updates a cpath2 instance property
 	 * but only if Admin mode is enabled; Admin mode
@@ -480,8 +469,6 @@ public final class CPathSettings {
 		{	//ok to alter some props in the 'normal' state too
 			if(PROP_DEBUG_ENABLED.equals(name)
 					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name) //always allow
-					|| PROP_LOG_END.equals(name) //always allow
-					|| PROP_LOG_START.equals(name) //always allow
 			) {
 				setProp(name, value);
 			} else {
@@ -528,11 +515,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String downloadsDir() {
-		String path = homeDir() + File.separator + DOWNLOADS_SUBDIR;
-		File f = new File(path);
-		if(!f.exists()) 
-			f.mkdir();
-		return path;
+		return subDir(DOWNLOADS_SUBDIR);
 	}
 	
 	
@@ -542,24 +525,32 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String cacheDir() {
-		return homeDir() + File.separator + CACHE_SUBDIR;
+		return subDir(CACHE_SUBDIR);
 	}
 	
 	
 	/**
-	 * Full path to the archive file where a BioPAX sub-model is exported
-	 * (in the batch downloads directory). 
+	 * Full path to the archive file where a BioPAX sub-model is exported.
 	 * 
 	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
 	 * @return
+	 * @see #downloadsDir()
 	 */
-	public String biopaxExportFileName(String name) {
-		return downloadsDir() + File.separator + 
-				exportArchivePrefix() + name 
-					+ ".BIOPAX.owl.gz";
+	public String biopaxFileNameFull(String name) {
+		return downloadsDir() + FileSystems.getDefault().getSeparator() + biopaxFileName(name);
 	}
-	
-	
+
+	/**
+	 * Local name of the BioPAX sub-model file (in the batch downloads directory).
+	 *
+	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
+	 * @return
+	 * @see #downloadsDir()
+	 */
+	public String biopaxFileName(String name) {
+		return exportArchivePrefix() + name + ".BIOPAX.owl.gz";
+	}
+
 	/**
 	 * Gets the common file name prefix (includes instance's provider
 	 * name and version, i.e., that comes after the directory path 
@@ -569,8 +560,8 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String exportArchivePrefix() {
-		return WordUtils.capitalize(property(PROVIDER_NAME)).replaceAll("\\W+","") +
-				"." + property(PROVIDER_VERSION) + ".";
+		return WordUtils.capitalize(property(PROVIDER_NAME) + property(PROVIDER_VERSION))
+				.replaceAll("\\W+","") + ".";
 	}
 	
 	
@@ -581,7 +572,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String mainModelFile() {
-		return biopaxExportFileName(Scope.ALL.toString());
+		return biopaxFileNameFull(Scope.ALL.toString());
 	}
 	
 	/**
@@ -591,62 +582,16 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String warehouseModelFile() {
-		return biopaxExportFileName(Scope.WAREHOUSE.toString());
-	}
-
-	/**
-	 * Global default start date for access log summaries.
-	 * @return
-	 */
-	public String getLogStart() {
-		return property(PROP_LOG_START);
-	}
-	public void setLogStart(String isoDate) {	
-		setCPathProperty(PROP_LOG_START, parse(isoDate)); //can be null
-	}
-	
-	public void setLogStart(Date isoDate) {
-		if(isoDate==null) 
-			setCPathProperty(PROP_LOG_START, null);	
-		else
-			setCPathProperty(PROP_LOG_START, ISO_DATE_FORMAT.format(isoDate));	
-	}
-	
-	/**
-	 * Global default end date for access log summaries.
-	 * @return
-	 */
-	public String getLogEnd() {
-		return property(PROP_LOG_END);
-	}	
-	public void setLogEnd(String isoDate) {
-		setCPathProperty(PROP_LOG_END, parse(isoDate)); //can be null
-	}
-	
-	public void setLogEnd(Date isoDate) {
-		if(isoDate==null) 
-			setCPathProperty(PROP_LOG_END, null);	
-		else
-			setCPathProperty(PROP_LOG_END, ISO_DATE_FORMAT.format(isoDate));	
+		return biopaxFileNameFull(Scope.WAREHOUSE.toString());
 	}
 
 
-	private String parse(String isoDate) {
-		if(isoDate!=null) {
-			isoDate = isoDate.trim(); //may throw a NPE (ok)	
-			
-			if(isoDate.isEmpty()) {
-				isoDate = null; 
-			} else {
-				//test parse; update the property if success
-				try {
-					ISO_DATE_FORMAT.parse(isoDate);
-				} catch (ParseException e) {
-					throw new RuntimeException("Not an ISO date (yyyy-MM-dd): " + isoDate, e);
-				}
-			}
-		}
-		return isoDate;
+	public boolean isSbgnLayoutEnabled() {
+		return "true".equalsIgnoreCase(property(PROP_SBGN_LAYOUT_ENABLED));
 	}
-	
+
+	public void setSbgnLayoutEnabled(boolean enabled) {
+		setCPathProperty(PROP_SBGN_LAYOUT_ENABLED, Boolean.toString(enabled));
+	}
+
 }

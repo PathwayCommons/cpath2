@@ -13,7 +13,7 @@ $(function() {
 	
 	module("Module: non-public server-side API");
 	
-	var urls = ['favicon.ico','datasources','log','log/ips'];
+	var urls = ['favicon.ico','datasources'];
 	test('Test if paths exist', urls.length, function() {
 	    for (var i = 0; i < urls.length; i++) {
 	        var url = urls[i];

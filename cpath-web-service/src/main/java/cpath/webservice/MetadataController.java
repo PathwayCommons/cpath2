@@ -2,34 +2,22 @@ package cpath.webservice;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
+import cpath.service.CPathUtils;
 import cpath.jpa.Content;
-import cpath.jpa.LogEvent;
 import cpath.jpa.Metadata;
-import cpath.service.Status;
 import cpath.webservice.args.binding.MetadataTypeEditor;
 
-import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 
@@ -61,7 +49,8 @@ public class MetadataController extends BasicController {
 
 
     @RequestMapping("/metadata/logo/{identifier}")
-    public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) throws IOException
+    public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier)
+    		throws IOException
     {	
     	Metadata ds = service.metadata().findByIdentifier(identifier);
     	byte[] bytes = null;
@@ -94,14 +83,8 @@ public class MetadataController extends BasicController {
 		for(Metadata m : service.metadata().findAll()) {
 			//set dynamic extra fields
 			if(m.isNotPathwayData()) {
-				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				wh.add(m);
-			} else {		
-//don't query for logs (web pages are slow)
-//				m.setNumAccessed(service.log().downloads(m.standardName()));
-//				m.setNumUniqueIps(service.log().uniqueIps(m.standardName()));				
-				m.setUploaded((new File(m.getDataArchiveName()).exists()));
-				m.setPremerged(!m.getContent().isEmpty());
+			} else {
 				ds.add(m);
 			}
 		}
@@ -117,53 +100,9 @@ public class MetadataController extends BasicController {
 		Metadata m = service.metadata().findByIdentifier(identifier);
 		if(m==null)
 			return null;
-		
-		//set dynamic extra fields
-		if(m.isNotPathwayData()) {
-			m.setUploaded((new File(m.getDataArchiveName()).exists()));
-		} else {
-			//don't query for logs (web pages are slow)
-//			m.setNumAccessed(service.log().downloads(m.standardName()));
-//			m.setNumUniqueIps( service.log().uniqueIps(m.standardName()));
-			m.setUploaded((new File(m.getDataArchiveName()).exists()));
-			m.setPremerged(!m.getContent().isEmpty());
-		}
-		
     	return m;
     }
-    
-//    @RequestMapping("/idmapping")
-//    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id,
-//    		HttpServletRequest request, HttpServletResponse response)
-//    {
-//    	//log events: command, format
-//    	Set<LogEvent> events = new HashSet<LogEvent>();
-//    	events.add(LogEvent.IDMAPPING);
-//
-//    	if(id == null || id.length == 0) {
-//    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", request, response, events);
-//    		return null;
-//    	}
-//
-//    	Map<String, String> res = new TreeMap<String, String>();
-//
-//    	for(String i : id) {
-//    		Set<String> im = service.map(i);
-//    		if(im == null) {
-//    			res.put(i, null);
-//    		} else {
-//    			for(String ac : im)
-//    				res.put(i, ac);
-//    		}
-//    	}
-//
-//    	//log to db (for usage reports)
-//    	service.log(events, clientIpAddress(request));
-//
-//    	return res;
-//	}
- 
-    
+
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();
     	

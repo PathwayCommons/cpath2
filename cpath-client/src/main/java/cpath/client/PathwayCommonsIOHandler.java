@@ -20,6 +20,7 @@ import java.util.StringTokenizer;
  * from old Pathway Commons database (http://www.pathwaycommons.org) 
  * using the features of Pathway Commons web service API:
  * (http://www.pathwaycommons.org/pc/webservice.do?cmd=help)
+ * @deprecated
  */
 public class PathwayCommonsIOHandler
 {

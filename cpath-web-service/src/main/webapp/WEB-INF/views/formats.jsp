@@ -78,7 +78,7 @@ ProteinReferences - not empty 'organism' property value).
 </p>
 
 <h3 id="sif">Simple Interaction Format (SIF)</h3>
-<h4>BINARY_SIF</h4>
+<h4>SIF (or BINARY_SIF)</h4>
 <p>
 Many network analysis algorithms require pairwise interaction networks 
 as input. A BioPAX network often contains more complex relationships
@@ -90,7 +90,7 @@ Since SIF interactions are always binary it is not possible to fully
 represent all of BioPAX, thus this translation is lossy in general. 
 Nonetheless, the SIF network is useful for those applications that require pairwise
 interaction input.  SIF format can be easily imported into popular network analysis tools, 
-like <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats">Cytoscape</a>.
+such as <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats#SIF_Format">Cytoscape</a>.
 </p><p>
 In this output format, all participants are specified as chemical or gene 
 names or identifiers. This format does not contain any cross-species
@@ -109,12 +109,12 @@ that more than one identifier maps to a UniProt identifier. In this case, a dupl
 interaction is created for each additional non-UniProt identifier.
 </p>
 
-<h4 id="esif">EXTENDED_BINARY_SIF</h4>
+<h4 id="esif">TXT (or EXTENDED_BINARY_SIF)</h4>
 <p>
 Similar to the basic SIF output format, except that this output format is
 specified in two sections. Each section starts with one row of column
 headings.  The two sections are separated by a single blank line. 
-Each entry is multi-column, tab-delimited. The first section is BINARY_SIF (edges) 
+Each entry is multi-column, tab-delimited. The first section is SIF (edges)
 as describe above, plus PATHWAYS column. 
 Current edge attributes include the interaction data source and PubMed ID.  
 The second section contains participant (molecule or gene) name followed by several node attributes.  

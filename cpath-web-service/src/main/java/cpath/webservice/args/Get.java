@@ -3,7 +3,7 @@ package cpath.webservice.args;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.biopax.paxtools.pattern.miner.SIFType;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
@@ -11,16 +11,21 @@ import cpath.service.OutputFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Get {
+public class Get extends Base {
 	@NotNull(message="Illegal Output Format") 
 	@Valid
 	private OutputFormat format;
 	// required at least one value
 	@NotEmpty(message="Provide at least one URI.")
 	private String[] uri;
+
+	private SIFType[] pattern;
+
+	private boolean subpw;
 	
 	public Get() {
 		format = OutputFormat.BIOPAX; // default
+		subpw = false;
 	}
 
 	public OutputFormat getFormat() {
@@ -47,5 +52,22 @@ public class Get {
 			}
 		}
 		this.uri = uris.toArray(new String[uris.size()]);
+	}
+
+	//SIF Types
+	public SIFType[] getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(SIFType[] pattern) {
+		this.pattern = pattern;
+	}
+
+	public boolean getSubpw() {
+		return subpw;
+	}
+
+	public void setSubpw(boolean subpw) {
+		this.subpw = subpw;
 	}
 }

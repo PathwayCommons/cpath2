@@ -5,15 +5,12 @@ import javax.validation.constraints.Min;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.hibernate.validator.constraints.NotBlank;
 
-public class Search {
+public class Search extends Base {
 	@NotBlank(message="Parameter 'q' (a Lucene query string) is blank (not specified).")
 	private String q;
-
 	private Class<? extends BioPAXElement> type;
-
 	private String[] organism;
 	private String[] datasource;
-	
 	@Min(0)
 	private Integer page;
 

@@ -55,7 +55,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
-@Ignore //disabled to build faster - TODO remove this annotation to enable tests, e.g., after switching to a new validator version
+@Ignore //disabled to build faster - TODO enable tests after switching to a new validator version
 
 /**
  * Extra integration tests for the BioPAX Validator 
@@ -85,7 +85,7 @@ public class BiopaxValidatorTest {
 	 * 
 	 */
 	@Test //controlType
-	public final void testValidateModel() {		
+	public void testValidateModel() {
 		Catalysis ca = level3.create(Catalysis.class, "catalysis1"); 
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");	
@@ -141,7 +141,7 @@ public class BiopaxValidatorTest {
     
     
 	@Test
-	public final void testNormalizeTestFile() throws IOException {
+	public void testNormalizeTestFile() throws IOException {
 		SimpleIOHandler simpleReader = new SimpleIOHandler();
 		simpleReader.mergeDuplicates(true);
 		

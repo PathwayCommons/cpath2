@@ -118,11 +118,10 @@
 	</bp:SmallMoleculeReference>
 
 	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:20">
-		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose
-			6-phosphate</bp:displayName>
+		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose-6-phosphate</bp:displayName>
 		<bp:structure rdf:resource="#ChemicalStructure_8" />
-		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p
-		</bp:standardName>
+		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p</bp:standardName>
+		<bp:name rdf:datatype="xsd:string">fructose</bp:name>
 		<bp:xref rdf:resource="UnificationXref:CHEBI_CHEBI%3A20" />
 		<bp:molecularWeight rdf:datatype="xsd:float">260.14
 		</bp:molecularWeight>
@@ -156,13 +155,11 @@
 	<bp:SmallMolecule rdf:ID="beta-D-fructose_6-phosphate">
 		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:20" />
 		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
-		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p
-		</bp:standardName>
+		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">&lt;FONT
 			FACE=&quot;Symbol&quot;&gt;b&lt;/FONT&gt;-D-fructose-6-phosphate
 		</bp:name>
-		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose
-			6-phosphate</bp:displayName>
+		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose-6-phosphate</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
 		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
 	</bp:SmallMolecule>

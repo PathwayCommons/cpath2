@@ -2,9 +2,9 @@ package cpath.jpa;
 
 import javax.persistence.*;
 
-import cpath.dao.CPathUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import cpath.service.CPathUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.Assert;
@@ -60,29 +60,24 @@ public final class Mapping {
 		Assert.isTrue(dest.length()<=15);
 
 		src = src.toUpperCase();
-		//replace a uniprot* db name with simply 'UNIPROT' and remove isoform suffix if present
-		if(src.startsWith("UNIPROT") || src.startsWith("SWISSPROT")) {
-			if(srcId.contains("-"))
-				srcId = srcId.replaceFirst("-\\d+$", "");;
+		//replace a uniprot* db name with simply 'UNIPROT'
+		if(src.startsWith("UNIPROT") || src.startsWith("SWISSPROT"))
 			src = "UNIPROT";
-		}
 		else if(src.startsWith("PUBCHEM") && (src.contains("COMPOUND") || src.contains("CID"))) {
 			src = "PUBCHEM-COMPOUND";
 		}
 		else if(src.startsWith("PUBCHEM") && (src.contains("SUBSTANCE") || src.contains("SID"))) {
 			src = "PUBCHEM-SUBSTANCE";
 		}
-		else if(src.equals("REFSEQ") && srcId.contains(".")) {
-			//e.g., strip refseq NP_012345.2 from the version number to get NP_012345
-			srcId = srcId.replaceFirst("\\.\\d+$", "");
-		}
+
+		srcId = CPathUtils.fixSourceIdForMapping(src, srcId);
 
 		this.src = src;
 		this.srcId = srcId;
 		this.dest = dest.toUpperCase();
 		this.destId = destId;
     }
-
+    
     Long getId() {
     	return id;
     }

@@ -1,7 +1,7 @@
 package cpath.jpa;
 
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -11,17 +11,18 @@ import java.util.regex.Pattern;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang.StringUtils;
+import cpath.service.*;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.Score;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 
 /**
  * Data Provider Metadata.
@@ -54,6 +55,7 @@ public final class Metadata {
         PSI_MI(true), // interactions to be converted to BioPAX L3 format
         PSI_MITAB(true), // interactions to be converted to PSI-MI then to BioPAX L3 format
 		BIOPAX(true), // pathways and interactions in BioPAX L2 or L3 format
+		//TODO: add SBML type (e.g., for Recon X)?
 		WAREHOUSE(false), // warehouse data to be converted to BioPAX and used during the merge stage
 		MAPPING(false); //extra gene/protein id-mapping data (two column, TSV format: "some id or name" \t "primary uniprot/chebi AC")
         
@@ -110,18 +112,8 @@ public final class Metadata {
     private String availability;
     private Integer numPathways;  
     private Integer numInteractions;
-    private Integer numPhysicalEntities;    
-    
-    //extra (jpa transient) fields
-    @Transient
-    private Long numAccessed;
-    @Transient
-    private Boolean uploaded;
-    @Transient
-    private Boolean premerged;
-    @Transient
-    private Long numUniqueIps;
-    
+    private Integer numPhysicalEntities;
+
     
 	/**
 	 * Default Constructor.
@@ -135,16 +127,15 @@ public final class Metadata {
      *
      * @param identifier  unique short string, will be used in URIs
      * @param name the not empty list of names: display name (must present), standard name, other names.
-     * @param description
-     * @param urlToData
-     * @param urlToHomepage
-     * @param icon
-     * @param metadata_type
-     * @param cleanerClassname
-     * @param converterClassname
-     * @param pubmedId
-     * @param availability
-     * @throws IllegalArgumentException
+     * @param description description of the data source (details, release date, version, etc.)
+     * @param urlToData URL - where the data can be download (can be part of larger data archive)
+     * @param urlToHomepage provider's home page URL
+     * @param urlToLogo provider's logo image URL
+     * @param metadata_type what kind of data (warehouse, biopax, psi-mi, id-mapping)
+     * @param cleanerClassname canonical name of a java class that implements {@link Cleaner}
+     * @param converterClassname canonical name of a java class that implements {@link cpath.service.Converter}
+     * @param pubmedId recommended by the data provider reference publication PMID
+     * @param availability data availability: free, academic, not-free
      */
 	public Metadata(final String identifier, final List<String> name, final String description, 
     		final String urlToData, String urlToHomepage, final String urlToLogo, 
@@ -194,7 +185,7 @@ public final class Metadata {
 	 * Sets the identifier.
 	 * No spaces, dashes, allowed. 
 	 * 
-	 * @param identifier
+	 * @param identifier metadata identifier
 	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
 	 */
     void setIdentifier(String identifier) {
@@ -309,8 +300,7 @@ public final class Metadata {
 	 */
     @Transient
     public String getDataArchiveName() {
-    	return CPathSettings.getInstance()
-    		.dataDir() + File.separator + identifier + ".zip";
+    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier + ".zip").toString();
     }
     public void setDataArchiveName(String path) {
     	//a fake bean property (for js, JSON)
@@ -326,7 +316,7 @@ public final class Metadata {
      */
     @Transient
     public String outputDir() {
-    	return CPathSettings.getInstance().dataDir() + File.separator + identifier;
+    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier).toString();
     }
     
     
@@ -382,7 +372,11 @@ public final class Metadata {
 				ent.removeDataSource(ds);
 			ent.addDataSource(pro);
 		}
-		
+
+		for (Score score : model.getObjects(Score.class))
+			if(score.getScoreSource() == null)
+				score.setScoreSource(pro);
+
 		// remove dangling Provenance from the model
 		ModelUtils.removeObjectsIfDangling(model, Provenance.class);
 	}
@@ -448,53 +442,12 @@ public final class Metadata {
 		this.iconUrl = iconUrl;
 	}
 
-	public Long getNumAccessed() {
-		return numAccessed;
-	}
-	public void setNumAccessed(Long numAccessed) {
-		this.numAccessed = numAccessed;
-	}
-	
-	public Boolean getUploaded() {
-		return uploaded;
-	}
-	public void setUploaded(Boolean uploaded) {
-		this.uploaded = uploaded;
-	}
-
-	public Boolean getPremerged() {
-		return premerged;
-	}
-	public void setPremerged(Boolean premerged) {
-		this.premerged = premerged;
-	}
-	
-	public Long getNumUniqueIps() {
-		return numUniqueIps;
-	}
-	public void setNumUniqueIps(Long numUniqueIps) {
-		this.numUniqueIps = numUniqueIps;
-	}
-	
-
 	@Transient
 	public boolean isNotPathwayData() {
 		return type.isNotPathwayData();
 	}	
 	public void setNotPathwayData(boolean foo) {
 		//a fake bean property (for javascript, JSON)
-	}
-			
-	/**
-	 * Drops all associated output data files - 
-	 * re-creates the output data directory.
-	 */
-	public void cleanupOutputDir() {
-		File dir = new File(outputDir());
-		if(dir.exists()) {
-			CPathUtils.cleanupDirectory(dir);
-		}		
-		dir.mkdir();
 	}
 	
 	@Override
@@ -504,6 +457,6 @@ public final class Metadata {
 	
 	@Override
 	public int hashCode() {
-		return (getClass().getCanonicalName() + identifier).hashCode();
+		return identifier.hashCode();
 	}
 }

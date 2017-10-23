@@ -9,7 +9,7 @@
 
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
-	<version>6.1.0-SNAPSHOT</version>
+	<version>7.0.0-SNAPSHOT</version>
 	<description>cPath2 parent (multi-mudule) project (biological pathway data integration/querying)</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 	<inceptionYear>2009</inceptionYear>
@@ -32,7 +32,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/PathwayCommons/cpath2.git</connection>
 		<developerConnection>scm:git:git@github.com:PathwayCommons/cpath2.git</developerConnection>
-		<url>https://github.com/PathwayCommons/cpath2</url>
+		<url>https://github.com/PathwayCommons/cpath2/tree/master/</url>
 	</scm>
 
 	<developers>
@@ -146,36 +146,31 @@
 	</modules>
 
 	<properties>
-		<java.version>1.7</java.version>
+		<java.version>1.8</java.version>
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring.version>4.1.7.RELEASE</spring.version>
-		<hibernate.version>4.3.10.Final</hibernate.version>
-		<lucene.version>4.10.4</lucene.version>
-		<h2.version>1.4.187</h2.version>
-		<querydsl.version>3.6.6</querydsl.version>
+		<spring.version>4.3.7.RELEASE</spring.version>
+		<hibernate.version>5.2.9.Final</hibernate.version>
+		<lucene.version>6.5.0</lucene.version>
+		<h2.version>1.4.196</h2.version>
+		<querydsl.version>4.1.4</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
-		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
-		<junit.version>4.11</junit.version>
-		<commons-lang.version>2.6</commons-lang.version>
+		<validator.version>4.0.0-SNAPSHOT</validator.version>
+		<junit.version>4.12</junit.version>
+		<commons-lang.version>3.4</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.2</commons-collections.version>
-		<commons-fileupload.version>1.3.1</commons-fileupload.version>		
-		<httpclient.version>4.5</httpclient.version>
-		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-		<jstl.version>1.2</jstl.version>
-		<taglibs.standard.version>1.1.2</taglibs.standard.version>
+		<httpclient.version>4.5.3</httpclient.version>
 		<javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
-		<hibernate-validator.version>5.1.3.Final</hibernate-validator.version>
-		<jackson.version>2.4.3</jackson.version>
-		<slf4j.version>1.7.7</slf4j.version>
-		<logback.version>1.1.2</logback.version>
-		<geoip-api.version>1.2.13</geoip-api.version>
-		<spring-data-jpa.version>1.7.1.RELEASE</spring-data-jpa.version>
-		<aspectjrt.version>1.8.4</aspectjrt.version>
+		<hibernate-validator.version>5.4.1.Final</hibernate-validator.version>
+		<jackson.version>2.8.9</jackson.version>
+		<slf4j.version>1.7.25</slf4j.version>
+		<logback.version>1.2.2</logback.version>
+		<spring-data-jpa.version>1.11.1.RELEASE</spring-data-jpa.version>
+		<aspectjrt.version>1.8.10</aspectjrt.version>
 		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
 		<maven-war-plugin.version>2.6</maven-war-plugin.version>
 		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
@@ -192,12 +187,11 @@
 		<maven.version.range>[3.0,4)</maven.version.range>
 		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
 		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-		<nexus-staging-maven-plugin.version>1.6.5</nexus-staging-maven-plugin.version>
-		<doxia-integration-tools.version>1.6</doxia-integration-tools.version>
+		<nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+		<doxia-integration-tools.version>1.7.4</doxia-integration-tools.version>
 		<wagon-ssh.version>2.8</wagon-ssh.version>
 		<wagon-scm.version>2.8</wagon-scm.version>
-		<!--<site-maven-plugin.version>0.12</site-maven-plugin.version>-->
-		<github.global.server>github</github.global.server>	
+		<github.global.server>github</github.global.server>
 	</properties>
 
 	<build>
@@ -216,8 +210,9 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
+						<forkCount>1</forkCount>
 						<argLine>
-							-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dnet.sf.ehcache.disabled=true -Dspring.profiles.active=dev -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider
+						-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dspring.profiles.active=dev
 						</argLine>
 					</configuration>
 				</plugin>
@@ -279,11 +274,6 @@
 					<artifactId>maven-site-plugin</artifactId>
 					<version>${maven-site-plugin.version}</version>
 				</plugin>
-<!--				<plugin>
-					<groupId>com.github.github</groupId>
-					<artifactId>site-maven-plugin</artifactId>
-					<version>${site-maven-plugin.version}</version>
-				</plugin>	-->
 				<plugin>
 					<groupId>org.sonatype.plugins</groupId>
 					<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -340,13 +330,14 @@
 										<exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
 										<exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
 										<exclude>log4j:log4j</exclude>
-										<exclude>org.slf4j:1.5*</exclude>
 										<exclude>org.springframework:2.*</exclude>
-										<exclude>org.springframework:3.0.*</exclude>
-										<exclude>jaxax.xml.bind:*</exclude>
+										<exclude>org.springframework:3.*</exclude>
+										<exclude>javax.xml.bind:*</exclude>
+										<exclude>net.sf.saxon:*</exclude>
 										<exclude>com.sun.xml.bind:*</exclude>
 										<exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
 										<exclude>commons-collections:3.2.1</exclude>
+										<exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
 									</excludes>
 								</bannedDependencies>
 								<requireMavenVersion>
@@ -426,81 +417,52 @@
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-core</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>					
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-trove</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>						
-				</exclusions>
 				<scope>runtime</scope>
 			</dependency>			
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>sif-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>psimi-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>sbgn-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>gsea-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-query</artifactId>
 				<version>${paxtools.version}</version>
+			</dependency>
+        	<dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>pattern</artifactId>
+                <version>${paxtools.version}</version>
+        	</dependency>
+			<dependency>
+				<groupId>org.biopax.paxtools</groupId>
+				<artifactId>normalizer</artifactId>
+				<version>${paxtools.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.biopax.validator</groupId>
+				<artifactId>biopax-validator</artifactId>
+				<version>${validator.version}</version>
 				<exclusions>
 					<exclusion>
 						<groupId>commons-logging</groupId>
@@ -508,26 +470,15 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-        	<dependency>
-                <groupId>org.biopax.paxtools</groupId>
-                <artifactId>pattern</artifactId>
-                <version>${paxtools.version}</version>
-                <exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>					
-				</exclusions>
-        	</dependency>
 			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>normalizer</artifactId>
-				<version>${paxtools.version}</version>
+				<groupId>org.biopax.validator</groupId>
+				<artifactId>obo-fetcher</artifactId>
+				<version>${validator.version}</version>
 				<exclusions>
+					<exclusion>
+						<groupId>log4j</groupId>
+						<artifactId>log4j</artifactId>
+					</exclusion>
 					<exclusion>
 						<groupId>commons-logging</groupId>
 						<artifactId>commons-logging</artifactId>
@@ -544,24 +495,38 @@
 						<artifactId>commons-logging</artifactId>
 					</exclusion>
 				</exclusions>
-				<classifier>jar-with-dependencies</classifier>
 			</dependency>
-			<!--<dependency>-->
-				<!--<groupId>org.apache.jena</groupId>-->
-				<!--<artifactId>apache-jena-libs</artifactId>-->
-				<!--<version>${apache-jena-libs.version}</version>-->
-				<!--<scope>runtime</scope>-->
-				<!--<exclusions>-->
-					<!--<exclusion>-->
-						<!--<groupId>log4j</groupId>-->
-						<!--<artifactId>log4j</artifactId>-->
-					<!--</exclusion>-->
-					<!--<exclusion>-->
-						<!--<groupId>org.slf4j</groupId>-->
-						<!--<artifactId>slf4j-log4j12</artifactId>-->
-					<!--</exclusion>-->
-				<!--</exclusions>-->
-			<!--</dependency>-->
+			<dependency>
+				<groupId>org.apache.jena</groupId>
+				<artifactId>apache-jena-libs</artifactId>
+				<type>pom</type>
+				<version>3.2.0</version>
+				<exclusions>
+					<exclusion>
+						<groupId>log4j</groupId>
+						<artifactId>log4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>com.hp.hpl.jena</groupId>
+				<artifactId>jena</artifactId>
+				<version>2.6.4</version>
+				<exclusions>
+					<exclusion>
+						<groupId>log4j</groupId>
+						<artifactId>log4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
@@ -641,26 +606,10 @@
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>biopax-validator</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>
 				<version>${commons-collections.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>commons-fileupload</groupId>
-				<artifactId>commons-fileupload</artifactId>
-				<version>${commons-fileupload.version}</version>
-			</dependency>	
 			<dependency>
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-core</artifactId>
@@ -691,17 +640,6 @@
 				<scope>runtime</scope>
 			</dependency>
 			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>obo-fetcher</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>${httpclient.version}</version>
@@ -713,27 +651,9 @@
 				</exclusions>
 			</dependency>
 			<dependency>
-				<groupId>commons-lang</groupId>
-				<artifactId>commons-lang</artifactId>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
 				<version>${commons-lang.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>taglibs</groupId>
-				<artifactId>standard</artifactId>
-				<version>${taglibs.standard.version}</version>
-				<scope>runtime</scope>
-			</dependency>
-			<dependency>
-				<groupId>javax.servlet</groupId>
-				<artifactId>javax.servlet-api</artifactId>
-				<version>${javax.servlet-api.version}</version>
-				<scope>provided</scope>
-			</dependency>
-			<dependency>
-				<groupId>javax.servlet</groupId>
-				<artifactId>jstl</artifactId>
-				<version>${jstl.version}</version>
-				<scope>runtime</scope>
 			</dependency>
 			<dependency>
 				<groupId>javax.validation</groupId>
@@ -789,18 +709,8 @@
 			</dependency>
 			<dependency>
 				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-core</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>ch.qos.logback</groupId>
 				<artifactId>logback-access</artifactId>
 				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.maxmind.geoip</groupId>
-				<artifactId>geoip-api</artifactId>
-				<version>${geoip-api.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.data</groupId>
@@ -813,7 +723,7 @@
 				<version>${aspectjrt.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>com.mysema.querydsl</groupId>
+				<groupId>com.querydsl</groupId>
 				<artifactId>querydsl-jpa</artifactId>
 				<version>${querydsl.version}</version>
 			</dependency>
@@ -859,7 +769,12 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<scope>test</scope>
-		</dependency>	
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<distributionManagement>
@@ -936,7 +851,6 @@
                         </executions>
                     </plugin>
                     <plugin>
-                    	<groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <executions>
                             <execution>

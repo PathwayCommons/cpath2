@@ -14,14 +14,6 @@ import org.springframework.data.repository.CrudRepository;
  * @author rodche
  */
 public interface MappingsRepository extends CrudRepository<Mapping, Long> {
-
-	/**
-	 * All Mappings 'To' the given type of ID.
-	 * 
-	 * @param dest
-	 * @return
-	 */
-	List<Mapping> findByDestIgnoreCase(String dest);
 	
 	/**
 	 * Mappings 'To' the given identifier.
@@ -31,8 +23,8 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findByDestIgnoreCaseAndDestId(String dest, String destId);
-	
-	
+
+
 	/**
 	 * Mappings 'From' the given id (any kind) 'To' the target type of ID.
 	 * 
@@ -41,8 +33,18 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findBySrcIdAndDestIgnoreCase(String srcId, String dest);
-	
-	
+
+
+	/**
+	 * Mappings 'From' any of given ids (any kind) 'To' the target type of ID.
+	 *
+	 * @param srcIds
+	 * @param dest
+     * @return
+     */
+	List<Mapping> findBySrcIdInAndDestIgnoreCase(List<String> srcIds, String dest);
+
+
 	/**
 	 * Mappings 'From' the given source db/id 'To' the target type of ID.
 	 * 
@@ -52,18 +54,5 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(String src, String srcId, String dest);
-		
-	
-	/**
-	 * This is to find a unique mapping entry,
-	 * e.g. to check if it exists before saving.
-	 * 
-	 * @param src
-	 * @param srcId
-	 * @param dest
-	 * @param destId
-	 * @return
-	 */
-	Mapping findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(String src, String srcId, String dest, String destId);
-	
+
 }

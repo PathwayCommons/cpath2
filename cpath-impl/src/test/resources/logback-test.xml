@@ -17,14 +17,15 @@
   </appender>
  
   <logger name="cpath" level="debug" />
-  <logger name="org.biopax" level="info" />
-  <logger name="org.springframework" level="info" />
-  <logger name="org.hibernate" level="info" />
-  <logger name="com.mchange" level="warn" />
-  <logger name="net.sf.ehcache" level="info" />
-  <logger name="org.obo" level="warn" />
+  <logger name="org.biopax" level="warn" />
+  <!--<logger name="org.springframework" level="warn" />-->
+  <logger name="org.hibernate" level="warn" />
+  <logger name="com.mchange" level="error" />
+  <logger name="net.sf.ehcache" level="warn" />
   <logger name="java.sql" level="warn" />
- 
+  <logger name="org.obo" level="warn" />
+  <logger name="org.biopax.ols" level="warn" />
+
   <root level="info">
     <appender-ref ref="console" />
   </root>
