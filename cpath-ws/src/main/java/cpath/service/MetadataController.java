@@ -8,7 +8,6 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import cpath.config.CPathSettings;
-import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 import cpath.service.args.binding.MetadataTypeEditor;
 
@@ -97,54 +96,6 @@ public class MetadataController extends BasicController {
 		if(m==null)
 			return null;
     	return m;
-    }
-
-    private List<ValInfo> validationInfo() {
-    	final List<ValInfo> list = new ArrayList<ValInfo>();
-    	
-		for(Metadata m : service.metadata().findAll()) {
-			if(m.isNotPathwayData())
-				continue;
-			
-			ValInfo vi = new ValInfo();
-			vi.setIdentifier(m.getIdentifier());
-			
-			for(Content pd : m.getContent())
-				vi.getFiles().put(pd.getFilename(), pd.toString());
-			
-			list.add(vi);
-		}
-    		
-		return list;
-	}
-    
-    
-    /**
-     * A POJO for a JSP view (validations).
-     */
-    public static final class ValInfo {
-    	String identifier;
-    	
-    	//filename to status/description map
-    	Map<String,String> files;
-    	
-    	public ValInfo() {
-			files = new TreeMap<String,String>();
-		}
-    	
-    	public String getIdentifier() {
-			return identifier;
-		}
-    	public void setIdentifier(String identifier) {
-			this.identifier = identifier;
-		}
-    	
-    	public Map<String, String> getFiles() {
-			return files;
-		}
-    	public void setFiles(Map<String, String> files) {
-			this.files = files;
-		}
     }
 
 }
