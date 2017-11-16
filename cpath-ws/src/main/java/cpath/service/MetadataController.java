@@ -11,6 +11,7 @@ import cpath.config.CPathSettings;
 import cpath.jpa.Metadata;
 import cpath.service.args.binding.MetadataTypeEditor;
 
+import org.biopax.paxtools.normalizer.MiriamLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.WebDataBinder;
@@ -96,6 +97,21 @@ public class MetadataController extends BasicController {
 		if(m==null)
 			return null;
     	return m;
+    }
+
+    @RequestMapping("/miriam/uri/{db}")
+    public String miriamUri(@PathVariable String db) {
+        return MiriamLink.getDataTypeURI(db);
+    }
+
+    @RequestMapping("/miriam/uri/{db}/{id}")
+    public String identifierOrgUri(@PathVariable String db, @PathVariable String id) {
+        return MiriamLink.getIdentifiersOrgURI(db,id);
+    }
+
+    @RequestMapping("/miriam/url/{db}/{id}")
+    public String[] miriamUrl(@PathVariable String db, @PathVariable String id) {
+        return MiriamLink.getLocations(db, id);
     }
 
 }
