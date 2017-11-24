@@ -13,3 +13,5 @@ index
 *.db
 *.swp
 cpath2.properties
+nohup.out
+
