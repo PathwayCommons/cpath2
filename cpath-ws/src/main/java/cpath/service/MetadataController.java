@@ -99,19 +99,27 @@ public class MetadataController extends BasicController {
     	return m;
     }
 
-    @RequestMapping("/miriam/uri/{db}")
-    public String miriamUri(@PathVariable String db) {
-        return MiriamLink.getDataTypeURI(db);
-    }
 
     @RequestMapping("/miriam/uri/{db}/{id}")
     public String identifierOrgUri(@PathVariable String db, @PathVariable String id) {
-        return MiriamLink.getIdentifiersOrgURI(db,id);
+        try {
+			return MiriamLink.getIdentifiersOrgURI(db, id);
+		}
+		catch (IllegalArgumentException e) {
+        	//not found
+		}
+		return null;
     }
 
     @RequestMapping("/miriam/url/{db}/{id}")
     public String[] miriamUrl(@PathVariable String db, @PathVariable String id) {
-        return MiriamLink.getLocations(db, id);
+    	try {
+			return MiriamLink.getLocations(db, id);
+		}
+		catch (IllegalArgumentException e) {
+    		//not found
+		}
+		return null;
     }
 
 }
