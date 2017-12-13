@@ -410,8 +410,6 @@ public class CPathServiceImpl implements CPathService {
 		
 		final Set<String> uris = new TreeSet<String>();
 
-		// id-mapping: get primary IDs where possible; 
-		// build a Lucene query string (will be eq. to xrefid:A OR xrefid:B OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers)
 		{
@@ -419,10 +417,12 @@ public class CPathServiceImpl implements CPathService {
 				// must be valid URI of some existing BioPAX object in our model
 				uris.add(identifier);
 			} else {
-				// replace ':' with "?" for this to match (due to use of Lucene StandardAnalyzer, not-analyzed 'xrefid' field and multi-field query parser)
-				identifier = identifier.replaceAll(":","?");
+				//Build a Lucene query (eq. to xrefid:"A" OR xrefid:"B" OR ...);
+				//let's sanitize the ID - escape symbols having special meaning for the Lucene query parser:
+				//'!','*','+','-','&','|','(',')','[',']','{','}','^','~','?',':','/','\','"','\s',
+				// - or simply use double quotes around each identifier:
 				if (!q.toString().contains(identifier)) {
-					q.append("xrefid:").append(identifier).append(" ");
+					q.append("xrefid:\"").append(identifier).append("\" ");
 				}
 			}
 		}
@@ -470,7 +470,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 			//BioPAX type at the beginning of the path -
 			Class<? extends BioPAXElement> type = BioPAXLevel.L3.getInterfaceForName(propertyPath.substring(0, idx));
-			String[] sourceUris =  findUrisByIds(uris, type); // apply id-mapping to get URIs if necessary
+			String[] sourceUris =  findUrisByIds(uris, type);
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			traverseAnalysis.execute(paxtoolsModel);
 			return res;
