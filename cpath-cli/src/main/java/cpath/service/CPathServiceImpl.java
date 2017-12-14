@@ -159,7 +159,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// extract/convert a sub-model
 		try {
-			final String[] mappedUris = findUrisByIds(uris);
+			final String[] mappedUris = findUrisByIds(uris); //TODO: use the second arg. (biopax types, e.g., Pathway)?
 
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
 			Model m = autoCompleteAndClone(elements, subPathways);
@@ -428,9 +428,9 @@ public class CPathServiceImpl implements CPathService {
 		}
 
 		if (q.length() > 0) {
-			//find existing URIs by ids using full-text search (collect all hits, because the query is very specific.
+			//find all entity URIs by IDs using a specific full-text search
 			final String query = q.toString().trim();
-			//find URIs of giving BioPAX classes
+			//default BioPAX classes
 			if(types.length==0)
 				types = new Class[]{PhysicalEntity.class, Gene.class};
 			for(Class type : types) {
@@ -463,13 +463,13 @@ public class CPathServiceImpl implements CPathService {
 		res.setPropertyPath(propertyPath);
 
 		try {
-			//both IDs and absolute URIs now work!
 			int idx = propertyPath.indexOf('/');
 			if(idx <= 0){
 				throw new IllegalBioPAXArgumentException("Path does not start from a BioPAX type name.");
 			}
 			//BioPAX type at the beginning of the path -
 			Class<? extends BioPAXElement> type = BioPAXLevel.L3.getInterfaceForName(propertyPath.substring(0, idx));
+			//Not only absolute URIs but also IDs (to search for biopax type objects) now work!
 			String[] sourceUris =  findUrisByIds(uris, type);
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			traverseAnalysis.execute(paxtoolsModel);
