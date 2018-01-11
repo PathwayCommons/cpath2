@@ -822,34 +822,15 @@ public final class Merger {
 				}
 			}
 
-			if (sourceIds.isEmpty()) {
-				//the message can help debug input data (provider must add some gene/chem xrefs then);
-				//usually, no IDs is no surprise for generic/complex entity case...
-				if (!isComplexOrGeneric(element)) {
-					log.info("idMappingByXrefs(), no " + xrefClassForMapping.getSimpleName() +
-							" IDs found in non-generic " + element.getModelInterface().getSimpleName() +
-							" (" + element.getUri() + "); organism: " + getOrganism(element));
-				}
-			}
-			else { // do id-mapping, for all ids at once, and return the result set:
-				result = service.map(sourceIds, toDb);
-			}
+			// do id-mapping, for all ids at once, and return the result set:
+			result = service.map(sourceIds, toDb);
 		}
 
 		return result;
 	}
 
-	private static boolean isComplexOrGeneric(XReferrable e) {
-		boolean ret = false;
-
-		if(e instanceof Complex)
-			ret = true;
-		else ret = (e instanceof Complex
-			|| (e instanceof PhysicalEntity && !((PhysicalEntity)e).getMemberPhysicalEntity().isEmpty())
-			|| (e instanceof EntityReference && !((EntityReference)e).getMemberEntityReference().isEmpty())
-		);
-
-		return ret;
+	private static boolean isComplexOrGeneric(BioPAXElement e) {
+		return e instanceof Complex || ModelUtils.isGeneric(e);
 	}
 
 	//Gets the organism taxID or name from a biopax object if it has property 'organism', and that's not null.
