@@ -689,6 +689,8 @@ public class CPathServiceImpl implements CPathService {
 	public void log(Collection<LogEvent> events, String ipAddr) {
 		for(LogEvent event : events) {
 			log.info(String.format("%s, %s, %s", ipAddr, event.getType(), event.getName()));
+			//TODO: POST events to Google Analytics - Measurememnt Protocol
+			// https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide#event
 		}
 	}
 
