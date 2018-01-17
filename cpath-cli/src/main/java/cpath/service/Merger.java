@@ -670,7 +670,7 @@ public final class Merger {
 		}
 
 		// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
-		if (!xrefsContainDb(bpe, "hgnc"))
+		if (!xrefsContainDb(bpe, "hgnc symbol"))
 			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
 	}
 
@@ -685,10 +685,12 @@ public final class Merger {
 		for (String ac : accessions) {
 			ProteinReference canonicalPR =
 					(ProteinReference) warehouseModel.getByID("http://identifiers.org/uniprot/" + ac);
-			if (canonicalPR != null)
+			if (canonicalPR != null) {
+				//TODO: shall we keep just one-two symbols (which) instead of using 'maxNumXrefsToAdd' param?
 				for (Xref x : canonicalPR.getXref())
 					if (x.getDb().equalsIgnoreCase("hgnc symbol"))
 						hgncSymbols.add(x.getId());
+			}
 		}
 		// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd)
