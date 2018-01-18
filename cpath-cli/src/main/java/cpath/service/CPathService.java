@@ -183,14 +183,11 @@ public interface CPathService {
 	Set<String> map(Collection<String> fromIds, String toDb);
 
 	/**
-	 * Saves and counts a series of data access events 
-	 * (usually associated with the same web request) 
-	 * to the log db.
-	 * 
-	 * @param events
-	 * @param ipAddr
+	 * Record web service and data access events.
+	 *
+	 * @param event
 	 */
-	void log(Collection<LogEvent> events, String ipAddr);
+	void track(Object event);
 
 	
     /**

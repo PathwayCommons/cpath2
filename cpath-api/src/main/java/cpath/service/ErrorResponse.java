@@ -22,12 +22,12 @@ public final class ErrorResponse extends ServiceResponse {
 	}
     
     public Integer getErrorCode() {
-        return status.getErrorCode();
+        return status.getCode();
     }
 
 
     public String getErrorMsg() {
-        return status.getErrorMsg();
+        return status.getMsg();
     }
 
 

@@ -25,6 +25,8 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -691,56 +693,46 @@ public class CPathServiceImpl implements CPathService {
 		return results;
 	}
 
-	//POST core PC events to Google Analytics - Measurememnt Protocol
+	/*
+	 * Track core service events via Google Analytics Measurement Protocol
+	 * TODO: test this
+	 */
 	@Override
-	public void log(final Collection<LogEvent> events, final String uip)
+	public void track(Object event)
 	{
+		Assert.isInstanceOf(JSONObject.class, event,"bug: 'event' is not a JSONObject");
+		JSONObject j = (JSONObject)event;
+		log.info(j.toJSONString());
+
 		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
 		request.add("v", "1");
 		request.add("tid", cpath.getGa());
-		request.add("uip", uip);
-		request.add("cg1", "core");
-		request.add("t", "event");
+		request.add("uip", String.valueOf(j.get("uip")));
+		request.add("cg1", "webservice/core");
+		request.add("ni", "1"); //all ws calls/results are non-interactive events
+		request.add("t", ("200".equals(j.get("status")))? "event" : "exception");
 		request.add("ds", cpath.getName() + " " + cpath.getVersion());
+		request.add("uid", String.valueOf(j.get("client")));
 
-		//TODO (loop): do not put directly in the map yet; re-use 'dp','t','uid' for all events...
-		for(LogEvent event : events) {
-			log.info(String.format("%s, %s, %s", uip, event.getType(), event.getName()));
-//			request.remove("t");
-			switch (event.getType()) {
-				case CLIENT:
-					request.add("uid", event.getName()); //normally one or none
-					break;
-				case COMMAND:
-					String cmd = event.getName();
-					if("neighborhood".equalsIgnoreCase(cmd) || "pathsbetween".equalsIgnoreCase(cmd)
-							|| "pathsfromto".equalsIgnoreCase(cmd) || "commostream".equalsIgnoreCase(cmd))
-						request.add("dt", cmd);
-					else
-						request.add("dp", cmd);
-					break;
-				case ERROR:
-//					request.remove("t");
-					request.add("t", "exception"); //TODO: shall I use 'event' hit type here as well?
-				case FORMAT:
-				case PROVIDER:
-					request.add("ec", event.getType().name().toLowerCase());
-					request.add("ea", "access");
-					request.add("el", event.getName());
-					break;
-				default:
-					break;
-			}
-		}
+		String cmd = String.valueOf(j.get("command"));
+		request.add("dt", cmd);
+		if ("neighborhood".equalsIgnoreCase(cmd) || "pathsbetween".equalsIgnoreCase(cmd)
+				|| "pathsfromto".equalsIgnoreCase(cmd) || "commostream".equalsIgnoreCase(cmd))
+			request.add("dp", "graph");
+		else
+			request.add("dp", cmd);
 
+		request.add("ec", "provider");
+		request.add("ea", String.valueOf(j.get("format")));
+		request.add("el", ((JSONArray)j.get("provider")).toJSONString());
+
+		//submit to GA
 		String res = "";
 		try {
 			res = rest.postForObject("https://www.google-analytics.com/collect", request, String.class);
 		} catch (RestClientException e) {
 			log.error("Cannot send events to GA; " + res + " - " + e);
 		}
-
-		//TODO: finis and test (using Google Analytics Measurememnt Protocol for PC log)
 	}
 
 	@Override

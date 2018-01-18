@@ -10,8 +10,6 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,6 +23,8 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,55 +44,40 @@ public abstract class BasicController {
     
     @Autowired
     public void setLogRepository(CPathService service) {
-    	Assert.notNull(service);  	
+    	Assert.notNull(service,"'service' was null");
 		this.service = service;
 	}
     
     /**
      * Http error response with more details and specific access log events.
-     * 
      * @param status
      * @param detailedMsg
-     * @param request
-     * @param response
-     * @param logEvents
-     */
-	protected final void errorResponse(Status status, String detailedMsg,
-			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> logEvents) {
-		
-		if(logEvents == null)
-			logEvents = new HashSet<LogEvent>();
-		
-		// to count the error (code), also add -
-		logEvents.add(LogEvent.error(status));
-		
-		//problems with logging subsystem should not fail the entire service
-		try {
-			service.log(logEvents, clientIpAddress(request));
-		} catch (Throwable ex) {
-			log.error("service.log failed" + ex);
-		}
-
-		errorResponse(status, status.getErrorMsg() + "; " + detailedMsg, response);
-	}
-
-	/**
-	 * Simple http error response.
-	 *
-	 * @param status
-	 * @param detailedMsg
+	 * @param request
 	 * @param response
+	 * @param event
 	 */
-	private final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
+	protected final void errorResponse(Status status, String detailedMsg,
+									   HttpServletRequest request, HttpServletResponse response,
+									   JSONObject event)
+	{
+		final String msg = status.getMsg() + "; " + detailedMsg;
+
+		if(event == null) event = new JSONObject();
+		
+		event.put("status", status.getCode());
+		if(log.isDebugEnabled()) event.put("error", msg);
+		event.put("uip", clientIpAddress(request));
+
+		//logging/tracking should not cause service fail
 		try {
-			log.warn(status.getErrorCode() + "; " + status.getErrorMsg() + "; " + detailedMsg);
-			response.sendError(status.getErrorCode(), status.getErrorMsg() + "; " + detailedMsg);
-		} catch (Exception e) {
-			log.error("errorResponse: response.sendError failed" + e);
+			service.track(event); //for service and data access analytics
+			response.sendError(status.getCode(), msg);
+		} catch (Throwable e) {
+			log.error("BUG: logging threw an exception" + e);
 		}
 	}
 
-	
+
 	/**
 	 * Builds an error message from  
 	 * the web parameters binding result
@@ -123,30 +108,27 @@ public abstract class BasicController {
 	/**
 	 * Writes the query results to the HTTP response
 	 * output stream.
-	 * 
-	 * @param serviceResp
+	 * @param result
 	 * @param request
 	 * @param response
-	 * @param logEvents
+	 * @param event
 	 */
-	protected final void stringResponse(ServiceResponse serviceResp, HttpServletRequest request,
-										HttpServletResponse response, Set<LogEvent> logEvents)
+	protected final void stringResponse(ServiceResponse result, HttpServletRequest request,
+										HttpServletResponse response, JSONObject event)
 	{
-		if(serviceResp instanceof ErrorResponse) {
-			errorResponse(((ErrorResponse) serviceResp).getStatus(), serviceResp.toString(), request, response,
-					logEvents);
+		if(result instanceof ErrorResponse) {
+			errorResponse(((ErrorResponse) result).getStatus(), result.toString(), request, response, event);
 		} 
-		else if (serviceResp instanceof DataResponse) {
-			final DataResponse dataResponse = (DataResponse) serviceResp;
+		else if (result instanceof DataResponse) {
+			final DataResponse dataResponse = (DataResponse) result;
 
-			// take care to count provider's data accessed events
-			Set<String> providers = dataResponse.getProviders();
-			if(!providers.isEmpty())
-				logEvents.addAll(LogEvent.providers(providers));
-			
+			JSONArray providers = new JSONArray();
+			providers.addAll(dataResponse.getProviders());
+			event.put("provider", providers);
+
 			//problems with logging subsystem should not fail the entire service
 			try {
-				service.log(logEvents, clientIpAddress(request));
+				service.track(event);
 			} catch (Throwable ex) {
 				log.error("service.log failed", ex);
 			}
@@ -170,13 +152,13 @@ public abstract class BasicController {
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR,
 						String.format("Failed to process the (temporary) result file %s; %s.",
-							resultFile, e.toString()), request, response, logEvents);
+							resultFile, e.toString()), request, response, event);
 				} finally {
 					try {Files.delete(resultFile);}catch(Exception e){log.error(e.toString());}
 				}
 			}
 			else if(dataResponse.isEmpty()) {
-				//return empty string or a trivial biopax rdf/xml (TODO: think of it...)
+				//return empty string or trivial valid RDF/XML
 				response.setContentType(dataResponse.getFormat().getMediaType());
 				try {
 					if(dataResponse.getFormat() == OutputFormat.BIOPAX) {
@@ -186,23 +168,23 @@ public abstract class BasicController {
 						new SimpleIOHandler().convertToOWL(emptyModel, bos);
 						response.getWriter().print(bos.toString("UTF-8"));
 					} else {
-						//SIF, GSEA formats do not have comments
+						//SIF, GSEA formats do not allow for comment lines
 //						response.getWriter().print(""); //nothing
 					}
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR, String.format("Failed writing 'no data found' response: %s.",
-							e.toString()), request, response, logEvents);
+							e.toString()), request, response, event);
 				}
 			}
 			else { //it's probably a bug -
 				errorResponse(INTERNAL_ERROR, String.format(
 					"BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
 					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()),
-						request, response, logEvents);
+						request, response, event);
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, logEvents);
+				result.getClass().getSimpleName(), result.toString()), request, response, event);
 		}
 	}
 

@@ -1,30 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
-
 package cpath.service;
 
 import java.util.ArrayList;
@@ -32,53 +5,55 @@ import java.util.ArrayList;
 
 public enum Status {
 
-    /**
-     * Status Code:  Bad Request, e.g., missing or illegal arguments.
-     */
-    BAD_REQUEST(400, "Bad Request (e.g., missing or illegal arguments)"),
+    OK(200, "OK"),
 
     /**
-     * Status Code:  Internal Server Error.
+     * Bad Request, e.g., missing or illegal arguments
+     */
+    BAD_REQUEST(400, "Bad Request (missing or illegal arguments)"),
+
+    /**
+     * Internal Server Error
      */
     INTERNAL_ERROR(500, "Internal Server Error"),
 
     /**
-     * Status Code:  Internal Server Error.
+     * Internal Server Error
      */
-    MAINTENANCE(503, "Server is temporarily unavailable");
+    MAINTENANCE(503, "Server Is Temporarily Unavailable (Maintenance)");
 
-    private final Integer errorCode;
-    private final String errorMsg;
+    private final Integer code;
+    private final String msg;
     
 
 	/**
-	 * Private Constructor.
+	 * Private Constructor
 	 * 
-	 * @param errorCode
+	 * @param code
 	 * @param msg
 	 */
-    private Status(int errorCode, String msg) {
-		this.errorCode = Integer.valueOf(errorCode);
-		this.errorMsg = msg;
+    Status(int code, String msg) {
+		this.code = Integer.valueOf(code);
+		this.msg = msg;
     }    
 	
 	
     /**
-     * Gets Error Code.
+     * Gets status code
      *
      * @return Error Code.
      */
-    public int getErrorCode() {
-        return errorCode.intValue();
+    public int getCode() {
+        return code.intValue();
     }
 
     /**
-     * Gets Error Message.
+     * Gets status message
      *
-     * @return Error Message.
+     * @return message.
      */
-    public String getErrorMsg() {
-        return errorMsg;
+    public String getMsg() {
+        return msg;
     }
 
     /**
@@ -93,14 +68,5 @@ public enum Status {
         }
         return list;
     }
-
-    
-	public static Status fromCode(int code) {
-		for(Status type : Status.values()) {
-			if(type.getErrorCode() == code)
-				return type;
-		}
-		return null;
-	} 
 
 }

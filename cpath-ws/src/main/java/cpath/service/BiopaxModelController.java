@@ -15,6 +15,8 @@ import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +38,7 @@ public class BiopaxModelController extends BasicController {
 
 	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
     private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
-	
-    
+
     /**
 	 * This configures the web request parameters binding, i.e., 
 	 * conversion to the corresponding java types; for example,
@@ -63,26 +64,25 @@ public class BiopaxModelController extends BasicController {
     public void elementById(@Valid Get args, BindingResult bindingResult,
 							HttpServletRequest request, HttpServletResponse response)
     {
-		//log events: command, format
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.command(Cmd.GET));
+		JSONObject event = new JSONObject();
+		event.put("command","get");
+		OutputFormat format = args.getFormat();
+		event.put("format", format.toString().toLowerCase());
 		if(args.getUser()!=null && !args.getUser().isEmpty())
-			events.add(LogEvent.client(args.getUser()));
-    	
+			event.put("client", args.getUser());
+
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
-    				errorFromBindingResult(bindingResult), request, response, events);
+    				errorFromBindingResult(bindingResult), request, response, event);
     	} else {
-			OutputFormat format = args.getFormat();
 			String[] uris = args.getUri();
-
 			Map<String,String> options = new HashMap<String,String>();
 			if(args.getPattern()!=null && args.getPattern().length>0)
 				options.put("pattern", StringUtils.join(args.getPattern(),","));
 
 			ServiceResponse result = service.fetch(format, options, args.getSubpw(), uris);
-			events.add(LogEvent.format(format));
-			stringResponse(result, request, response, events);
+
+			stringResponse(result, request, response, event);
 		}
     }  
 
@@ -95,24 +95,28 @@ public class BiopaxModelController extends BasicController {
 			@RequestParam(required=false) String user,
 			HttpServletRequest request, HttpServletResponse response)
     {
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.command(Cmd.TOP_PATHWAYS));
-		if(user!=null && !user.isEmpty())
-			events.add(LogEvent.client(user));
+		JSONObject event = new JSONObject();
+		event.put("command","top_pathways");
+		event.put("format","xml/json");
+		if(user!=null && user.isEmpty())
+			event.put("client", user);
 
 		ServiceResponse results = service.topPathways(q, organism, datasource);
 		
 		if(results instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse) results).getStatus(), 
-					((ErrorResponse) results).toString(), request, response, events);
+					((ErrorResponse) results).toString(), request, response, event);
 			return null;
 		} else {
-			//log
 			SearchResponse hits = (SearchResponse) results;
+			JSONArray providers = new JSONArray();
+			providers.addAll(hits.getProviders());
+			event.put("provider", providers);
+
+	    	service.track(null); //log, track
+
 			hits.setVersion(CPathSettings.getInstance().getVersion());
-    		events.addAll(LogEvent.providers(hits.getProviders()));
-	    	service.log(events, clientIpAddress(request));
-			return hits;
+	    	return hits;
 		}
     }
     
@@ -121,22 +125,21 @@ public class BiopaxModelController extends BasicController {
     public TraverseResponse traverse(@Valid Traverse args,
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.command(Cmd.TRAVERSE));
+		JSONObject event = new JSONObject();
+		event.put("command","traverse");
+		event.put("format","xml/json");
 		if(args.getUser()!=null && !args.getUser().isEmpty())
-			events.add(LogEvent.client(args.getUser()));
-    	
+			event.put("client", args.getUser());
+
     	if(bindingResult.hasErrors()) {
-    		errorResponse(Status.BAD_REQUEST, 
-    				errorFromBindingResult(bindingResult), request, response, events);
+    		errorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult), request, response, event);
     	} else {
     		ServiceResponse sr = service.traverse(args.getPath(), args.getUri());
     		if(sr instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) sr).getStatus(), sr.toString(), request, response, events);
+				errorResponse(((ErrorResponse) sr).getStatus(), sr.toString(), request, response, event);
 			} else {
-    			//log to db and return the xml object
-    			service.log(events, clientIpAddress(request));
-				//TODO: (how) log provider names with each traverse query result?..
+    			service.track(event);
+				//TODO: (how) log providers with each traverse query result?..
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
 				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
     			return traverseResponse;
@@ -150,23 +153,19 @@ public class BiopaxModelController extends BasicController {
 	public void graphQuery(@Valid Graph args, BindingResult bindingResult,
 						   HttpServletRequest request, HttpServletResponse response)
     {
-
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.command(Cmd.GRAPH));
+		JSONObject event = new JSONObject();
+		event.put("command", "graph/" + args.getKind().toString().toLowerCase());
+		event.put("format", args.getFormat().toString().toLowerCase());
 		if(args.getUser()!=null && !args.getUser().isEmpty())
-			events.add(LogEvent.client(args.getUser()));
-		
+			event.put("client", args.getUser());
+
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
 			errorResponse(Status.BAD_REQUEST, 
-					errorFromBindingResult(bindingResult), request, response, events);
+					errorFromBindingResult(bindingResult), request, response, event);
 			return;
 		} 
-		
-    	// on parameter binding success, add a few more events to log/count -
-		events.add(LogEvent.kind(args.getKind()));
-    	events.add(LogEvent.format(args.getFormat()));
-		
+
 		ServiceResponse result;
 
 		Map<String,String> formatOptions = new HashMap<String,String>();
@@ -194,29 +193,27 @@ public class BiopaxModelController extends BasicController {
 			// impossible (should have failed earlier)
 			errorResponse(Status.INTERNAL_ERROR, 
 				getClass().getCanonicalName() + " does not support " 
-					+ args.getKind(), request, response, events);
+					+ args.getKind(), request, response, event);
 			return;
 		}
 		
-		stringResponse(result, request, response, events);
+		stringResponse(result, request, response, event);
     }
 	
 	
     @RequestMapping(value="/search")
     public SearchResponse search(@Valid Search args, BindingResult bindingResult,
-											   HttpServletRequest request, HttpServletResponse response)
+								 HttpServletRequest request, HttpServletResponse response)
     {		
-		// Prepare service assess events
-		// (won't use 'datasource' filter values for the access log, PROVIDER type events)
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.command(Cmd.SEARCH));
+		// Track service usage (using result data instead of 'datasource' filter values)
+		JSONObject event = new JSONObject();
+    	event.put("command","search");
+		event.put("format","xml/json");
 		if(args.getUser()!=null && !args.getUser().isEmpty())
-			events.add(LogEvent.client(args.getUser()));
+			event.put("client", args.getUser());
     	   	
     	if(bindingResult.hasErrors()) {
-			errorResponse(Status.BAD_REQUEST, 
-				errorFromBindingResult(bindingResult), 
-					request, response, events);
+			errorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult), request, response, event);
 			return null;
 		} else {
 			// get results from the service
@@ -224,20 +221,17 @@ public class BiopaxModelController extends BasicController {
 					args.getDatasource(), args.getOrganism());
 
 			if(results instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) results).getStatus(), results.toString(), request, response, events);
+				errorResponse(((ErrorResponse) results).getStatus(), results.toString(), request, response, event);
 				return null;
 			} else {
-				if(!results.isEmpty()) {
-					//count for all unique provider names from the ServiceResponse
-					events.addAll(LogEvent.providers(
-							((SearchResponse) results).getProviders()
-					));
-				}
-				//save to the log db
-		    	service.log(events, clientIpAddress(request));
+				JSONArray providers = new JSONArray();
+				providers.addAll(((SearchResponse)results).getProviders());
+				event.put("provider", providers);
+
+		    	service.track(event); //track service usage and data sources in the results
+
 				SearchResponse searchResponse = (SearchResponse) results;
 				searchResponse.setVersion(CPathSettings.getInstance().getVersion());
-
 				return searchResponse;
 			}
 		}

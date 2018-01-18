@@ -6,20 +6,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.jpa.Content;
-import cpath.service.LogEvent;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
-import cpath.service.Cmd;
-import cpath.service.GraphType;
-import cpath.service.OutputFormat;
-import cpath.service.Status;
 import static org.junit.Assert.*;
 
 /**
@@ -34,28 +28,6 @@ public class RepositoriesAndServiceTest {
 	
 	@Autowired
 	private CPathService service;
-
-
-	@DirtiesContext
-	@Test
-	public final void testTimeline() {	
-		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		// add some logs (for two days, several categories):
-		Set<LogEvent> events = new HashSet<LogEvent>(
-			Arrays.asList(
-					LogEvent.format(OutputFormat.BIOPAX),
-					LogEvent.provider("Reactome"),
-					LogEvent.provider("HumanCyc"),
-					LogEvent.kind(GraphType.NEIGHBORHOOD),
-					LogEvent.error(Status.INTERNAL_ERROR),
-					LogEvent.provider("Reactome"),
-					LogEvent.provider("HumanCyc"),
-					LogEvent.command(Cmd.SEARCH)
-			)
-		);
-
-		service.log(events, ipAddr);
-	}
 
 	@Test
 	@DirtiesContext
