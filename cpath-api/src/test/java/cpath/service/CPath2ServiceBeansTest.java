@@ -9,11 +9,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
 import cpath.config.CPathSettings;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
 import org.junit.Test;
 
-import cpath.service.Status;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
@@ -24,7 +21,6 @@ public class CPath2ServiceBeansTest {
 	public final void testGetAllStatusCodes() {
 		List<String> list = Status.getAllStatusCodes();
 		assertEquals(4, list.size());
-
 //		//a quick unrelate test
 		assertEquals("PathwayCommonsDemo0.", CPathSettings.getInstance().exportArchivePrefix());
 	}
@@ -43,7 +39,6 @@ public class CPath2ServiceBeansTest {
 		ma.marshal(sr, writer);
 		String out = writer.toString();
 		assertTrue(out.length()>0);
-//		System.out.println(out);
 		assertTrue(out.contains("searchResponse"));
 		
 		TraverseResponse tr = new TraverseResponse();
@@ -52,7 +47,6 @@ public class CPath2ServiceBeansTest {
 		ma.marshal(tr, writer);
 		out = writer.toString();
 		assertTrue(out.length()>0);
-//		System.out.println(out);
 		assertTrue(out.contains("traverseResponse"));
 	}
 }
