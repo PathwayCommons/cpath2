@@ -36,6 +36,10 @@ import org.springframework.util.Assert;
 import cpath.config.CPathSettings;
 import cpath.jpa.*;
 import cpath.service.jaxb.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import static cpath.service.Status.*;
 
@@ -58,6 +62,8 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Autowired
     MappingsRepository mappingsRepository;
+
+	private final RestTemplate rest;
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -79,6 +85,7 @@ public class CPathServiceImpl implements CPathService {
 	public CPathServiceImpl() {
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
+		this.rest = new RestTemplate();
 	}
 
 
@@ -665,7 +672,7 @@ public class CPathServiceImpl implements CPathService {
 				//it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
 				fromId = fromId.replaceFirst("-\\d+$", "");
 			} else if (toDb.equalsIgnoreCase("UNIPROT") && refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
-				//remove the version number, such as ".1"
+				//remove the versiovaluesn number, such as ".1"
 				fromId = fromId.replaceFirst("\\.\\d+$", "");
 			}
 
@@ -684,14 +691,56 @@ public class CPathServiceImpl implements CPathService {
 		return results;
 	}
 
-
+	//POST core PC events to Google Analytics - Measurememnt Protocol
 	@Override
-	public void log(Collection<LogEvent> events, String ipAddr) {
+	public void log(final Collection<LogEvent> events, final String uip)
+	{
+		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
+		request.add("v", "1");
+		request.add("tid", cpath.getGa());
+		request.add("uip", uip);
+		request.add("cg1", "core");
+		request.add("t", "event");
+		request.add("ds", cpath.getName() + " " + cpath.getVersion());
+
+		//TODO (loop): do not put directly in the map yet; re-use 'dp','t','uid' for all events...
 		for(LogEvent event : events) {
-			log.info(String.format("%s, %s, %s", ipAddr, event.getType(), event.getName()));
-			//TODO: POST events to Google Analytics - Measurememnt Protocol
-			// https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide#event
+			log.info(String.format("%s, %s, %s", uip, event.getType(), event.getName()));
+//			request.remove("t");
+			switch (event.getType()) {
+				case CLIENT:
+					request.add("uid", event.getName()); //normally one or none
+					break;
+				case COMMAND:
+					String cmd = event.getName();
+					if("neighborhood".equalsIgnoreCase(cmd) || "pathsbetween".equalsIgnoreCase(cmd)
+							|| "pathsfromto".equalsIgnoreCase(cmd) || "commostream".equalsIgnoreCase(cmd))
+						request.add("dt", cmd);
+					else
+						request.add("dp", cmd);
+					break;
+				case ERROR:
+//					request.remove("t");
+					request.add("t", "exception"); //TODO: shall I use 'event' hit type here as well?
+				case FORMAT:
+				case PROVIDER:
+					request.add("ec", event.getType().name().toLowerCase());
+					request.add("ea", "access");
+					request.add("el", event.getName());
+					break;
+				default:
+					break;
+			}
 		}
+
+		String res = "";
+		try {
+			res = rest.postForObject("https://www.google-analytics.com/collect", request, String.class);
+		} catch (RestClientException e) {
+			log.error("Cannot send events to GA; " + res + " - " + e);
+		}
+
+		//TODO: finis and test (using Google Analytics Measurememnt Protocol for PC log)
 	}
 
 	@Override

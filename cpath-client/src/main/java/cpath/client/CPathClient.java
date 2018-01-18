@@ -20,7 +20,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
-import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -83,8 +82,6 @@ public class CPathClient
 			client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
 		else
 			client.endPointURL = url;
-    	
-//    	client.updateActualEndPointURL();
 
     	return client;
     }
@@ -232,25 +229,8 @@ public class CPathClient
      */
     public void setEndPointUrlAndRedirect(final String url) {
         this.endPointURL = url;
-//        updateActualEndPointURL();
     }
 
-//	// this (using actualEndPointURL) is required for POST queries to work through proxy/redirects on the way...
-//	private void updateActualEndPointURL() {
-//		actualEndPointURL = endPointURL; //initially, it's the same
-//		// query for the location using previous/initial one until both are the same:
-//		int i=0;
-//		for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ )
-//		{
-//			loc = restTemplate.postForLocation(loc, null);
-//
-//			if(loc != null)
-//				actualEndPointURL = loc.toString();
-//
-//			LOGGER.info("Location: " + loc);
-//		}
-//	}
-	
 	/**
 	 * Creates a new full-text search query object
 	 * (e.g., call as cli.createSearchQuery().queryString("BRCA*")
