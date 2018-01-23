@@ -1,7 +1,10 @@
 import java.io.IOException;
 import java.util.*;
 
+import cpath.config.CPathSettings;
 import org.biopax.validator.api.beans.Validation;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,28 @@ public class RepositoriesAndServiceTest {
 	
 	@Autowired
 	private CPathService service;
+
+
+	@DirtiesContext
+	@Test
+	public final void testLogGa() {
+
+		CPathSettings cpath = CPathSettings.getInstance();
+		cpath.setAdminEnabled(true);
+		cpath.setGa("UA-43341809-3");
+
+		JSONObject event = new JSONObject();
+		event.put("status","200"); //ok
+		event.put("uip", "66.249.74.168");//some IP (perhaps it's Google's)
+		event.put("client", "cpath2-junit-test");
+		JSONArray a = new JSONArray();
+		a.addAll(Arrays.asList("Reactome","HumanCyc"));
+		event.put("provider",a);
+		event.put("command","search");
+		service.track(event);
+
+		cpath.setAdminEnabled(false);
+	}
 
 	@Test
 	@DirtiesContext

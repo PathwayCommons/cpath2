@@ -1,6 +1,7 @@
 package cpath.service;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -32,16 +33,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.*;
 import cpath.service.jaxb.*;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriTemplate;
 
 import static cpath.service.Status.*;
 
@@ -695,43 +697,42 @@ public class CPathServiceImpl implements CPathService {
 
 	/*
 	 * Track core service events via Google Analytics Measurement Protocol
-	 * TODO: test this
+	 * TODO: "works", but I don't see any results at analytics.goggle.com...
 	 */
 	@Override
 	public void track(Object event)
 	{
+		final URI GA_COLLECT_URI = URI.create("https://www.google-analytics.com/collect");
+
 		Assert.isInstanceOf(JSONObject.class, event,"bug: 'event' is not a JSONObject");
 		JSONObject j = (JSONObject)event;
 		log.info(j.toJSONString());
 
-		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
-		request.add("v", "1");
-		request.add("tid", cpath.getGa());
-		request.add("uip", String.valueOf(j.get("uip")));
-		request.add("cg1", "webservice/core");
-		request.add("ni", "1"); //all ws calls/results are non-interactive events
-		request.add("t", ("200".equals(j.get("status")))? "event" : "exception");
-		request.add("ds", cpath.getName() + " " + cpath.getVersion());
-		request.add("uid", String.valueOf(j.get("client")));
-
+		final String hitType = ("200".equals(j.get("status")))? "event" : "exception";
 		String cmd = String.valueOf(j.get("command"));
-		request.add("dt", cmd);
-		if ("neighborhood".equalsIgnoreCase(cmd) || "pathsbetween".equalsIgnoreCase(cmd)
-				|| "pathsfromto".equalsIgnoreCase(cmd) || "commostream".equalsIgnoreCase(cmd))
-			request.add("dp", "graph");
-		else
-			request.add("dp", cmd);
+		String format = (j.get("format") != null) ? String.valueOf(j.get("format")) : cmd;
+		JSONArray ds = ((JSONArray)j.get("provider"));
+		String providers = null;
+		if(ds != null && !ds.isEmpty()) {
+			providers = ds.toJSONString();
+		}
 
-		request.add("ec", "provider");
-		request.add("ea", String.valueOf(j.get("format")));
-		request.add("el", ((JSONArray)j.get("provider")).toJSONString());
+		// payload_data template
+		final UriTemplate payloadTemplate = new UriTemplate("?v=1&tid=" + cpath.getGa() +
+				"&cg1=webservice&ni=1&ds=server&t={hitType}&uip={clientIp}&uid={clientName}&dp={path}" +
+				"&dt={title}&ec=provider&ea={format}&el={providers}");
 
-		//submit to GA
-		String res = "";
+		ResponseEntity<String> res = null;
 		try {
-			res = rest.postForObject("https://www.google-analytics.com/collect", request, String.class);
+			// build the payload data (like a URL query string - URI-encoded - body)
+			String payloadData = payloadTemplate.expand(hitType, String.valueOf(j.get("uip")),
+					String.valueOf(j.get("client")), cmd, cmd, format, providers).getQuery();
+			RequestEntity<String> requestEntity = RequestEntity.post(GA_COLLECT_URI).body(payloadData);
+			// send the request and get response
+			res	= rest.exchange(requestEntity, String.class);
+			log.debug("GA: " + res.getStatusCode());
 		} catch (RestClientException e) {
-			log.error("Cannot send events to GA; " + res + " - " + e);
+			log.error("Cannot send to GA; " + res + " - " + e);
 		}
 	}
 

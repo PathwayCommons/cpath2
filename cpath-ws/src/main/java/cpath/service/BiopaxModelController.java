@@ -97,7 +97,7 @@ public class BiopaxModelController extends BasicController {
     {
 		JSONObject event = new JSONObject();
 		event.put("command","top_pathways");
-		event.put("format","xml/json");
+		event.put("format","search"); //the same xml or json output format as for /search
 		if(user!=null && user.isEmpty())
 			event.put("client", user);
 
@@ -113,7 +113,7 @@ public class BiopaxModelController extends BasicController {
 			providers.addAll(hits.getProviders());
 			event.put("provider", providers);
 
-	    	service.track(null); //log, track
+	    	service.track(event); //log, track
 
 			hits.setVersion(CPathSettings.getInstance().getVersion());
 	    	return hits;
@@ -127,7 +127,7 @@ public class BiopaxModelController extends BasicController {
     {
 		JSONObject event = new JSONObject();
 		event.put("command","traverse");
-		event.put("format","xml/json");
+		event.put("format","traverse"); //traverse schema - xml or json
 		if(args.getUser()!=null && !args.getUser().isEmpty())
 			event.put("client", args.getUser());
 
@@ -208,7 +208,7 @@ public class BiopaxModelController extends BasicController {
 		// Track service usage (using result data instead of 'datasource' filter values)
 		JSONObject event = new JSONObject();
     	event.put("command","search");
-		event.put("format","xml/json");
+		event.put("format","search");
 		if(args.getUser()!=null && !args.getUser().isEmpty())
 			event.put("client", args.getUser());
     	   	

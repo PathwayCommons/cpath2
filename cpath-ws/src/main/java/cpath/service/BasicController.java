@@ -63,7 +63,7 @@ public abstract class BasicController {
 		final String msg = status.getMsg() + "; " + detailedMsg;
 
 		if(event == null) event = new JSONObject();
-		
+
 		event.put("status", status.getCode());
 		if(log.isDebugEnabled()) event.put("error", msg);
 		event.put("uip", clientIpAddress(request));
@@ -122,6 +122,7 @@ public abstract class BasicController {
 		else if (result instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) result;
 
+			event.put("uip", clientIpAddress(request));
 			JSONArray providers = new JSONArray();
 			providers.addAll(dataResponse.getProviders());
 			event.put("provider", providers);
