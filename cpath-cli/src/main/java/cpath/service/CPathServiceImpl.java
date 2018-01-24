@@ -2,6 +2,7 @@ package cpath.service;
 
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -10,6 +11,11 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -33,17 +39,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.*;
 import cpath.service.jaxb.*;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriTemplate;
 
 import static cpath.service.Status.*;
 
@@ -66,8 +67,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Autowired
     MappingsRepository mappingsRepository;
-
-	private final RestTemplate rest;
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -89,7 +88,6 @@ public class CPathServiceImpl implements CPathService {
 	public CPathServiceImpl() {
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
-		this.rest = new RestTemplate();
 	}
 
 
@@ -702,8 +700,6 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public void track(Object event)
 	{
-		final URI GA_COLLECT_URI = URI.create("https://www.google-analytics.com/collect");
-
 		Assert.isInstanceOf(JSONObject.class, event,"bug: 'event' is not a JSONObject");
 		JSONObject j = (JSONObject)event;
 		log.info(j.toJSONString());
@@ -711,29 +707,48 @@ public class CPathServiceImpl implements CPathService {
 		final String hitType = ("200".equals(j.get("status")))? "event" : "exception";
 		String cmd = String.valueOf(j.get("command"));
 		String format = (j.get("format") != null) ? String.valueOf(j.get("format")) : cmd;
-		JSONArray ds = ((JSONArray)j.get("provider"));
+		JSONArray a = ((JSONArray)j.get("provider"));
 		String providers = null;
-		if(ds != null && !ds.isEmpty()) {
-			providers = ds.toJSONString();
+		if(a != null && !a.isEmpty()) {
+			providers = a.toJSONString();
 		}
+		String uip = String.valueOf(j.get("uip"));
+		String uid  = String.valueOf(j.get("client"));
 
-		// payload_data template
-		final UriTemplate payloadTemplate = new UriTemplate("?v=1&tid=" + cpath.getGa() +
-				"&cg1=webservice&ni=1&ds=server&t={hitType}&uip={clientIp}&uid={clientName}&dp={path}" +
-				"&dt={title}&ec=provider&ea={format}&el={providers}");
+		HttpClient client = HttpClientBuilder.create().build();
+		URIBuilder builder = new URIBuilder();
+		builder
+			.setScheme("https")
+			.setHost("www.google-analytics.com")
+			.setPath("/collect")
+			.addParameter("v", "1") // API Version.
+			.addParameter("tid", cpath.getGa()) // Tracking ID
+			.addParameter("ni","1")
+//			.addParameter("ds","server")
+//			.addParameter("cg1","webservice/core")
+//			.addParameter("cg2",cpath.getName() + " " + cpath.getVersion())
+			.addParameter("t", hitType)
+			.addParameter("uip", uip)
+//			.addParameter("uid", uid)
+			.addParameter("cid", uid)
+//			.addParameter("dp", cmd)
+//			.addParameter("dt", cmd)
+			.addParameter("ec", cmd)
+			.addParameter("ea", format)
+			.addParameter("el", providers)
+		;
 
-		ResponseEntity<String> res = null;
 		try {
-			// build the payload data (like a URL query string - URI-encoded - body)
-			String payloadData = payloadTemplate.expand(hitType, String.valueOf(j.get("uip")),
-					String.valueOf(j.get("client")), cmd, cmd, format, providers).getQuery();
-			RequestEntity<String> requestEntity = RequestEntity.post(GA_COLLECT_URI).body(payloadData);
-			// send the request and get response
-			res	= rest.exchange(requestEntity, String.class);
-			log.debug("GA: " + res.getStatusCode());
-		} catch (RestClientException e) {
-			log.error("Cannot send to GA; " + res + " - " + e);
+			URI uri = builder.build();
+			HttpPost request = new HttpPost(uri);
+			HttpResponse res = client.execute(request);
+			log.debug("GA:" + res.getStatusLine().getStatusCode());
+		} catch (URISyntaxException e) {
+			throw new RuntimeException("Problem building GA tracking URI", e);
+		} catch (IOException e) {
+			log.error("Problem sending GA tracking request",e);
 		}
+
 	}
 
 	@Override
