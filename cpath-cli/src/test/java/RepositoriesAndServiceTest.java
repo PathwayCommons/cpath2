@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import org.apache.commons.lang3.StringUtils;
 import org.biopax.validator.api.beans.Validation;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,12 +41,12 @@ public class RepositoriesAndServiceTest {
 		cpath.setGa("UA-43341809-3");
 		JSONObject event = new JSONObject();
 		event.put("status","200"); //ok
-		event.put("uip", "172.20.10.3");//some IP (perhaps it's Google's)
+		event.put("uip", "172.20.10.3");
 		event.put("client", "junit-test");
 		JSONArray a = new JSONArray();
-		a.addAll(Arrays.asList("Reactome","HumanCyc"));
+		a.addAll(Arrays.asList("reactome","humancyc"));
 		event.put("provider", a);
-		event.put("command", "search");
+		event.put("command", "test");
 		service.track(event);
 		cpath.setAdminEnabled(false);
 	}

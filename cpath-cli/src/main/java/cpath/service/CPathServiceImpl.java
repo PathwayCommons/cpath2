@@ -695,9 +695,7 @@ public class CPathServiceImpl implements CPathService {
 
 	/*
 	 * Track core service events via Google Analytics Measurement Protocol
-	 * TODO: "works", but I don't see any results at analytics.goggle.com...
 	 */
-	@Override
 	public void track(Object event)
 	{
 		Assert.isInstanceOf(JSONObject.class, event,"bug: 'event' is not a JSONObject");
@@ -710,29 +708,32 @@ public class CPathServiceImpl implements CPathService {
 		JSONArray a = ((JSONArray)j.get("provider"));
 		String providers = null;
 		if(a != null && !a.isEmpty()) {
-			providers = a.toJSONString();
+			providers = a.toJSONString().toLowerCase();
 		}
 		String uip = String.valueOf(j.get("uip"));
 		String uid  = String.valueOf(j.get("client"));
 
-		HttpClient client = HttpClientBuilder.create().build();
+		HttpClient client = HttpClientBuilder.create()
+			.setUserAgent("cpath2-httpclient").build();
+		//- hits ain't actually stored in the GA unless some UA is set (no all names work though)!
+
 		URIBuilder builder = new URIBuilder();
-		builder
+		builder //TODO: optimize use of parameters: dp, ec, ea, el, an, cg?,.. (e.g., to store query genes, etc.)
 			.setScheme("https")
 			.setHost("www.google-analytics.com")
-			.setPath("/collect")
+			.setPath("/collect") //use "/debug/collect" for debugging
 			.addParameter("v", "1") // API Version.
 			.addParameter("tid", cpath.getGa()) // Tracking ID
 			.addParameter("ni","1")
-//			.addParameter("ds","server")
-//			.addParameter("cg1","webservice/core")
-//			.addParameter("cg2",cpath.getName() + " " + cpath.getVersion())
+			.addParameter("ds","server")
+			.addParameter("cg1","webservice/core")
+			.addParameter("cg2",cpath.getName() + " " + cpath.getVersion())
 			.addParameter("t", hitType)
 			.addParameter("uip", uip)
-//			.addParameter("uid", uid)
+			.addParameter("uid", uid) //can use "an" with uid (- pc2 client app/lib name)
 			.addParameter("cid", uid)
-//			.addParameter("dp", cmd)
-//			.addParameter("dt", cmd)
+			.addParameter("dp", cmd)
+			.addParameter("dt", cmd)
 			.addParameter("ec", cmd)
 			.addParameter("ea", format)
 			.addParameter("el", providers)
@@ -741,8 +742,10 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			URI uri = builder.build();
 			HttpPost request = new HttpPost(uri);
-			HttpResponse res = client.execute(request);
-			log.debug("GA:" + res.getStatusLine().getStatusCode());
+			HttpResponse res = client.execute(request);;
+//			OutputStream os = new ByteArrayOutputStream();
+//			res.getEntity().writeTo(os);
+			log.debug(String.format("GA: %s", res.getStatusLine().getStatusCode()));// + "; " +  os.toString()));
 		} catch (URISyntaxException e) {
 			throw new RuntimeException("Problem building GA tracking URI", e);
 		} catch (IOException e) {
