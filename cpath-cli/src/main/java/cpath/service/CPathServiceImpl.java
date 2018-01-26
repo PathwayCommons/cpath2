@@ -32,8 +32,6 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -694,64 +692,62 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	/*
-	 * Track core service events via Google Analytics Measurement Protocol
+	 * Track core service events using Google Analytics Measurement Protocol
+	 * TODO: design/optimize use of: dp, ec, ea, el, an, cg?, exd, etc. parameters for data access analytics.
 	 */
-	public void track(Object event)
+	public void track(String ip, String category, String label, String action, String client, String ua)
 	{
-		Assert.isInstanceOf(JSONObject.class, event,"bug: 'event' is not a JSONObject");
-		JSONObject j = (JSONObject)event;
-		log.info(j.toJSONString());
+		log.info(String.format("%s, %s, %s", ip, category, label));
 
-		final String hitType = ("200".equals(j.get("status")))? "event" : "exception";
-		String cmd = String.valueOf(j.get("command"));
-		String format = (j.get("format") != null) ? String.valueOf(j.get("format")) : cmd;
-		JSONArray a = ((JSONArray)j.get("provider"));
-		String providers = null;
-		if(a != null && !a.isEmpty()) {
-			providers = a.toJSONString().toLowerCase();
-		}
-		String uip = String.valueOf(j.get("uip"));
-		String uid  = String.valueOf(j.get("client"));
+		final String hitType = ("error".equalsIgnoreCase(category))? "exception" : "event";
 
-		HttpClient client = HttpClientBuilder.create()
-			.setUserAgent("cpath2-httpclient").build();
-		//- hits ain't actually stored in the GA unless some UA is set (no all names work though)!
+		HttpClient httpClient = HttpClientBuilder.create().setUserAgent(ua).build();
+		//- hits ain't actually stored in the GA unless some UA is defined (whatever)
 
 		URIBuilder builder = new URIBuilder();
-		builder //TODO: optimize use of parameters: dp, ec, ea, el, an, cg?,.. (e.g., to store query genes, etc.)
+		builder
 			.setScheme("https")
-			.setHost("www.google-analytics.com")
-			.setPath("/collect") //use "/debug/collect" for debugging
+			.setHost(CPathSettings.GA_HOST)
+			.setPath(cpath.gaPath()) //use "/debug/collect" for debugging
 			.addParameter("v", "1") // API Version.
-			.addParameter("tid", cpath.getGa()) // Tracking ID
-			.addParameter("ni","1")
-			.addParameter("ds","server")
-			.addParameter("cg1","webservice/core")
-			.addParameter("cg2",cpath.getName() + " " + cpath.getVersion())
+			.addParameter("ni","1") // it's always a non-interactive event (service log)
+			.addParameter("tid", cpath.getGa()) // Google Analytics Tracking ID (property)
 			.addParameter("t", hitType)
-			.addParameter("uip", uip)
-			.addParameter("uid", uid) //can use "an" with uid (- pc2 client app/lib name)
-			.addParameter("cid", uid)
-			.addParameter("dp", cmd)
-			.addParameter("dt", cmd)
-			.addParameter("ec", cmd)
-			.addParameter("ea", format)
-			.addParameter("el", providers)
-		;
+			.addParameter("ds", cpath.exportArchivePrefix())
+			//either &dl or both &dh and &dp could be specified (to ref a pageview hit...)
+ 			//.addParameter("cg1", cpath.exportArchivePrefix())
+			.addParameter("uip", ip)
+			// either &cid (a hash str.) or &uid is required
+			.addParameter("uid", client) //client app, lib or script name (not a person or session)
+			.addParameter("an", client);
 
+		if(hitType.equals("event")) {
+			// &ec,&ea,&el go only with &t=event
+			builder.addParameter("ec", category) //can be 'command','error','provider', or 'format'
+				.addParameter("ea", action) //e.g., service command name or output format
+				.addParameter("el", label); //e.g., data provider, query/genes, or output format name
+		}
+		else {
+			// &exd,&exf go only with &t=exception
+ 			builder.addParameter("exd", action + "; " + label);
+		}
+
+		// submit
 		try {
 			URI uri = builder.build();
-			HttpPost request = new HttpPost(uri);
-			HttpResponse res = client.execute(request);;
-//			OutputStream os = new ByteArrayOutputStream();
-//			res.getEntity().writeTo(os);
-			log.debug(String.format("GA: %s", res.getStatusLine().getStatusCode()));// + "; " +  os.toString()));
+			HttpResponse res = httpClient.execute(new HttpPost(uri));
+			if(cpath.isDebugEnabled() && res.getEntity() != null){
+				// detailed response msg.
+				OutputStream os = new ByteArrayOutputStream();
+				res.getEntity().writeTo(os);
+				log.debug(String.format("GA: %s; %s", res, os.toString()));
+			} else
+				log.debug(String.format("GA: %s", res.getStatusLine().getStatusCode()));
 		} catch (URISyntaxException e) {
 			throw new RuntimeException("Problem building GA tracking URI", e);
 		} catch (IOException e) {
 			log.error("Problem sending GA tracking request",e);
 		}
-
 	}
 
 	@Override
@@ -779,7 +775,6 @@ public class CPathServiceImpl implements CPathService {
 				metadata = existing;
 				//the jpa managed (persistent) entity will be auto-updated/flashed
 			}
-
 			metadata = metadataRepository.save(metadata);
 		}
 

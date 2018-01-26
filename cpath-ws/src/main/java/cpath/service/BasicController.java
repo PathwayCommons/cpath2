@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
 
+import cpath.service.args.ArgsBase;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
@@ -23,8 +24,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,27 +49,22 @@ public abstract class BasicController {
     
     /**
      * Http error response with more details and specific access log events.
-     * @param status
+	 * @param status
      * @param detailedMsg
 	 * @param request
 	 * @param response
-	 * @param event
+	 * @param client
 	 */
 	protected final void errorResponse(Status status, String detailedMsg,
 									   HttpServletRequest request, HttpServletResponse response,
-									   JSONObject event)
+									   String client)
 	{
+		final String ua = request.getHeader("User-Agent");
 		final String msg = status.getMsg() + "; " + detailedMsg;
-
-		if(event == null) event = new JSONObject();
-
-		event.put("status", status.getCode());
-		if(log.isDebugEnabled()) event.put("error", msg);
-		event.put("uip", clientIpAddress(request));
-
+		final String action = request.getContextPath();
 		//logging/tracking should not cause service fail
 		try {
-			service.track(event); //for service and data access analytics
+			service.track(clientIpAddress(request),"error", msg, action, client, ua);
 			response.sendError(status.getCode(), msg);
 		} catch (Throwable e) {
 			log.error("BUG: logging threw an exception" + e);
@@ -108,30 +102,25 @@ public abstract class BasicController {
 	/**
 	 * Writes the query results to the HTTP response
 	 * output stream.
+	 * @param args query args
 	 * @param result
 	 * @param request
 	 * @param response
-	 * @param event
 	 */
-	protected final void stringResponse(ServiceResponse result, HttpServletRequest request,
-										HttpServletResponse response, JSONObject event)
+	protected final void stringResponse(ArgsBase args, ServiceResponse result, HttpServletRequest request,
+										HttpServletResponse response)
 	{
 		if(result instanceof ErrorResponse) {
-			errorResponse(((ErrorResponse) result).getStatus(), result.toString(), request, response, event);
+			errorResponse(((ErrorResponse) result).getStatus(), result.toString(), request, response, args.getUser());
 		} 
 		else if (result instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) result;
-
-			event.put("uip", clientIpAddress(request));
-			JSONArray providers = new JSONArray();
-			providers.addAll(dataResponse.getProviders());
-			event.put("provider", providers);
-
-			//problems with logging subsystem should not fail the entire service
-			try {
-				service.track(event);
-			} catch (Throwable ex) {
-				log.error("service.log failed", ex);
+			final String ip = clientIpAddress(request);
+			final String ua = request.getHeader("User-Agent");
+			// log/track one data access event for each data provider listed in the result
+			service.track(ip, "command", args.getLabel(), request.getContextPath(), args.getUser(), ua);
+			for(String provider : dataResponse.getProviders()) {
+				service.track(ip,"provider", provider, request.getContextPath(), args.getUser(), ua);
 			}
 
 			if(dataResponse.getData() instanceof Path) {
@@ -153,7 +142,7 @@ public abstract class BasicController {
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR,
 						String.format("Failed to process the (temporary) result file %s; %s.",
-							resultFile, e.toString()), request, response, event);
+							resultFile, e.toString()), request, response, args.getUser());
 				} finally {
 					try {Files.delete(resultFile);}catch(Exception e){log.error(e.toString());}
 				}
@@ -174,18 +163,18 @@ public abstract class BasicController {
 					}
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR, String.format("Failed writing 'no data found' response: %s.",
-							e.toString()), request, response, event);
+							e.toString()), request, response, args.getUser());
 				}
 			}
 			else { //it's probably a bug -
 				errorResponse(INTERNAL_ERROR, String.format(
 					"BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
 					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()),
-						request, response, event);
+						request, response, args.getUser());
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				result.getClass().getSimpleName(), result.toString()), request, response, event);
+				result.getClass().getSimpleName(), result.toString()), request, response, args.getUser());
 		}
 	}
 

@@ -525,7 +525,7 @@ public final class Main {
 
 		//auto-generate export.sh script (to run Paxtools commands for exporting BioPAX to other formats)
 		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
-		final String commonPrefix = cpath.exportArchivePrefix(); //e.g., PathwayCommons8.
+		final String commonPrefix = cpath.exportArchivePrefix(); //e.g., PathwayCommons8
 		writer = new PrintWriter(cpath.exportScriptFile());
 		writer.println("#!/bin/sh");
 		writer.println("# An auto-generated script for converting the BioPAX data archives");
@@ -542,7 +542,7 @@ public final class Main {
 		writeScriptCommands(cpath.biopaxFileName("All"), writer, true);
 		//rename properly those SIF files that were cut from corresponding extended SIF (.txt) ones
 		writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
-		writer.println(String.format("gzip %s*.txt %s*.sif %s*.gmt %s*.xml",
+		writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
 				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
 		writer.println("echo \"All done.\"");
 		writer.close();

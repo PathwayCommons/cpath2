@@ -13,7 +13,7 @@ import cpath.service.OutputFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Graph extends Base {
+public class Graph extends ArgsBase {
 	@NotNull(message="Parameter 'kind' is required.")
 	private GraphType kind; //required!
 	
@@ -143,5 +143,12 @@ public class Graph extends Base {
 
 	public void setSubpw(boolean subpw) {
 		this.subpw = subpw;
+	}
+
+	@Override
+	public String getLabel() {
+		return kind.toString().toLowerCase() +
+//			" " + direction.toString().toLowerCase() +
+			" " + format.toString().toLowerCase();
 	}
 }

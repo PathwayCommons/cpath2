@@ -3,7 +3,7 @@ package cpath.service.args;
 /**
  * Created by igor on 23/06/16.
  */
-class Base {
+public abstract class ArgsBase {
     private String user;
 
     public String getUser() {
@@ -13,4 +13,6 @@ class Base {
     public void setUser(String user) {
         this.user = user;
     }
+
+    public abstract String getLabel();
 }

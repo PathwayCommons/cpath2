@@ -22,7 +22,7 @@ public class CPath2ServiceBeansTest {
 		List<String> list = Status.getAllStatusCodes();
 		assertEquals(4, list.size());
 //		//a quick unrelate test
-		assertEquals("PathwayCommonsDemo0.", CPathSettings.getInstance().exportArchivePrefix());
+		assertEquals("PathwayCommonsDemo0", CPathSettings.getInstance().exportArchivePrefix());
 	}
 
 	@Test

@@ -11,7 +11,7 @@ import cpath.service.OutputFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Get extends Base {
+public class Get extends ArgsBase {
 	@NotNull(message="Illegal Output Format") 
 	@Valid
 	private OutputFormat format;
@@ -69,5 +69,10 @@ public class Get extends Base {
 
 	public void setSubpw(boolean subpw) {
 		this.subpw = subpw;
+	}
+
+	@Override
+	public String getLabel() {
+		return format.toString().toLowerCase();
 	}
 }

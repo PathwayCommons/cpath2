@@ -3,8 +3,6 @@ import java.util.*;
 
 import cpath.config.CPathSettings;
 import org.biopax.validator.api.beans.Validation;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,18 +35,10 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testLogGa() {
 		CPathSettings cpath = CPathSettings.getInstance();
-		cpath.setAdminEnabled(true);
-		cpath.setGa("UA-43341809-3");
-		JSONObject event = new JSONObject();
-		event.put("status","200"); //ok
-		event.put("uip", "172.20.10.3");
-		event.put("client", "junit-test");
-		JSONArray a = new JSONArray();
-		a.addAll(Arrays.asList("reactome","humancyc"));
-		event.put("provider", a);
-		event.put("command", "test");
-		service.track(event);
-		cpath.setAdminEnabled(false);
+		cpath.setDebugEnabled(true);
+		service.track("172.20.10.3","provider","reactome","test","junit",null);
+		service.track("172.20.10.3","error","bad request","test","junit",null);
+		cpath.setDebugEnabled(false);
 	}
 
 	@Test

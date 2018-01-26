@@ -78,6 +78,12 @@ public final class CPathSettings
 	 */
 	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
 
+
+	/**
+	 * Google Analytics Measurement Protocol (API) host.
+	 */
+	public static final String GA_HOST = "www.google-analytics.com";
+
 	
 	/* System / Environment property names used by cPath2
 	 * (loaded by Spring property placeholder from the cpath2.properties,
@@ -118,10 +124,11 @@ public final class CPathSettings
 		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
-		defaults.put(PROP_METADATA_LOCATION, homeDir + FileSystems.getDefault().getSeparator() + METADATA_FILE);
+		defaults.put(PROP_METADATA_LOCATION, Paths.get(homeDir, METADATA_FILE).toString());
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
+		defaults.put(PROVIDER_GA,"UA-43341809-3"); //PC2 web service
 		//default settings
 		settings = new Properties(defaults);
 	}
@@ -523,7 +530,7 @@ public final class CPathSettings
 	 * @see #downloadsDir()
 	 */
 	public String biopaxFileName(String name) {
-		return exportArchivePrefix() + name + ".BIOPAX.owl.gz";
+		return exportArchivePrefix() + "." + name + ".BIOPAX.owl.gz";
 	}
 
 	/**
@@ -536,9 +543,8 @@ public final class CPathSettings
 	 */
 	public String exportArchivePrefix() {
 		return WordUtils.capitalize(property(PROVIDER_NAME) + property(PROVIDER_VERSION))
-				.replaceAll("\\W+","") + ".";
+				.replaceAll("\\W+","");
 	}
-	
 	
 	/**
 	 * Full path to the large archive where 
@@ -569,4 +575,11 @@ public final class CPathSettings
 		setCPathProperty(PROP_SBGN_LAYOUT_ENABLED, Boolean.toString(enabled));
 	}
 
+	public String gaPath() {
+		return (isDebugEnabled()) ? "/debug/collect" : "/collect";
+	}
+
+	public String gaUrl() {
+		return "https://" + GA_HOST + gaPath();
+	}
 }
