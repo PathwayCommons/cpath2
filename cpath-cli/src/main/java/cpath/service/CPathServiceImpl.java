@@ -698,38 +698,41 @@ public class CPathServiceImpl implements CPathService {
 	public void track(String ip, String category, String label, String action, String client, String ua)
 	{
 		log.info(String.format("%s, %s, %s", ip, category, label));
+		boolean isError = "error".equalsIgnoreCase(category);
 
-		final String hitType = ("error".equalsIgnoreCase(category))? "exception" : "event";
-
+		if(ua==null || ua.isEmpty())
+			ua = "HttpClient";
 		HttpClient httpClient = HttpClientBuilder.create().setUserAgent(ua).build();
 		//- hits ain't actually stored in the GA unless some UA is defined (whatever)
 
-		URIBuilder builder = new URIBuilder();
-		builder
+		URIBuilder builder = new URIBuilder()
 			.setScheme("https")
 			.setHost(CPathSettings.GA_HOST)
 			.setPath(cpath.gaPath()) //use "/debug/collect" for debugging
 			.addParameter("v", "1") // API Version.
 			.addParameter("ni","1") // it's always a non-interactive event (service log)
 			.addParameter("tid", cpath.getGa()) // Google Analytics Tracking ID (property)
-			.addParameter("t", hitType)
+			.addParameter("t", (isError) ? "exception": "event")
 			.addParameter("ds", cpath.exportArchivePrefix())
 			//either &dl or both &dh and &dp could be specified (to ref a pageview hit...)
+//			.addParameter("dp", action)
  			//.addParameter("cg1", cpath.exportArchivePrefix())
 			.addParameter("uip", ip)
 			// either &cid (a hash str.) or &uid is required
 			.addParameter("uid", client) //client app, lib or script name (not a person or session)
 			.addParameter("an", client);
 
-		if(hitType.equals("event")) {
+		if(isError) {
+			// &exd,&exf go only with &t=exception
+			builder.addParameter("exd", action + "; " + label);
+			String isFatal = (label.contains("500") || label.contains("503"))?"1":"0";
+			builder.addParameter("exf", isFatal);
+		} else {
 			// &ec,&ea,&el go only with &t=event
-			builder.addParameter("ec", category) //can be 'command','error','provider', or 'format'
+			builder
+				.addParameter("ec", category) //can be 'command','error','provider', or 'format'
 				.addParameter("ea", action) //e.g., service command name or output format
 				.addParameter("el", label); //e.g., data provider, query/genes, or output format name
-		}
-		else {
-			// &exd,&exf go only with &t=exception
- 			builder.addParameter("exd", action + "; " + label);
 		}
 
 		// submit

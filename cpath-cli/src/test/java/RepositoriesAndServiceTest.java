@@ -36,8 +36,11 @@ public class RepositoriesAndServiceTest {
 	public final void testLogGa() {
 		CPathSettings cpath = CPathSettings.getInstance();
 		cpath.setDebugEnabled(true);
-		service.track("172.20.10.3","provider","reactome","test","junit",null);
-		service.track("172.20.10.3","error","bad request","test","junit",null);
+		service.track("172.20.10.3","command","ATM","test","junit",null);
+		service.track("172.20.10.3","provider","Reactome","test","junit",null);
+		service.track("172.20.10.3","error","404; bad request","test","junit",null);
+		service.track("172.20.10.3","provider","HumanCyc","test","junit","MyScript/1.0 (test)");
+		service.track("172.20.10.3","error","500; internal error","test","junit",null);
 		cpath.setDebugEnabled(false);
 	}
 

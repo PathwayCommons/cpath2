@@ -60,14 +60,13 @@ public abstract class BasicController {
 									   String client)
 	{
 		final String ua = request.getHeader("User-Agent");
-		final String msg = status.getMsg() + "; " + detailedMsg;
+		final String msg = status.getCode() + ", " + status.getMsg() + "; " + detailedMsg;
 		final String action = request.getContextPath();
-		//logging/tracking should not cause service fail
 		try {
 			service.track(clientIpAddress(request),"error", msg, action, client, ua);
 			response.sendError(status.getCode(), msg);
-		} catch (Throwable e) {
-			log.error("BUG: logging threw an exception" + e);
+		} catch (IOException e) {
+			log.error("Problem sending back an error response; " + e);
 		}
 	}
 

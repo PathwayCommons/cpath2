@@ -15,8 +15,6 @@ import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,11 +119,10 @@ public class BiopaxModelController extends BasicController {
     		if(sr instanceof ErrorResponse) {
 				errorResponse(((ErrorResponse) sr).getStatus(), sr.toString(), request, response, args.getUser());
 			} else {
-
 				final String ip = clientIpAddress(request);
 				final String ua = request.getHeader("User-Agent");
 				service.track(ip, "command", args.getLabel(), request.getContextPath(), args.getUser(), ua);
-				//TODO: how to log data providers for each traverse query?..
+				//TODO: log/track data providers that occur is the traverse query result
 
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
 				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
