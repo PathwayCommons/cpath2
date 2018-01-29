@@ -46,4 +46,9 @@ public class Traverse extends ArgsBase {
 	public String getLabel() {
 		return path;
 	}
+
+	@Override
+	public String getCommand() {
+		return "traverse";
+	}
 }

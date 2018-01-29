@@ -144,7 +144,7 @@ public class SearchEngine implements Indexer, Searcher {
 		SearchResponse response = null;
 		
 		LOG.debug("search: '" + query + "', page: " + page
-			+ ", filterBy: " + filterByType
+			+ ", filterBy: " + ((filterByType!=null)?filterByType.getSimpleName():"N/A")
 			+ "; extra filters: ds in (" + Arrays.toString(datasources)
 			+ "), org. in (" + Arrays.toString(organisms) + ")");
 		

@@ -62,4 +62,9 @@ public class Search extends ArgsBase {
 	public String getLabel() {
 		return q + " (" + ((type!=null)?type.getSimpleName():"") + " p" + ((page!=null)?page:0) + ")";
 	}
+
+	@Override
+	public String getCommand() {
+		return "search";
+	}
 }

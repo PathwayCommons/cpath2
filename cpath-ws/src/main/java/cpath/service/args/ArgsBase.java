@@ -15,4 +15,6 @@ public abstract class ArgsBase {
     }
 
     public abstract String getLabel();
+
+    public abstract String getCommand();
 }

@@ -75,4 +75,9 @@ public class Get extends ArgsBase {
 	public String getLabel() {
 		return format.toString().toLowerCase();
 	}
+
+	@Override
+	public String getCommand() {
+		return "get";
+	}
 }

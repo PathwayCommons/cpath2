@@ -58,6 +58,9 @@ biologicaal networks, ontology, knowledge, analysis, cancer research, systems bi
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${cpath.ga}');
+    gtag('config', '${cpath.ga}', {
+        'custom_map': {'dimension1':'day'}
+    });
+    gtag('event', 'view', {'day': ${cpath.today}});
 </script>
 

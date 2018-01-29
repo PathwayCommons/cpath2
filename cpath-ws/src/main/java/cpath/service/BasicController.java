@@ -49,22 +49,23 @@ public abstract class BasicController {
     
     /**
      * Http error response with more details and specific access log events.
-	 * @param status
-     * @param detailedMsg
+	 * @param action
+	 * @param error
 	 * @param request
 	 * @param response
 	 * @param client
 	 */
-	protected final void errorResponse(Status status, String detailedMsg,
+	protected final void errorResponse(String action, ErrorResponse error,
 									   HttpServletRequest request, HttpServletResponse response,
 									   String client)
 	{
 		final String ua = request.getHeader("User-Agent");
-		final String msg = status.getCode() + ", " + status.getMsg() + "; " + detailedMsg;
-		final String action = request.getContextPath();
 		try {
-			service.track(clientIpAddress(request),"error", msg, action, client, ua);
-			response.sendError(status.getCode(), msg);
+			//log/track using a shorter message
+			service.track(clientIpAddress(request),"error",
+					error.getStatus().getCode() + "; " + error.getErrorMsg(), action, client, ua);
+			//retrn a long detailed message
+			response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
 		} catch (IOException e) {
 			log.error("Problem sending back an error response; " + e);
 		}
@@ -110,16 +111,16 @@ public abstract class BasicController {
 										HttpServletResponse response)
 	{
 		if(result instanceof ErrorResponse) {
-			errorResponse(((ErrorResponse) result).getStatus(), result.toString(), request, response, args.getUser());
-		} 
+			errorResponse(args.getCommand(), (ErrorResponse) result, request, response, args.getUser());
+		}
 		else if (result instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) result;
 			final String ip = clientIpAddress(request);
 			final String ua = request.getHeader("User-Agent");
 			// log/track one data access event for each data provider listed in the result
-			service.track(ip, "command", args.getLabel(), request.getContextPath(), args.getUser(), ua);
+			service.track(ip, "command", args.getLabel(), args.getCommand(), args.getUser(), ua);
 			for(String provider : dataResponse.getProviders()) {
-				service.track(ip,"provider", provider, request.getContextPath(), args.getUser(), ua);
+				service.track(ip,"provider", provider, args.getCommand(), args.getUser(), ua);
 			}
 
 			if(dataResponse.getData() instanceof Path) {
@@ -139,9 +140,10 @@ public abstract class BasicController {
 						}
 					}
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR,
-						String.format("Failed to process the (temporary) result file %s; %s.",
-							resultFile, e.toString()), request, response, args.getUser());
+					String msg = String.format("Failed to process the (temporary) result file %s; %s.",
+							resultFile, e.toString());
+					errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
+							request, response, args.getUser());
 				} finally {
 					try {Files.delete(resultFile);}catch(Exception e){log.error(e.toString());}
 				}
@@ -161,19 +163,22 @@ public abstract class BasicController {
 //						response.getWriter().print(""); //nothing
 					}
 				} catch (IOException e) {
-					errorResponse(INTERNAL_ERROR, String.format("Failed writing 'no data found' response: %s.",
-							e.toString()), request, response, args.getUser());
+					String msg = String.format("Failed writing a trivial response: %s.", e.toString());
+					errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
+							request, response, args.getUser());
 				}
 			}
 			else { //it's probably a bug -
-				errorResponse(INTERNAL_ERROR, String.format(
-					"BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
-					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()),
+				String msg = String.format("BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
+						dataResponse.getData().getClass().getSimpleName(), dataResponse.toString());
+				errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
 						request, response, args.getUser());
 			}
 		} else { //it's a bug -
-			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				result.getClass().getSimpleName(), result.toString()), request, response, args.getUser());
+			String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ",
+					result.getClass().getSimpleName(), result.toString());
+			errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
+					request, response, args.getUser());
 		}
 	}
 

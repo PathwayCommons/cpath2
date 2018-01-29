@@ -6,8 +6,8 @@
 
 cpath2.maxSearchHitsPerPage=100
 cpath2.xml.base=http://pathwaycommons.org/pc2/
-cpath2.provider.version=9
-cpath2.provider.name=Pathway Commons
+cpath2.provider.version=0
+cpath2.provider.name=Pathway Commons Demo
 cpath2.provider.url=http://pathwaycommons.org
 cpath2.provider.downloads.url=http://www.pathwaycommons.org/archives/
 cpath2.provider.logo.url=http://pathwaycommons.github.io/about/images/brand/pc_logo.png

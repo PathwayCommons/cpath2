@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -693,17 +692,12 @@ public class CPathServiceImpl implements CPathService {
 
 	/*
 	 * Track core service events using Google Analytics Measurement Protocol
-	 * TODO: design/optimize use of: dp, ec, ea, el, an, cg?, exd, etc. parameters for data access analytics.
 	 */
 	public void track(String ip, String category, String label, String action, String client, String ua)
 	{
-		log.info(String.format("%s, %s, %s", ip, category, label));
-		boolean isError = "error".equalsIgnoreCase(category);
+		log.info(String.format("%s, %s, %s, %s", ip, category, action, label));
 
-		if(ua==null || ua.isEmpty())
-			ua = "HttpClient";
-		HttpClient httpClient = HttpClientBuilder.create().setUserAgent(ua).build();
-		//- hits ain't actually stored in the GA unless some UA is defined (whatever)
+		boolean isError = "error".equalsIgnoreCase(category);
 
 		URIBuilder builder = new URIBuilder()
 			.setScheme("https")
@@ -719,8 +713,10 @@ public class CPathServiceImpl implements CPathService {
  			//.addParameter("cg1", cpath.exportArchivePrefix())
 			.addParameter("uip", ip)
 			// either &cid (a hash str.) or &uid is required
-			.addParameter("uid", client) //client app, lib or script name (not a person or session)
-			.addParameter("an", client);
+			.addParameter("uid", String.valueOf(client)) //client app, lib or script name (not a person or session)
+			.addParameter("an", String.valueOf(client))
+			.addParameter("cd1", cpath.getToday()) //custom dimension1 - date (should be configured there in GA)
+			;
 
 		if(isError) {
 			// &exd,&exf go only with &t=exception
@@ -736,16 +732,24 @@ public class CPathServiceImpl implements CPathService {
 		}
 
 		// submit
+		//Hits are not actually stored in GA unless some UA is defined (whatever)
+		if(ua==null || ua.isEmpty())
+			ua = "HttpClient";
+
 		try {
 			URI uri = builder.build();
-			HttpResponse res = httpClient.execute(new HttpPost(uri));
+			HttpResponse res = HttpClientBuilder.create().setUserAgent(ua)
+					.build().execute(new HttpPost(uri));
 			if(cpath.isDebugEnabled() && res.getEntity() != null){
 				// detailed response msg.
 				OutputStream os = new ByteArrayOutputStream();
 				res.getEntity().writeTo(os);
-				log.debug(String.format("GA: %s; %s", res, os.toString()));
-			} else
-				log.debug(String.format("GA: %s", res.getStatusLine().getStatusCode()));
+				log.info(uri.toString());
+				log.info(String.format("GA: res:%s; body:%s", ua, res, os.toString()));
+			} else {
+				log.debug("GA query: " + uri.getQuery());
+				log.debug(String.format("GA res: %s", res.getStatusLine().getStatusCode()));
+			}
 		} catch (URISyntaxException e) {
 			throw new RuntimeException("Problem building GA tracking URI", e);
 		} catch (IOException e) {

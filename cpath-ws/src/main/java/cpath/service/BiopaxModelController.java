@@ -63,8 +63,8 @@ public class BiopaxModelController extends BasicController {
 							HttpServletRequest request, HttpServletResponse response)
     {
     	if(bindingResult.hasErrors()) {
-    		errorResponse(Status.BAD_REQUEST, 
-    				errorFromBindingResult(bindingResult), request, response, args.getUser());
+    		errorResponse(args.getCommand(), new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
+					request, response, args.getUser());
     	} else {
 			String[] uris = args.getUri();
 			Map<String,String> options = new HashMap<String,String>();
@@ -88,18 +88,18 @@ public class BiopaxModelController extends BasicController {
 		ServiceResponse results = service.topPathways(q, organism, datasource);
 		
 		if(results instanceof ErrorResponse) {
-			errorResponse(((ErrorResponse) results).getStatus(), 
-					((ErrorResponse) results).toString(), request, response, user);
+			errorResponse("top_pathways", (ErrorResponse) results, request, response, user);
 			return null;
 		} else {
 			SearchResponse hits = (SearchResponse) results;
 
 			final String ip = clientIpAddress(request);
 			final String ua = request.getHeader("User-Agent");
+			final String action = "top_pathways";
 			// log/track one data access event for each data provider listed in the result
-			service.track(ip, "command", q, request.getContextPath(), user, ua);
+			service.track(ip, "command", q, action, user, ua);
 			for(String provider : hits.getProviders()) {
-				service.track(ip,"provider", provider, request.getContextPath(), user, ua);
+				service.track(ip,"provider", provider, action, user, ua);
 			}
 
 			hits.setVersion(CPathSettings.getInstance().getVersion());
@@ -112,18 +112,19 @@ public class BiopaxModelController extends BasicController {
     public TraverseResponse traverse(@Valid Traverse args,
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {
+		final String action = args.getCommand();
     	if(bindingResult.hasErrors()) {
-    		errorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult), request, response, args.getUser());
+    		errorResponse(action, new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
+					request, response, args.getUser());
     	} else {
     		ServiceResponse sr = service.traverse(args.getPath(), args.getUri());
     		if(sr instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) sr).getStatus(), sr.toString(), request, response, args.getUser());
+				errorResponse(action, (ErrorResponse) sr, request, response, args.getUser());
 			} else {
 				final String ip = clientIpAddress(request);
 				final String ua = request.getHeader("User-Agent");
-				service.track(ip, "command", args.getLabel(), request.getContextPath(), args.getUser(), ua);
+				service.track(ip, "command", args.getLabel(), action, args.getUser(), ua);
 				//TODO: log/track data providers that occur is the traverse query result
-
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
 				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
     			return traverseResponse;
@@ -138,7 +139,8 @@ public class BiopaxModelController extends BasicController {
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			errorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult), request, response, args.getUser());
+			errorResponse(args.getCommand(), new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
+					request, response, args.getUser());
 			return;
 		} 
 
@@ -167,9 +169,9 @@ public class BiopaxModelController extends BasicController {
 			break;
 		default:
 			// impossible (should have failed earlier)
-			errorResponse(Status.INTERNAL_ERROR, 
-				getClass().getCanonicalName() + " does not support " 
-					+ args.getKind(), request, response, args.getUser());
+			String msg = getClass().getCanonicalName() + " does not support " + args.getKind();
+			errorResponse(args.getCommand(), new ErrorResponse(Status.INTERNAL_ERROR, msg),
+					request, response, args.getUser());
 			return;
 		}
 
@@ -182,7 +184,8 @@ public class BiopaxModelController extends BasicController {
 								 HttpServletRequest request, HttpServletResponse response)
     {
     	if(bindingResult.hasErrors()) {
-			errorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult), request, response, args.getUser());
+			errorResponse(args.getCommand(), new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
+					request, response, args.getUser());
 			return null;
 		} else {
 			// get results from the service
@@ -190,15 +193,16 @@ public class BiopaxModelController extends BasicController {
 					args.getDatasource(), args.getOrganism());
 
 			if(results instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) results).getStatus(), results.toString(), request, response, args.getUser());
+				errorResponse(args.getCommand(), (ErrorResponse) results, request, response, args.getUser());
 				return null;
 			} else {
 				final String ip = clientIpAddress(request);
 				final String ua = request.getHeader("User-Agent");
+				final String action = args.getCommand();
 				// log/track one data access event for each data provider listed in the result
-				service.track(ip, "command", args.getLabel(), request.getContextPath(), args.getUser(), ua);
+				service.track(ip, "command", args.getLabel(), action, args.getUser(), ua);
 				for(String provider : ((SearchResponse)results).getProviders()) {
-					service.track(ip,"provider", provider, request.getContextPath(), args.getUser(), ua);
+					service.track(ip,"provider", provider, action, args.getUser(), ua);
 				}
 
 				SearchResponse searchResponse = (SearchResponse) results;

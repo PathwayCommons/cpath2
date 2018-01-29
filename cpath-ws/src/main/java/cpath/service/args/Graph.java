@@ -151,4 +151,9 @@ public class Graph extends ArgsBase {
 //			" " + direction.toString().toLowerCase() +
 			" " + format.toString().toLowerCase();
 	}
+
+	@Override
+	public String getCommand() {
+		return "graph " + kind;
+	}
 }

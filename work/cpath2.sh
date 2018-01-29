@@ -3,7 +3,7 @@
 # cPath2 run script.
 ##
 
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xmx96g -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xmx64g -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider"
 CPATH2_TUNING_OPTS="-Xms48g -Xmn1g -Xss65536k -XX:SurvivorRatio=16 -Xincgc -Xnoclassgc -XX:CMSTriggerRatio=50 -XX:ParallelGCThreads=2 -XX:NewRatio=5"
 CPATH2_DEBUG_OPTS="-Dlogback.configurationFile=logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 
@@ -17,5 +17,5 @@ elif [ "$1" = "console" ] ; then
 else
   #start the web app using the default (dev) profile, small test data in the temp. dir, etc.
   #(optionally, include $CPATH2_DEBUG_OPTS)
-  $JAVA_HOME/bin/java -Dfile.encoding=UTF-8 -Xmx4g -jar ../cpath-ws/target/cpath2.war
+  $JAVA_HOME/bin/java -Dfile.encoding=UTF-8 -Xmx4g -jar ../cpath-ws/target/cpath2.war --server.port=8280
 fi

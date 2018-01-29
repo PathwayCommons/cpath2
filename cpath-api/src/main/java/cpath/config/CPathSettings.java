@@ -2,6 +2,8 @@ package cpath.config;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -203,7 +205,6 @@ public final class CPathSettings
 	public void setDownloadsUrl(String url) {
 		setCPathProperty(PROVIDER_DOWNLOADS_URL, url);
 	}
-
 
 	public String getGa() {
 		return property(PROVIDER_GA);
@@ -581,5 +582,20 @@ public final class CPathSettings
 
 	public String gaUrl() {
 		return "https://" + GA_HOST + gaPath();
+	}
+
+
+	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+
+	public static String today() {
+		return ISO_DATE_FORMAT.format(new Date());
+	}
+
+	static String isoDate(Date date) {
+		return ISO_DATE_FORMAT.format(date);
+	}
+
+	public String getToday() {
+		return CPathSettings.today();
 	}
 }

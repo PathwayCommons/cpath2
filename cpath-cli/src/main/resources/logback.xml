@@ -19,17 +19,15 @@
       <outputPatternAsHeader>true</outputPatternAsHeader>
     </encoder>
   </appender>
- 
-  <logger name="org.biopax" level="warn" />
+
+  <logger name="org" level="warn" />
+  <logger name="com" level="warn" />
+  <logger name="net" level="error" />
+  <logger name="java" level="warn" />
+  <logger name="javax" level="warn" />
+  <logger name="psidev.psi.mi" level="error" />
   <logger name="org.biopax.paxtools.impl" level="error" />
   <logger name="org.biopax.paxtools.util.BPCollections" level="info" />
-  <!--<logger name="org.springframework" level="warn" />-->
-  <logger name="org.hibernate" level="warn" />
-  <logger name="com.mchange" level="warn" />
-  <logger name="net.sf.ehcache" level="error" />
-  <logger name="org.obo" level="warn" />
-  <logger name="java.sql" level="warn" />
-  <logger name="psidev.psi.mi" level="error" />
  
   <root level="info">
     <appender-ref ref="file" />
