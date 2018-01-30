@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -78,6 +79,10 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
 	private final static CPathSettings cpath = CPathSettings.getInstance();
+
+	//HttpClient for PC web service usage tracking in GA;
+	//hits (events, pageviews) are not stored unless some UA is defined:
+	private static final HttpClient httpClient = HttpClientBuilder.create().setUserAgent("HttpClient").build();
 
 	/**
 	 * Constructor
@@ -693,7 +698,7 @@ public class CPathServiceImpl implements CPathService {
 	/*
 	 * Track core service events using Google Analytics Measurement Protocol
 	 */
-	public void track(String ip, String category, String label, String action, String client, String ua)
+	public void track(String ip, String category, String label, String action, String client)
 	{
 		log.info(String.format("%s, %s, %s, %s", ip, category, action, label));
 
@@ -732,20 +737,15 @@ public class CPathServiceImpl implements CPathService {
 		}
 
 		// submit
-		//Hits are not actually stored in GA unless some UA is defined (whatever)
-		if(ua==null || ua.isEmpty())
-			ua = "HttpClient";
-
 		try {
 			URI uri = builder.build();
-			HttpResponse res = HttpClientBuilder.create().setUserAgent(ua)
-					.build().execute(new HttpPost(uri));
+			HttpResponse res = httpClient.execute(new HttpPost(uri));
 			if(cpath.isDebugEnabled() && res.getEntity() != null){
 				// detailed response msg.
 				OutputStream os = new ByteArrayOutputStream();
 				res.getEntity().writeTo(os);
 				log.info(uri.toString());
-				log.info(String.format("GA: res:%s; body:%s", ua, res, os.toString()));
+				log.info(String.format("GA: res:%s; body:%s", res, os.toString()));
 			} else {
 				log.debug("GA query: " + uri.getQuery());
 				log.debug(String.format("GA res: %s", res.getStatusLine().getStatusCode()));

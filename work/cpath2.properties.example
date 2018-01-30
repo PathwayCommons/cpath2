@@ -12,7 +12,7 @@ cpath2.provider.url=http://pathwaycommons.org
 cpath2.provider.downloads.url=http://www.pathwaycommons.org/archives/
 cpath2.provider.logo.url=http://pathwaycommons.github.io/about/images/brand/pc_logo.png
 # provider's Google Analytics code
-cpath2.provider.ga=UA-43341809-3
+cpath2.provider.ga=UA-43341809-10
 cpath2.provider.description=\
 Pathway Commons integrates a number of pathway and molecular interaction databases \
 supporting BioPAX and PSI-MI formats into one large BioPAX model, which can be \

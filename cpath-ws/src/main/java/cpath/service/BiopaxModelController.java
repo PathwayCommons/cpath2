@@ -94,12 +94,11 @@ public class BiopaxModelController extends BasicController {
 			SearchResponse hits = (SearchResponse) results;
 
 			final String ip = clientIpAddress(request);
-			final String ua = request.getHeader("User-Agent");
 			final String action = "top_pathways";
 			// log/track one data access event for each data provider listed in the result
-			service.track(ip, "command", q, action, user, ua);
+			service.track(ip, "command", q, action, user);
 			for(String provider : hits.getProviders()) {
-				service.track(ip,"provider", provider, action, user, ua);
+				service.track(ip,"provider", provider, action, user);
 			}
 
 			hits.setVersion(CPathSettings.getInstance().getVersion());
@@ -122,8 +121,7 @@ public class BiopaxModelController extends BasicController {
 				errorResponse(action, (ErrorResponse) sr, request, response, args.getUser());
 			} else {
 				final String ip = clientIpAddress(request);
-				final String ua = request.getHeader("User-Agent");
-				service.track(ip, "command", args.getLabel(), action, args.getUser(), ua);
+				service.track(ip, "command", args.getLabel(), action, args.getUser());
 				//TODO: log/track data providers that occur is the traverse query result
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
 				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
@@ -197,12 +195,11 @@ public class BiopaxModelController extends BasicController {
 				return null;
 			} else {
 				final String ip = clientIpAddress(request);
-				final String ua = request.getHeader("User-Agent");
 				final String action = args.getCommand();
 				// log/track one data access event for each data provider listed in the result
-				service.track(ip, "command", args.getLabel(), action, args.getUser(), ua);
+				service.track(ip, "command", args.getLabel(), action, args.getUser());
 				for(String provider : ((SearchResponse)results).getProviders()) {
-					service.track(ip,"provider", provider, action, args.getUser(), ua);
+					service.track(ip,"provider", provider, action, args.getUser());
 				}
 
 				SearchResponse searchResponse = (SearchResponse) results;

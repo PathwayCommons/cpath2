@@ -130,7 +130,7 @@ public final class CPathSettings
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
-		defaults.put(PROVIDER_GA,"UA-43341809-3"); //PC2 web service
+		defaults.put(PROVIDER_GA,"UA-43341809-10"); //beta PC2 service tracking
 		//default settings
 		settings = new Properties(defaults);
 	}
@@ -583,7 +583,6 @@ public final class CPathSettings
 	public String gaUrl() {
 		return "https://" + GA_HOST + gaPath();
 	}
-
 
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 

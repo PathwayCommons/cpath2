@@ -59,11 +59,10 @@ public abstract class BasicController {
 									   HttpServletRequest request, HttpServletResponse response,
 									   String client)
 	{
-		final String ua = request.getHeader("User-Agent");
 		try {
 			//log/track using a shorter message
 			service.track(clientIpAddress(request),"error",
-					error.getStatus().getCode() + "; " + error.getErrorMsg(), action, client, ua);
+					error.getStatus().getCode() + "; " + error.getErrorMsg(), action, client);
 			//retrn a long detailed message
 			response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
 		} catch (IOException e) {
@@ -116,11 +115,10 @@ public abstract class BasicController {
 		else if (result instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) result;
 			final String ip = clientIpAddress(request);
-			final String ua = request.getHeader("User-Agent");
 			// log/track one data access event for each data provider listed in the result
-			service.track(ip, "command", args.getLabel(), args.getCommand(), args.getUser(), ua);
+			service.track(ip, "command", args.getLabel(), args.getCommand(), args.getUser());
 			for(String provider : dataResponse.getProviders()) {
-				service.track(ip,"provider", provider, args.getCommand(), args.getUser(), ua);
+				service.track(ip,"provider", provider, args.getCommand(), args.getUser());
 			}
 
 			if(dataResponse.getData() instanceof Path) {
