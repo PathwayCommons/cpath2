@@ -785,11 +785,11 @@ public final class Merger {
 		return null;
 	}
 
-	/*
+	/* A tricky internal id-mapping method.
 	 * @param element xRefferable BioPAX object; i.e. that can (and hopefully does) have Xrefs
 	 * @param xrefClassForMapping only use this Xref sub-class for mapping
 	 * @param toDb target ID type; can be either 'UNIPROT' or 'CHEBI' only
-	 * @param fromDbStartsWith optional list of allowed source xref.db names or partial (prefix) names (others are ignored)
+	 * @param dbStartsWithIgnoringcase optional list of allowed source xref.db names or prefixes
 	 * @param <T> the Xref sub-type
      * @return primary accession numbers of the kind (toDb)
      */
@@ -798,11 +798,15 @@ public final class Merger {
 	{
 		//this method is to be called for a Gene, Complex, EntityReference
 		// - or a simple PEs that have no ER or its ER has no xrefs.
-		Assert.isTrue(PublicationXref.class != xrefClassForMapping);
-		Assert.isTrue(element instanceof Gene || element instanceof PhysicalEntity || element instanceof EntityReference);
-		//EntityReference must be used here instead of its parent SimplePhysicalEntity whnever possible and makes sense
-		Assert.isTrue(!(element instanceof SimplePhysicalEntity) || ((SimplePhysicalEntity) element).getEntityReference()==null
-				|| ((SimplePhysicalEntity) element).getEntityReference().getXref().isEmpty());
+		Assert.isTrue(PublicationXref.class != xrefClassForMapping,
+				"xrefClassForMapping cannot be PublicationXref");
+		Assert.isTrue(element instanceof Gene || element instanceof PhysicalEntity
+				|| element instanceof EntityReference, "element can be either: Gene, PE or ER...");
+		//An EntityReference must be used here instead of its owner - SimplePhysicalEntity - when possible
+		Assert.isTrue(!(element instanceof SimplePhysicalEntity)
+				|| ((SimplePhysicalEntity) element).getEntityReference()==null
+				|| ((SimplePhysicalEntity) element).getEntityReference().getXref().isEmpty(),
+				"bad element type");
 
 		Set<String> result = Collections.emptySet();
 		final Set<T> filteredXrefs = new ClassFilterSet<Xref, T>(element.getXref(), xrefClassForMapping);
@@ -823,7 +827,6 @@ public final class Merger {
 					sourceIds.add(CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId()));
 				}
 			}
-
 			// do id-mapping, for all ids at once, and return the result set:
 			result = service.map(sourceIds, toDb);
 		}

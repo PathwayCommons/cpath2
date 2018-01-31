@@ -389,16 +389,26 @@ public class SearchEngine implements Indexer, Searcher {
 				final String prop = editor.getProperty();
 				//to include in the index, as keywords, only the following properties
 				// (basically, to exclude float type properties, embedded xml, db names, etc.):
-				return (prop.equalsIgnoreCase("author") || prop.equalsIgnoreCase("availability")
-						|| prop.equalsIgnoreCase("chemicalFormula") || prop.equalsIgnoreCase("comment")
-						|| prop.equalsIgnoreCase("controlType") || prop.equalsIgnoreCase("conversionDirection")
-						|| prop.equalsIgnoreCase("eCNumber") || prop.equalsIgnoreCase("id")
-						|| prop.equalsIgnoreCase("name") || prop.equalsIgnoreCase("displayName")
-						|| prop.equalsIgnoreCase("standardName") || prop.equalsIgnoreCase("sequence")
-						|| prop.equalsIgnoreCase("source") || prop.equalsIgnoreCase("year")
-						|| prop.equalsIgnoreCase("term") || prop.equalsIgnoreCase("stepDirection")
-						|| prop.equalsIgnoreCase("structureData") || prop.equalsIgnoreCase("templateDirection")
-						|| prop.equalsIgnoreCase("title") || prop.equalsIgnoreCase("url")
+				return (prop.equalsIgnoreCase("author")
+						//|| prop.equalsIgnoreCase("availability")
+						|| prop.equalsIgnoreCase("chemicalFormula")
+						|| prop.equalsIgnoreCase("comment")
+						|| prop.equalsIgnoreCase("controlType")
+						//|| prop.equalsIgnoreCase("conversionDirection")
+						|| prop.equalsIgnoreCase("eCNumber")
+						// || prop.equalsIgnoreCase("id") //excl. xref.id (use a separate idx. field)
+						|| prop.equalsIgnoreCase("name")
+						|| prop.equalsIgnoreCase("displayName")
+						|| prop.equalsIgnoreCase("standardName")
+						|| prop.equalsIgnoreCase("sequence")
+						//|| prop.equalsIgnoreCase("source")
+						//|| prop.equalsIgnoreCase("year")
+						|| prop.equalsIgnoreCase("term")
+						//|| prop.equalsIgnoreCase("stepDirection")
+						|| prop.equalsIgnoreCase("structureData")
+						//|| prop.equalsIgnoreCase("templateDirection")
+						|| prop.equalsIgnoreCase("title")
+						|| prop.equalsIgnoreCase("url")
 				);
 			}
 		};
