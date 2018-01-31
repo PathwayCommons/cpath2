@@ -739,7 +739,6 @@ public class CPathServiceImpl implements CPathService {
 			CloseableHttpClient httpClient = HttpClientBuilder.create().setUserAgent("HttpClient").build();
 			URI uri = builder.build();
 			HttpResponse res = httpClient.execute(new HttpPost(uri));
-			httpClient.close();
 			if(cpath.isDebugEnabled() && res.getEntity() != null){
 				// detailed response msg.
 				OutputStream os = new ByteArrayOutputStream();
@@ -750,6 +749,7 @@ public class CPathServiceImpl implements CPathService {
 				log.debug("GA query: " + uri.getQuery());
 				log.debug(String.format("GA res: %s", res.getStatusLine().getStatusCode()));
 			}
+			httpClient.close();
 		} catch (URISyntaxException e) {
 			throw new RuntimeException("Problem building GA tracking URI", e);
 		} catch (IOException e) {
