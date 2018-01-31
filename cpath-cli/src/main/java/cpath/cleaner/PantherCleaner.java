@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import cpath.service.CPathUtils;
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -88,6 +89,20 @@ final class PantherCleaner implements Cleaner {
 				}
 			}
 		});
+		exec.execute(new Runnable() {
+			// remove ALL "PANTHER Pathway" and "PANTHER Pathway Component" xrefs
+			// (they collide with UniProt IDs like P01234 and confuse id-mapping, full-text search)
+			@Override
+			public void run() {
+				for(BioPAXElement o : objects) {
+					if((o instanceof Xref) && CPathUtils
+							.startsWithAnyIgnoreCase(String.valueOf(((Xref)o).getDb()),"panther pathway"))
+					{
+						model.remove(o);
+					}
+				}
+			}
+		});
 		exec.shutdown(); //accept no more tasks
 		try {//wait
 			exec.awaitTermination(120, TimeUnit.SECONDS);
@@ -100,14 +115,16 @@ final class PantherCleaner implements Cleaner {
 				.clone(originalModel, originalModel.getObjects());		
 		log.info((objects.size()-cleanModel.getObjects().size())
 				+ " non-human objects (and all corresponding properties) were cleared.");
-		originalModel = null; // free some memory	
+		originalModel = null; // free some memory, perhaps...
 		
 		if(cleanModel.getObjects(BioSource.class).size() != 1)
 			throw new IllegalStateException("There are still several BioSource objects");
 		
 		//replace generic ERs that have only one non-generic memberER with that member
 		//(should not be nested generics; if so, won't replace those)
-		for(SequenceEntityReference generic : new HashSet<SequenceEntityReference>(cleanModel.getObjects(SequenceEntityReference.class))) {
+		for(SequenceEntityReference generic : new HashSet<SequenceEntityReference>(
+				cleanModel.getObjects(SequenceEntityReference.class)))
+		{
 			if(generic.getMemberEntityReference().size() != 1)
 				continue; //non-generic or non-trivial
 			

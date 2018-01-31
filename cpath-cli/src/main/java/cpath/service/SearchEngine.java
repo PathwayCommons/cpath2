@@ -396,7 +396,7 @@ public class SearchEngine implements Indexer, Searcher {
 						|| prop.equalsIgnoreCase("controlType")
 						//|| prop.equalsIgnoreCase("conversionDirection")
 						|| prop.equalsIgnoreCase("eCNumber")
-						// || prop.equalsIgnoreCase("id") //excl. xref.id (use a separate idx. field)
+						|| prop.equalsIgnoreCase("id")
 						|| prop.equalsIgnoreCase("name")
 						|| prop.equalsIgnoreCase("displayName")
 						|| prop.equalsIgnoreCase("standardName")

@@ -506,11 +506,11 @@ public final class CPathUtils {
 			children.add((XReferrable) bpe);
 
 		for(XReferrable child : children) {
-			//skip for unwanted types
-			//TODO: shall we add xref.id from Evidence,CV,Provenance (these're included to 'keyword' anyway)
+			//skip for unwanted utility class child elements, such as Evidence,CV,Provenance
 			if (!(child instanceof Entity || child instanceof EntityReference))
 				continue;
-			// collect standard bio IDs (skip publications); try/use id-mapping to associate more IDs:
+			// collect standard bio IDs (skip publications);
+			// (we will use id-mapping later to associate more IDs)
 			for (Xref x : child.getXref()) {
 				if (!(x instanceof PublicationXref) && x.getId() != null && x.getDb() != null) {
 					ids.add(x.getId());
