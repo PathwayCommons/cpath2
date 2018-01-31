@@ -196,10 +196,11 @@ public class BiopaxModelController extends BasicController {
 			} else {
 				final String ip = clientIpAddress(request);
 				final String action = args.getCommand();
+				final String client = args.getUser();
 				// log/track one data access event for each data provider listed in the result
-				service.track(ip, "command", args.getLabel(), action, args.getUser());
+				service.track(ip, "command", args.getLabel(), action, client);
 				for(String provider : ((SearchResponse)results).getProviders()) {
-					service.track(ip,"provider", provider, action, args.getUser());
+					service.track(ip,"provider", provider, action, client);
 				}
 
 				SearchResponse searchResponse = (SearchResponse) results;

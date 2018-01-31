@@ -15,6 +15,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
@@ -79,10 +80,6 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
 	private final static CPathSettings cpath = CPathSettings.getInstance();
-
-	//HttpClient for PC web service usage tracking in GA;
-	//hits (events, pageviews) are not stored unless some UA is defined:
-	private static final HttpClient httpClient = HttpClientBuilder.create().setUserAgent("HttpClient").build();
 
 	/**
 	 * Constructor
@@ -738,8 +735,11 @@ public class CPathServiceImpl implements CPathService {
 
 		// submit
 		try {
+			//hits (events, pageviews) are not stored unless some UA is defined:
+			CloseableHttpClient httpClient = HttpClientBuilder.create().setUserAgent("HttpClient").build();
 			URI uri = builder.build();
 			HttpResponse res = httpClient.execute(new HttpPost(uri));
+			httpClient.close();
 			if(cpath.isDebugEnabled() && res.getEntity() != null){
 				// detailed response msg.
 				OutputStream os = new ByteArrayOutputStream();
@@ -753,7 +753,7 @@ public class CPathServiceImpl implements CPathService {
 		} catch (URISyntaxException e) {
 			throw new RuntimeException("Problem building GA tracking URI", e);
 		} catch (IOException e) {
-			log.error("Problem sending GA tracking request",e);
+			throw new RuntimeException("Problem with GA tracking", e);
 		}
 	}
 
