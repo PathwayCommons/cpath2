@@ -63,7 +63,8 @@ public final class Main {
         @Override
         public String toString() { return command; }
     }
-    
+
+	final static String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
  
     /**
      * The big deal main.
@@ -533,6 +534,7 @@ public final class Main {
 		writer.println("# There must be blacklist.txt and paxtools.jar files already.");
 		writer.println("# Change to the downloads/ and run as:");
 		writer.println("# sh export.sh &");
+
 		for(Metadata md : allMetadata) {
 			if(!md.isNotPathwayData()) //skip warehouse metadata
 				writeScriptCommands(cpath.biopaxFileName(md.getIdentifier()), writer, md.getNumPathways()>0);
@@ -544,6 +546,15 @@ public final class Main {
 		writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
 		writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
 				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
+
+		//generate pathways.txt (parent-child) and physical_entities.json (URI-to-IDs mapping) files
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
+				cpath.biopaxFileName("All"), "pathways.txt", "--pathways"));
+		writer.println("wait");
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
+				cpath.biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
+		writer.println("wait");
+		writer.println("gzip pathways.txt *.json");
 		writer.println("echo \"All done.\"");
 		writer.close();
 
@@ -551,7 +562,6 @@ public final class Main {
 	}
 
 	private static void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
-		final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
 		//make output file name prefix that includes datasource and ends with '.':
 		final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
