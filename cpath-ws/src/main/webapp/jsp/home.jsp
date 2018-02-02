@@ -133,7 +133,10 @@ or the fat JAR with embedded application server was started) -->
 			'organism=9606&amp;organism=10016' returns results for both human and mouse. 
 			Note the <a href="#organisms">officially supported species</a>.
 		</li>
-		<li><em>type=</em> [Optional] BioPAX class filter (<a href="#biopax_types">values</a>)
+		<li><em>type=</em> [Optional] BioPAX class filter (<a href="#biopax_types">values</a>).
+			NOTE: queries using &amp;type=biosource (or any BioPAX UtilityClass, such as Score, Evidence)
+			filter won't not return any hits; use Entity (e.g., Pathway, Control,
+			Protein) or EntityReference type (e.g., ProteinReference) instead.
 		</li>
 	</ul>
 	<h4>Examples:</h4> <br/>
@@ -171,9 +174,6 @@ or the fat JAR with embedded application server was started) -->
 			. </a></li>
 		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
 			all Reactome pathways</a></li>
-		<li>A search query using &type=biosource (and other BioPAX Utility classes, e.g., Score, Evidence)
-		do not result in any hits anymore; do search for Entities, such as Pathway, Control,
-			Protein, or EntityReferences, such as ProteinReference, etc.</li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>

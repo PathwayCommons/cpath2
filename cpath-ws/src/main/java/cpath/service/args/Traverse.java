@@ -3,10 +3,11 @@ package cpath.service.args;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Traverse extends ArgsBase {
+public class Traverse extends ServiceQuery {
 	@NotBlank(message="Property Path is blank (not specified).")
 	private String path;
 	// required at least one value
@@ -43,12 +44,17 @@ public class Traverse extends ArgsBase {
 	}
 
 	@Override
-	public String getLabel() {
-		return path;
+	public String toString() {
+		return String.format("%s p:%s; uri:%s", super.toString(), path, Arrays.toString(uri));
 	}
 
 	@Override
 	public String getCommand() {
 		return "traverse";
+	}
+
+	@Override
+	public String getFormatName() {
+		return "xml"; //default
 	}
 }

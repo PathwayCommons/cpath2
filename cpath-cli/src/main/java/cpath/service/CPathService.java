@@ -186,11 +186,9 @@ public interface CPathService {
 	 * Record web service and data access events.
 	 *  @param ip
      * @param category
-     * @param label
-     * @param action
-     * @param client
+     * @param name
      */
-	void track(String ip, String category, String label, String action, String client);
+	void track(String ip, String category, String name);
 
 	
     /**

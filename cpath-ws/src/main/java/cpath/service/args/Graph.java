@@ -10,10 +10,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Graph extends ArgsBase {
+public class Graph extends ServiceQuery {
 	@NotNull(message="Parameter 'kind' is required.")
 	private GraphType kind; //required!
 	
@@ -146,14 +147,33 @@ public class Graph extends ArgsBase {
 	}
 
 	@Override
-	public String getLabel() {
-		return kind.toString().toLowerCase() +
-//			" " + direction.toString().toLowerCase() +
-			" " + format.toString().toLowerCase();
+	public String toString() {
+		StringBuilder sb = new StringBuilder(super.toString())
+			.append(" for:").append(format)
+			.append("; spw:").append(subpw)
+			.append("; src:").append(Arrays.toString(source));
+		if(target!=null && target.length>0)
+		 sb.append("; tgt:").append(Arrays.toString(target));
+		if(limit!=null)
+			sb.append("; lim:").append(limit);
+		if(organism!=null && organism.length>0)
+			sb.append("; org:").append(Arrays.toString(organism));
+		if(datasource!=null && datasource.length>0)
+			sb.append("; dts:").append(Arrays.toString(datasource));
+		if(direction!=null)
+			sb.append("; dir:").append(direction);
+		if(pattern!=null && pattern.length>0)
+			sb.append("; pat:").append(Arrays.toString(pattern));
+		return sb.toString();
 	}
 
 	@Override
 	public String getCommand() {
-		return "graph " + kind;
+		return kind.toString();
+	}
+
+	@Override
+	public String getFormatName() {
+		return format.name().toLowerCase();
 	}
 }

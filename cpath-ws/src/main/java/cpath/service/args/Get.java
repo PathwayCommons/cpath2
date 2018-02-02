@@ -8,10 +8,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Get extends ArgsBase {
+public class Get extends ServiceQuery {
 	@NotNull(message="Illegal Output Format") 
 	@Valid
 	private OutputFormat format;
@@ -72,12 +73,24 @@ public class Get extends ArgsBase {
 	}
 
 	@Override
-	public String getLabel() {
-		return format.toString().toLowerCase();
+	public String toString() {
+		StringBuilder sb = new StringBuilder(super.toString())
+			.append(" for:").append(format)
+			.append("; spw:").append(subpw)
+			.append("; uri:").append(Arrays.toString(uri));
+		if(pattern!=null && pattern.length>0)
+			sb.append("; pat:").append(Arrays.toString(pattern));
+
+		return sb.toString();
 	}
 
 	@Override
 	public String getCommand() {
 		return "get";
+	}
+
+	@Override
+	public String getFormatName() {
+		return format.name().toLowerCase();
 	}
 }

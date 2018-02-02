@@ -34,14 +34,10 @@ public class RepositoriesAndServiceTest {
 	@DirtiesContext
 	@Test
 	public final void testLogGa() {
-		CPathSettings cpath = CPathSettings.getInstance();
-		cpath.setDebugEnabled(true);
-		service.track("172.20.10.3","command","ATM","test","junit");
-		service.track("172.20.10.3","provider","Reactome","test","junit");
-		service.track("172.20.10.3","error","404; bad request","test","junit");
-		service.track("172.20.10.3","provider","HumanCyc","test","junit");
-		service.track("172.20.10.3","error","500; internal error","test","junit");
-		cpath.setDebugEnabled(false);
+		service.track("172.20.10.3","command","search");
+		service.track("172.20.10.3","provider","Reactome");
+		service.track("172.20.10.3","error","bad request");
+		service.track("172.20.10.3","client",null);
 	}
 
 	@Test

@@ -3,7 +3,7 @@ package cpath.service.args;
 /**
  * Created by igor on 23/06/16.
  */
-public abstract class ArgsBase {
+public abstract class ServiceQuery {
     private String user;
 
     public String getUser() {
@@ -14,7 +14,12 @@ public abstract class ArgsBase {
         this.user = user;
     }
 
-    public abstract String getLabel();
+    @Override
+    public String toString() {
+        return getCommand() + ((user!=null) ? " cli:" + user + ";" : "");
+    }
 
     public abstract String getCommand();
+
+    public abstract String getFormatName();
 }

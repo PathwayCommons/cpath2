@@ -1,8 +1,6 @@
 package cpath.service;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -11,11 +9,6 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -305,8 +298,8 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	public ServiceResponse getPathsFromTo(final OutputFormat format,
-										  Map<String, String> formatOptions, final String[] sources, final String[] targets, final Integer limit,
+	public ServiceResponse getPathsFromTo(final OutputFormat format, Map<String, String> formatOptions,
+										  final String[] sources, final String[] targets, final Integer limit,
 										  final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
@@ -402,7 +395,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	/**
 	 * Mapping IDs to BioPAX entity URIs.
-	 *
 	 *
 	 * @param identifiers - a list of genes/protein or molecules as: \
 	 * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
@@ -694,66 +686,9 @@ public class CPathServiceImpl implements CPathService {
 	/*
 	 * Track core service events using Google Analytics Measurement Protocol
 	 */
-	public void track(String ip, String category, String label, String action, String client)
+	public void track(String ip, String category, String label)
 	{
-		log.info(String.format("%s, %s, %s, %s", ip, category, action, label));
-
-		boolean isError = "error".equalsIgnoreCase(category);
-
-		URIBuilder builder = new URIBuilder()
-			.setScheme("https")
-			.setHost(CPathSettings.GA_HOST)
-			.setPath(cpath.gaPath()) //use "/debug/collect" for debugging
-			.addParameter("v", "1") // API Version.
-			.addParameter("ni","1") // it's always a non-interactive event (service log)
-			.addParameter("tid", cpath.getGa()) // Google Analytics Tracking ID (property)
-			.addParameter("t", (isError) ? "exception": "event")
-			.addParameter("ds", cpath.exportArchivePrefix())
-			//either &dl or both &dh and &dp could be specified (to ref a pageview hit...)
-//			.addParameter("dp", action)
- 			//.addParameter("cg1", cpath.exportArchivePrefix())
-			.addParameter("uip", ip)
-			// either &cid (a hash str.) or &uid is required
-			.addParameter("uid", String.valueOf(client)) //client app, lib or script name (not a person or session)
-			.addParameter("an", String.valueOf(client))
-			.addParameter("cd1", cpath.getToday()) //custom dimension1 - date (should be configured there in GA)
-			;
-
-		if(isError) {
-			// &exd,&exf go only with &t=exception
-			builder.addParameter("exd", action + "; " + label);
-			String isFatal = (label.contains("500") || label.contains("503"))?"1":"0";
-			builder.addParameter("exf", isFatal);
-		} else {
-			// &ec,&ea,&el go only with &t=event
-			builder
-				.addParameter("ec", category) //can be 'command','error','provider', or 'format'
-				.addParameter("ea", action) //e.g., service command name or output format
-				.addParameter("el", label); //e.g., data provider, query/genes, or output format name
-		}
-
-		// submit
-		try {
-			//hits (events, pageviews) are not stored unless some UA is defined:
-			CloseableHttpClient httpClient = HttpClientBuilder.create().setUserAgent("HttpClient").build();
-			URI uri = builder.build();
-			HttpResponse res = httpClient.execute(new HttpPost(uri));
-			if(cpath.isDebugEnabled() && res.getEntity() != null){
-				// detailed response msg.
-				OutputStream os = new ByteArrayOutputStream();
-				res.getEntity().writeTo(os);
-				log.info(uri.toString());
-				log.info(String.format("GA: res:%s; body:%s", res, os.toString()));
-			} else {
-				log.debug("GA query: " + uri.getQuery());
-				log.debug(String.format("GA res: %s", res.getStatusLine().getStatusCode()));
-			}
-			httpClient.close();
-		} catch (URISyntaxException e) {
-			throw new RuntimeException("Problem building GA tracking URI", e);
-		} catch (IOException e) {
-			throw new RuntimeException("Problem with GA tracking", e);
-		}
+		log.info(String.format("%s, %s, %s", ip, category.toUpperCase(), String.valueOf(label).toLowerCase()));
 	}
 
 	@Override

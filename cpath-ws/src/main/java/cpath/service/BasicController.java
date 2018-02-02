@@ -10,13 +10,17 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
 
-import cpath.service.args.ArgsBase;
+import cpath.service.args.ServiceQuery;
+import cpath.service.args.Search;
+import cpath.service.args.TopPathways;
+import cpath.service.args.Traverse;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
@@ -49,21 +53,18 @@ public abstract class BasicController {
     
     /**
      * Http error response with more details and specific access log events.
-	 * @param action
+	 * @param args
 	 * @param error
 	 * @param request
 	 * @param response
-	 * @param client
 	 */
-	protected final void errorResponse(String action, ErrorResponse error,
-									   HttpServletRequest request, HttpServletResponse response,
-									   String client)
+	protected final void errorResponse(ServiceQuery args, ErrorResponse error,
+									   HttpServletRequest request, HttpServletResponse response)
 	{
 		try {
 			//log/track using a shorter message
-			service.track(clientIpAddress(request),"error",
-					error.getStatus().getCode() + "; " + error.getErrorMsg(), action, client);
-			//retrn a long detailed message
+			track(request, args, null, error);
+			//return a long detailed message
 			response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
 		} catch (IOException e) {
 			log.error("Problem sending back an error response; " + e);
@@ -106,20 +107,17 @@ public abstract class BasicController {
 	 * @param request
 	 * @param response
 	 */
-	protected final void stringResponse(ArgsBase args, ServiceResponse result, HttpServletRequest request,
+	protected final void stringResponse(ServiceQuery args, ServiceResponse result, HttpServletRequest request,
 										HttpServletResponse response)
 	{
 		if(result instanceof ErrorResponse) {
-			errorResponse(args.getCommand(), (ErrorResponse) result, request, response, args.getUser());
+			errorResponse(args, (ErrorResponse) result, request, response);
 		}
 		else if (result instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) result;
-			final String ip = clientIpAddress(request);
+
 			// log/track one data access event for each data provider listed in the result
-			service.track(ip, "command", args.getLabel(), args.getCommand(), args.getUser());
-			for(String provider : dataResponse.getProviders()) {
-				service.track(ip,"provider", provider, args.getCommand(), args.getUser());
-			}
+			track(request, args, dataResponse.getProviders(), null);
 
 			if(dataResponse.getData() instanceof Path) {
 				//get the temp file
@@ -140,8 +138,7 @@ public abstract class BasicController {
 				} catch (IOException e) {
 					String msg = String.format("Failed to process the (temporary) result file %s; %s.",
 							resultFile, e.toString());
-					errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
-							request, response, args.getUser());
+					errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
 				} finally {
 					try {Files.delete(resultFile);}catch(Exception e){log.error(e.toString());}
 				}
@@ -162,25 +159,22 @@ public abstract class BasicController {
 					}
 				} catch (IOException e) {
 					String msg = String.format("Failed writing a trivial response: %s.", e.toString());
-					errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
-							request, response, args.getUser());
+					errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
 				}
 			}
 			else { //it's probably a bug -
 				String msg = String.format("BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
 						dataResponse.getData().getClass().getSimpleName(), dataResponse.toString());
-				errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
-						request, response, args.getUser());
+				errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
 			}
 		} else { //it's a bug -
 			String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ",
 					result.getClass().getSimpleName(), result.toString());
-			errorResponse(args.getCommand(), new ErrorResponse(INTERNAL_ERROR, msg),
-					request, response, args.getUser());
+			errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
 		}
 	}
 
-	
+
 	/**
 	 * Resizes the image.
 	 * 
@@ -242,5 +236,50 @@ public abstract class BasicController {
         }  
 		
         return ip;
+	}
+
+
+	// data access logging and tracking
+	void track(HttpServletRequest request, ServiceQuery args, Set<String> providers, ErrorResponse err) {
+		final String ip = clientIpAddress(request);
+
+		String client = args.getUser();
+		if(client==null || client.isEmpty()) {
+			//extract http client tool name/version part:
+			client = request.getHeader("User-Agent");
+			if(client!=null && !client.isEmpty() && client.contains(" ")) {
+				client = client.substring(0, client.indexOf(" "));
+			}
+		}
+
+		Integer status = 200;
+		if(err != null) {
+			status = err.getErrorCode();
+			service.track(ip, "error", err.getErrorMsg());
+		}
+
+		service.track(ip, "command", args.getCommand());
+
+		service.track(ip, "client", client);
+
+		String msg = status + ": " + args.toString();
+		if(providers != null) {
+			for (String provider : providers) service.track(ip, "provider", provider);
+			if (!providers.isEmpty()) msg += "; pro:" + String.join(",", providers);
+		}
+
+		service.track(ip, "all", msg);
+
+		//a hack to properly detect resulting data format in some cases
+		//(note: using URI extension for the content negotiation takes over 'accept' request header)
+		String f = args.getFormatName().toLowerCase();
+		if(args instanceof Search || args instanceof TopPathways || args instanceof Traverse) {
+			if((String.valueOf(request.getHeader("accept")).contains("application/json")
+					&& !request.getRequestURI().endsWith(".xml")) || request.getRequestURI().endsWith(".json"))
+			{
+                f = "json";
+            }
+		}
+		service.track(ip, "format", f);
 	}
 }
