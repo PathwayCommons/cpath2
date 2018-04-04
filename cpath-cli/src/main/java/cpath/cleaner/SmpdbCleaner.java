@@ -69,6 +69,8 @@ final class SmpdbCleaner implements Cleaner {
 			}
 			//replace shortened ugly displayName with standardName
 			pw.removeName("SubPathway");
+			pw.removeName("SubPathwayOutput");
+			pw.removeName("SubPathwayInput");
 		}
 
 		ModelUtils.replace(model, replacements);
