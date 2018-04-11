@@ -17,7 +17,7 @@ import java.util.*;
 
 
 /**
- * Implementation of Cleaner interface for the SMPDB BioPAX L3 pathway data
+ * Implementation of Cleaner interface for the SMPDB BioPAX L3 pathway data.
  * 
  * Can normalize pathway URIs to, e.g., http://identifiers.org/smpdb/SMP00016
  * (this allows to then merge same pathways from different input files)
@@ -32,6 +32,10 @@ final class SmpdbCleaner implements Cleaner {
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning SMPDB biopax file...");
+
+		//fail shortly (premerger skips this dataFile) if there is no TAXONOMY:9606 unif. xref:
+		if(!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606"))
+			throw new RuntimeException("Human data not found.");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
