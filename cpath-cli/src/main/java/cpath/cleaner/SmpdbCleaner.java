@@ -33,9 +33,12 @@ final class SmpdbCleaner implements Cleaner {
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning SMPDB biopax file...");
 
-		//fail shortly (premerger skips this dataFile) if there is no TAXONOMY:9606 unif. xref:
-		if(!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606"))
-			throw new RuntimeException("Human data not found.");
+		//fail shortly (premerger skips this dataFile) if there is no TAXONOMY:9606 unif. xref,
+		//but there are some (obviously non-human) BioSource objects (many human data pathways/files
+		// out there have no organism/BioSource defined at all):
+		if(!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606")
+				&& !model.getObjects(BioSource.class).isEmpty())
+			throw new RuntimeException("Highly likely non-human datafile (skip).");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
