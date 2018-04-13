@@ -33,17 +33,24 @@ final class SmpdbCleaner implements Cleaner {
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning SMPDB biopax file...");
 
-		//fail shortly (premerger skips this dataFile) if there is no TAXONOMY:9606 unif. xref,
-		//but there are some (obviously non-human) BioSource objects (many human data pathways/files
-		// out there have no organism/BioSource defined at all):
-		if(!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606")
-				&& !model.getObjects(BioSource.class).isEmpty())
-			throw new RuntimeException("Highly likely non-human datafile (skip).");
+// As we managed to get only human data archive from SMPDB there is no need for filtering by organism anymore -
+//		/*
+//		  fail shortly (premerger skips this dataFile) if there is no TAXONOMY:9606 unif. xref,
+//		  but there are some (obviously non-human) BioSource objects (many human data pathways/files
+//		  out there have no organism/BioSource defined at all):
+//		*/
+//		if(!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606")
+//				&& !model.getObjects(BioSource.class).isEmpty())
+//			throw new RuntimeException("Highly likely non-human datafile (skip).");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
 		final Map<Pathway, Pathway> replacements = new HashMap<Pathway, Pathway>();
 		for(Pathway pw : pathways) {
+			//since 1-Apr-2018 - skip normalized pathways
+			if(pw.getUri().startsWith("http://identifiers.org/smpdb/"))
+				continue;
+
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
 			//normally there are two unif. xrefs, e.g., SMP00016 and PW000149, per pathway
