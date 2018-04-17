@@ -3,6 +3,8 @@ package cpath;
 import static cpath.config.CPathSettings.*;
 
 import cpath.config.CPathSettings;
+import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
 import cpath.service.Merger;
 import cpath.service.PreMerger;
 import cpath.jpa.Metadata;
@@ -486,6 +488,12 @@ public final class Main {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 
+
+		//load the main model
+		LOG.info("loading the Main BioPAX Model...");
+		Model model = CPathUtils.loadMainBiopaxModel();
+		LOG.info("loaded.");
+
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
@@ -503,17 +511,29 @@ public final class Main {
 			writer.println(StringUtils.join(Arrays.asList(
 				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
 				m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
-		}		
+		}
 		writer.flush();
-		writer.close();	
+		writer.close();
+		LOG.info("generated datasources.txt");
+
+		//export the list of unique UniProt primary accession numbers
+		MappingsRepository mappingsRepository = context.getBean(MappingsRepository.class);
+		List<String> xrefids = new ArrayList<>();
+		for(Xref x : model.getObjects(Xref.class))
+			if (!(x instanceof PublicationXref) && x.getId() != null)
+				xrefids.add(x.getId());
+		writer = new PrintWriter(cpath.downloadsDir() + File.separator + "uniprot.txt");
+		writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:", cpath.getVersion()));
+		//map to the primary IDs, sort, and write
+		Set<String> acs = new TreeSet<>();
+		for(Mapping m : mappingsRepository.findBySrcIdInAndDestIgnoreCase(xrefids, "UNIPROT"))
+			acs.add(m.getDestId());
+		for(String ac : acs) writer.println(ac);
+		writer.close();
+		LOG.info("generated uniprot.txt");
+
 		// destroy the Spring context, release some resources
 		context.close();
-		LOG.info("successfully generated the datasources.txt file.");
-			
-		//load the main model
-		LOG.info("loading the Main BioPAX Model...");
-		Model model = CPathUtils.loadMainBiopaxModel();
-		LOG.info("successfully read the Main BioPAX Model");
 
 		LOG.info("init the full-text search engine...");
 		final Searcher searcher = new SearchEngine(model, cpath.indexDir());
