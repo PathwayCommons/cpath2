@@ -66,7 +66,7 @@ public class Graph extends ServiceQuery {
 	}
 
 	public void setSource(String[] source) {
-		Set<String> uris = new HashSet<String>(source.length);
+		Set<String> uris = new HashSet<>(source.length);
 		for(String item : source) {
 			if(item.contains(",")) {
 				//split by ',' ignoring spaces and empty values (between ,,)
@@ -84,7 +84,7 @@ public class Graph extends ServiceQuery {
 	}
 
 	public void setTarget(String[] target) {
-		Set<String> uris = new HashSet<String>(target.length);
+		Set<String> uris = new HashSet<>(target.length);
 		for(String item : target) {
 			if(item.contains(",")) {
 				//split by ',' ignoring spaces and empty values (between ,,)

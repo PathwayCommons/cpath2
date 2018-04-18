@@ -28,7 +28,7 @@ public class Help extends ServiceResponse implements Comparable<Help>{
 	
 	
 	public Help() {
-		members = new TreeSet<Help>();
+		members = new TreeSet<>();
 	}
 	
 	public Help(String id) {

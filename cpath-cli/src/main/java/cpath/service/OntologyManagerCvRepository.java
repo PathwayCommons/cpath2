@@ -227,7 +227,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	
 	
 	public Set<String> ontologyTermsToUris(Collection<OntologyTermI> terms) {
-		Set<String> urns = new HashSet<String>();
+		Set<String> urns = new HashSet<>();
 		for(OntologyTermI term : terms) {
 			urns.add(ontologyTermToUri(term));
 		}

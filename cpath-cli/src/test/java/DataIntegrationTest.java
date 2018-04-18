@@ -429,7 +429,7 @@ public class DataIntegrationTest {
 		
 	
 	private static List<Model> initPathwayModels() throws IOException {
-		final List<Model> pathwayModels = new ArrayList<Model>();
+		final List<Model> pathwayModels = new ArrayList<>();
 		
 		SimpleIOHandler reader = new SimpleIOHandler();
 		Normalizer normalizer = new Normalizer();

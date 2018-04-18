@@ -77,7 +77,7 @@ public class RepositoriesAndServiceTest {
 		assertEquals(1, service.map("SID:14438", "CHEBI").size());
 
 		//map from a list of IDs to target ID type (UNIPROT)
-		List<String> srcIds = new ArrayList<String>();
+		List<String> srcIds = new ArrayList<>();
 		//add IDs - both map to the same uniprot ID ()
 		srcIds.add("ZHX1");
 		srcIds.add("A2A2M3");

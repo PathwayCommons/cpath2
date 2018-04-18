@@ -11,11 +11,9 @@ import java.util.Set;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.util.Filter;
 import org.junit.Test;
 
 import cpath.service.Cleaner;
@@ -96,19 +94,14 @@ public class KeggHsaCleanerTest {
 		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(
 				getClass().getClassLoader().getResource("").getPath() 
 					+ File.separator + "testCleanedKeggSimpleMerge56210.owl"));
-		
 		pw = (Pathway) model.getByID(testPathwayUri);
 		//with SimpleMerger only, pathways with the same URI do not merge properly...
 		assertTrue(pw.getPathwayComponent().isEmpty());
 		
 		//BUt it works - using SimpleMerger and a special Filter<BioPAXElement>
-		SimpleMerger merger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {
-			public boolean filter(BioPAXElement object) {
-				return object instanceof Pathway;
-			}
-		});
+		SimpleMerger merger = new SimpleMerger(SimpleEditorMap.L3, (o) -> o instanceof Pathway);
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		merger.merge(model, m562);	
+		merger.merge(model, m562);
 		merger.merge(model, m10);
 		assertTrue(model.containsID(testPathwayUri));
 		assertTrue(model.containsID("http://identifiers.org/kegg.pathway/hsa00562"));

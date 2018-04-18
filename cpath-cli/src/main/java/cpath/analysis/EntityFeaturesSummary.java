@@ -36,7 +36,7 @@ public final class EntityFeaturesSummary implements Analysis<Model> {
 
 	public void execute(Model model) {
 		
-		final Set<String> providerURIs = new HashSet<String>();
+		final Set<String> providerURIs = new HashSet<>();
 		final String javaPropertyDatasources = System.getProperty(JAVA_OPTION_DATASOURCES);
 		if(javaPropertyDatasources!=null && !javaPropertyDatasources.isEmpty())
 			for(String id : javaPropertyDatasources.split(","))
@@ -45,9 +45,9 @@ public final class EntityFeaturesSummary implements Analysis<Model> {
 		final Set<ExperimentalForm> allExpForms = model.getObjects(ExperimentalForm.class);
 				
 		for(EntityFeature ef : model.getObjects(EntityFeature.class)) {
-			Set<String> providers = new HashSet<String>();
-			Set<String> eforms = new HashSet<String>();
-			Set<PhysicalEntity> pes = new HashSet<PhysicalEntity>();
+			Set<String> providers = new HashSet<>();
+			Set<String> eforms = new HashSet<>();
+			Set<PhysicalEntity> pes = new HashSet<>();
 			pes.addAll(ef.getFeatureOf());
 			pes.addAll(ef.getNotFeatureOf());
 			

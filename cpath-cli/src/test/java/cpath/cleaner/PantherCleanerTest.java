@@ -19,14 +19,11 @@ public class PantherCleanerTest {
 
 	@Test
 	public final void testClean() throws IOException {
-		// dump owl for review
-		Path f = Paths
-			.get(getClass().getClassLoader().getResource("").getPath(),"testCleanPanther.owl");
-		ZipFile zf = new ZipFile(getClass().getResource("/panther.owl.zip").getFile());
+		Path f = Paths.get(getClass().getClassLoader().getResource("").getPath(),"testCleanPanther.owl");
+		ZipFile zf = new ZipFile(getClass().getResource("/panther.zip").getFile());
 		assertTrue(zf.entries().hasMoreElements());
 		ZipEntry ze = zf.entries().nextElement();
 		(new PantherCleaner()).clean(zf.getInputStream(ze), Files.newOutputStream(f));
-		
 		Model m = new SimpleIOHandler().convertFromOWL(Files.newInputStream(f));
 		Set<BioSource> bioSources = m.getObjects(BioSource.class);
 		assertEquals(1, bioSources.size());

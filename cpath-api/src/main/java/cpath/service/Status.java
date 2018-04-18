@@ -1,6 +1,7 @@
 package cpath.service;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public enum Status {
@@ -61,8 +62,8 @@ public enum Status {
      *
      * @return ArrayList of Status Objects.
      */
-    public static ArrayList<String> getAllStatusCodes() {
-        ArrayList<String> list = new ArrayList<String>();
+    public static List<String> getAllStatusCodes() {
+        List<String> list = new ArrayList<>();
         for(Status statusCode : Status.values()) {
         	list.add(statusCode.name());
         }

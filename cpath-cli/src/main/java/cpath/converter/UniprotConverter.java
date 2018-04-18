@@ -343,7 +343,7 @@ final class UniprotConverter extends BaseConverter {
      */
     private Collection<String> getGeneSymbols(String geneName, ProteinReference proteinReference) 
     {
-    	Collection<String> symbls = new ArrayList<String>();
+    	Collection<String> symbls = new ArrayList<>();
         String parts[] = geneName.split(";\\s*(and)?");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
@@ -368,7 +368,7 @@ final class UniprotConverter extends BaseConverter {
      */
     private Collection<String> getGeneSynonyms(String geneName, ProteinReference proteinReference) 
     {
-    	Collection<String> syns = new ArrayList<String>();
+    	Collection<String> syns = new ArrayList<>();
         String parts[] = geneName.split(";\\s*(and)?");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
@@ -419,7 +419,7 @@ final class UniprotConverter extends BaseConverter {
 	private ProteinReference newProteinReferenceWithAccessionXrefs(String idLine, String accessions, Model model)
 	{	
 		// accession numbers as array
-		final List<String> acList = new ArrayList<String>(Arrays.asList(accessions.split(";")));
+		final List<String> acList = new ArrayList<>(Arrays.asList(accessions.split(";")));
 		// Pop the the first item, the primary AC, to generate canonical URI and unif. xref:
 		final String primaryId = acList.remove(0).trim();
 		final String uri = "http://identifiers.org/uniprot/" + primaryId;

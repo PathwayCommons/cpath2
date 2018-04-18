@@ -4,7 +4,6 @@ import cpath.config.CPathSettings;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 
-import javafx.scene.shape.Path;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -22,7 +21,6 @@ import org.springframework.util.Assert;
 
 import java.io.*;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -82,7 +80,7 @@ public final class Merger {
 		});
 		
 		// build models and merge from dataFile.premergeData
-		Collection<Metadata> providersMetadata = new ArrayList<Metadata>();
+		Collection<Metadata> providersMetadata = new ArrayList<>();
 		
 		for(Metadata metadata : service.metadata().findAll())
 			providersMetadata.add(metadata);
@@ -133,13 +131,13 @@ public final class Merger {
 
 	//remove bad unif. and rel. xrefs
 	private void cleanupXrefs(Model m) {
-		for(Xref x : new HashSet<Xref>(m.getObjects(Xref.class))) {
+		for(Xref x : new HashSet<>(m.getObjects(Xref.class))) {
 			if(!(x instanceof PublicationXref)) {
 				//remove bad xrefs from the model and properties
 				if (x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
 					m.remove(x);
 					//remove from properties
-					for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+					for (XReferrable owner : new HashSet<>(x.getXrefOf())) {
 						owner.removeXref(x);
 					}
 				} else {
@@ -213,7 +211,7 @@ public final class Merger {
 	//break all cyclic pathway inclusions via pathwayComponent property
 	public void breakPathwayComponentCycle(final Pathway pathway) {
 		//run recursively, though, avoiding infinite loops (KEGG pathways can cause it)
-		breakPathwayComponentCycle(new HashSet<Pathway>(), pathway, pathway);
+		breakPathwayComponentCycle(new HashSet<>(), pathway, pathway);
 	}
 
 	private void breakPathwayComponentCycle(final Set<Pathway> visited,
@@ -282,7 +280,7 @@ public final class Merger {
 				" to replace equivalent original objects ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
 		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
-		for (EntityReference origEr: new HashSet<EntityReference>(source.getObjects(EntityReference.class)))
+		for (EntityReference origEr: new HashSet<>(source.getObjects(EntityReference.class)))
 		{
 			EntityReference replacement = null;
 			
@@ -315,7 +313,7 @@ public final class Merger {
 						}
 					}
 					if(!isSupported) {
-						for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
+						for(EntityReference genericEr : new HashSet<>(origEr.getMemberEntityReferenceOf())) {
 							genericEr.removeMemberEntityReference(origEr);
 						}
 						source.remove(origEr);
@@ -367,7 +365,7 @@ public final class Merger {
 
 	private void filterOutUnwantedOrganismInteractions(Model source) {
 		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
-		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
+		miLoop: for(MolecularInteraction mi : new HashSet<>(source.getObjects(MolecularInteraction.class))) {
 			//try to find a reason to keep this MI in the model:
 			// - it has a participant having one of allowed taxonomy ID;
 			// - it has a complex or process participant (at this time, we won't bother looking further...);
@@ -403,7 +401,7 @@ public final class Merger {
 			//unless jumped to 'miLoop:' label above, remove this MI and participants
 			source.remove(mi);
 			log.info("MI is removed (all participants come from unwanted organisms): " + mi.getUri());
-			for(Entity e : new HashSet<Entity>(mi.getParticipant())) {
+			for(Entity e : new HashSet<>(mi.getParticipant())) {
 				mi.removeParticipant(e);
 				//ok to remove from the model as well, because some may come back after merging
 				//if they are still used by other entities
@@ -414,7 +412,7 @@ public final class Merger {
 
 	private void replaceConflictingUris(Model source, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
-		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects()))
+		for(BioPAXElement bpe : new HashSet<>(source.getObjects()))
 		{
 			String currUri = bpe.getUri();
 			if( !(bpe instanceof ProteinReference) && currUri.startsWith("http://identifiers.org/uniprot/")
@@ -449,7 +447,7 @@ public final class Merger {
      */
 	private void replaceOriginalUris(Model source, String metadataId) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
-		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
+		for(BioPAXElement bpe : new HashSet<>(source.getObjects())) {
 			String currUri = bpe.getUri();
 			if( !(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) ) {
 				// Generate a new URI (using Md5hex);
@@ -463,20 +461,21 @@ public final class Merger {
 	}
 
 	/*
-	* The following can improve our export to simple text formats:
-	* physical entities that lack entity reference, are generic, or
-	* have no uniprot/chebi/hgnc, or have ambiguous IDs
-	* can in some cases contribute to the results.
+	* This procedure auto-generates UniProt and ChEBI xrefs
+	* which improve converting of the biopax to simple text formats.
+	*
+	* So, entities that originally lacked entityReference, generics, complexes,
+	* and ones having no uniprot/chebi/hgnc or with ambiguous ids
+	* can now in some cases contribute to the results (SIF, GMT, SBGN output formats).
 	*
 	* This might eventually result in mutually exclusive identifiers,
-	* which is not a big deal as long as we do not merge things based on these new xrefs,
-	* but just index/search/query the db (this especially helps when no entity references defined
-	* for a molecule or when id-mapping is ambiguous).
+	* which is ok as long as we do not ever merge Things based on these xrefs,
+	* and only index or search in the db.
 	*/
 	private void xrefByMapping(Model source, String srcModelInfo, Model target) {
 		log.info("Using original xrefs or names and id-mapping, add UniProt/ChEBI/HGNC xrefs " +
 				" (unless they're too many) to not-merged PE/ERs (" + srcModelInfo + ")");
-		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class)))
+		for(Entity pe : new HashSet<>(source.getObjects(Entity.class)))
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
@@ -506,7 +505,7 @@ public final class Merger {
 		for (EntityReference old : replacements.keySet()) {			
 			final EntityReference repl = replacements.get(old);	
 			
-			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) 
+			for (EntityFeature ef : new HashSet<>(old.getEntityFeature()))
 			{ // move entity features of the replaced ER to the new canonical one
 				// remove the ef from the old ER
 				old.removeEntityFeature(ef);
@@ -525,11 +524,11 @@ public final class Merger {
 				if(equivEf == null) //add new EF to the canonical ER
 					repl.addEntityFeature(ef);
 				else { //update PEs' feature and notFeature properties to use the existing equiv. feature
-					for(PhysicalEntity pe : new HashSet<PhysicalEntity>(ef.getFeatureOf())) {
+					for(PhysicalEntity pe : new HashSet<>(ef.getFeatureOf())) {
 						pe.removeFeature(ef);
 						pe.addFeature(equivEf);
 					}
-					for(PhysicalEntity pe : new HashSet<PhysicalEntity>(ef.getNotFeatureOf())) {
+					for(PhysicalEntity pe : new HashSet<>(ef.getNotFeatureOf())) {
 						pe.removeNotFeature(ef);
 						pe.addNotFeature(equivEf);
 					}	
@@ -538,7 +537,7 @@ public final class Merger {
 
 			// Copy/Keep PublicationXrefs and RelationshipXrefs to the original PEs
 			// (otherwise we'd lost most of original xrefs...) TODO review; shall we copy only PXs?
-			for(Xref x : new HashSet<Xref>(old.getXref())) {
+			for(Xref x : new HashSet<>(old.getXref())) {
 				if(x instanceof UnificationXref) //sub with RX
 					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model);
 
@@ -607,7 +606,8 @@ public final class Merger {
      */
 	void genomicXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		Assert.isTrue(!(bpe instanceof SmallMolecule  || bpe instanceof Process)); //but normally it's a seq. entity or gene
+		Assert.isTrue(!(bpe instanceof SmallMolecule  || bpe instanceof SmallMoleculeReference || bpe instanceof Process),
+		"A process or chemical is not allowed here"); //a seq. entity or gene kind is expected here
 
 		// try/prefer to use ER instead of entity -
 		if(bpe instanceof SimplePhysicalEntity) {
@@ -624,14 +624,14 @@ public final class Merger {
 		}
 
 		final String organismRemark = getOrganism(bpe); //get organism taxID/name if possible
-		final Collection<String> primaryACs = new HashSet<String>();
+		final Collection<String> primaryACs = new HashSet<>();
 		if(!xrefsContainDb(bpe, "UNIPROT")) {
 			//bpe does not have any uniprot xrefs; try to map other IDs to the primary ACs of the PRs in the Warehouse
 			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT"));
 			if (primaryACs.isEmpty())
 				primaryACs.addAll(idMappingByXrefs(bpe, RelationshipXref.class, "UNIPROT"));
-// FYI: if we'd try mapping biopolymers by name, then e.g,, 'HLA DQB1' or 'ND5'
-// would result in hundreds unique uniprot/trembl IDs; so we don't do this!
+            // FYI: if we'd try mapping biopolymers by name, then e.g,, 'HLA DQB1' or 'ND5'
+            // would result in hundreds unique uniprot/trembl IDs; so we don't do this!
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryACs.isEmpty() && primaryACs.size() <= maxNumXrefsToAdd) {
@@ -641,30 +641,28 @@ public final class Merger {
 //				log.debug("skip " + bpe.getUri() + ", " + organismRemark +
 //						", that maps to none/tons (" + primaryACs.size() + ") UNIPROT IDs");
 //			}
-		}
-		else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
-			// let's map those to primary accessions, then - to HGNC Symbols, and ignore other xref/ids
+		} else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
+			// let's map those to primary accessions, then - to HGNC Symbols, and then remove other ids
 			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT", "uniprot"));
 			if(primaryACs.isEmpty())
 				primaryACs.addAll(idMappingByXrefs(bpe, RelationshipXref.class, "UNIPROT", "uniprot"));
-
 			//remove existing uniprot xrefs, add primary ones (unsupported species IDs must disappear)
 			if(!primaryACs.isEmpty()) {
-				Collection<String> newACs = new HashSet<String>(primaryACs);
-				for(Xref x : new HashSet<Xref>()) {
-					if(x instanceof PublicationXref)
-						continue;
-					if(primaryACs.contains(x.getId())) {
-						newACs.remove(x.getId());
-					} else {
-						bpe.removeXref(x);
-						log.debug("genomicXrefByMapping, removed " + x + " from " + bpe.getUri());
-					}
+				Collection<String> newACs = new HashSet<>(primaryACs);
+				for(Xref x : new HashSet<>(bpe.getXref())) { //here was a bug: body never executed due to empty set
+					if(!(x instanceof PublicationXref)
+                            && CPathUtils.startsWithAnyIgnoreCase(x.getDb(),"uniprot"))
+					{
+                        if (primaryACs.contains(x.getId())) {
+                            newACs.remove(x.getId()); //won't add again
+                        } else {
+                            bpe.removeXref(x); //remove a secondary or unsupported species uniprot xref
+                        }
+                    }
 				}
 				for(String ac : newACs) {
 					bpe.addXref(CPathUtils
-							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot knowledgebase", ac, m));
-					log.debug("genomicXrefByMapping, added uniprot RX:" + ac + " to " + bpe.getUri());
+                            .findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot knowledgebase", ac, m));
 				}
 			}
 		}
@@ -681,7 +679,7 @@ public final class Merger {
 		if(accessions == null || accessions.isEmpty())
 			return;
 
-		final Set<String> hgncSymbols = new HashSet<String>();
+		final Set<String> hgncSymbols = new HashSet<>();
 		for (String ac : accessions) {
 			ProteinReference canonicalPR =
 					(ProteinReference) warehouseModel.getByID("http://identifiers.org/uniprot/" + ac);
@@ -809,14 +807,14 @@ public final class Merger {
 				"bad element type");
 
 		Set<String> result = Collections.emptySet();
-		final Set<T> filteredXrefs = new ClassFilterSet<Xref, T>(element.getXref(), xrefClassForMapping);
+		final Set<T> filteredXrefs = new ClassFilterSet<>(element.getXref(), xrefClassForMapping);
 		if(filteredXrefs.isEmpty()) {
 			log.debug("no " + xrefClassForMapping.getSimpleName() +
 				" xrefs found for " + element.getModelInterface().getSimpleName() + " (" + element.getUri());
 		}
 		else
 		{
-			final Set<String> sourceIds = new HashSet<String>();
+			final Set<String> sourceIds = new HashSet<>();
 			for (T x : filteredXrefs) {
 				if ( !(x instanceof PublicationXref) && !CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "PANTHER")
 					//- hack: skip "PANTHER PATHWAY COMPONENT" IDs which are similar to UniProt accessions,
@@ -935,10 +933,10 @@ public final class Merger {
 	}
 
 	private Set<String> mapSmallMoleculeByExactName(Named el) {
-		Set<String> mp = new HashSet<String>();
+		Set<String> mp = new HashSet<>();
 
 		// save all the names in a different Set:
-		final Set<String> names = new HashSet<String>();
+		final Set<String> names = new HashSet<>();
 		for(String n : el.getName())
 			names.add(n.toLowerCase()); //LC is vital
 
@@ -961,7 +959,7 @@ public final class Merger {
 
 	private Set<EntityReference> findEntityRefUsingIdMappingResult(Set<String> mapsTo, String uriPrefix)
 	{
-		Set<EntityReference> toReturn = new HashSet<EntityReference>();
+		Set<EntityReference> toReturn = new HashSet<>();
 		
 		for(String id : mapsTo) {		
 			String uri = uriPrefix + id;

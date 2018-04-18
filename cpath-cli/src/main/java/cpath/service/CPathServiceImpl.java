@@ -190,7 +190,7 @@ public class CPathServiceImpl implements CPathService {
 
 
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
-		ArrayList<Filter> filters = new ArrayList<Filter>();
+		List<Filter> filters = new ArrayList<>();
 		
 		if(blacklist != null)
 			filters.add(new UbiqueFilter(blacklist.getListed()));
@@ -345,7 +345,7 @@ public class CPathServiceImpl implements CPathService {
 			// remove all Pathway objects from the result model (TODO: think again...e.g., to keep pathway name/uri somehow)
 			// (- pathways become incomplete after detaching from main PC model;
 			// these look confusing after converting to other format.)
-			for(Pathway p : new HashSet<Pathway>(m.getObjects(Pathway.class))) {
+			for(Pathway p : new HashSet<>(m.getObjects(Pathway.class))) {
 				m.remove(p);
 			}
 		}
@@ -407,7 +407,7 @@ public class CPathServiceImpl implements CPathService {
 		if (identifiers.length == 0)
 			return identifiers; //empty array
 		
-		final Set<String> uris = new TreeSet<String>();
+		final Set<String> uris = new TreeSet<>();
 
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers)
@@ -595,7 +595,7 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	private static Set<BioPAXElement> urisToBpes(Model model, String[] ids)
 	{
-		Set<BioPAXElement> elements = new HashSet<BioPAXElement>();
+		Set<BioPAXElement> elements = new HashSet<>();
 
 		for(Object id : ids) {
 			BioPAXElement e = model.getByID(id.toString());
@@ -641,15 +641,16 @@ public class CPathServiceImpl implements CPathService {
 
 
 	public Set<String> map(Collection<String> fromIds, final String toDb) {
-		Assert.hasText(toDb);
-		Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb));
+		Assert.hasText(toDb,"toDb must be not null, empty or blank");
+		Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb),
+				"toDb is not CHEBI or UNIPROT");
 
 		if(fromIds.isEmpty()) {
 			log.debug("map(), the argument 'fromIds' is an empty collection.");
 			return Collections.emptySet();
 		}
 
-		List<String> sourceIds = new ArrayList<String>();
+		List<String> sourceIds = new ArrayList<>();
 		// let's guess the source db (id type) and take care of isoform ids;
 		// it's risky if a no-prefix integer ID type (pubchem cid, sid) is used and no srcDb is provided;
 		// nevertheless, for bio-polymers, we support the only 'NCBI Gene' (integer) ID type.
@@ -675,7 +676,7 @@ public class CPathServiceImpl implements CPathService {
 			? mappingsRepository.findBySrcIdAndDestIgnoreCase(sourceIds.get(0), toDb)
 				: mappingsRepository.findBySrcIdInAndDestIgnoreCase(sourceIds, toDb);
 
-		final Set<String> results = new TreeSet<String>();
+		final Set<String> results = new TreeSet<>();
 		for(Mapping m : mappings) {
 			if(toDb.equalsIgnoreCase(m.getDest()))
 				results.add(m.getDestId());
@@ -769,7 +770,7 @@ public class CPathServiceImpl implements CPathService {
 		setSearcher(searchEngine);
 		log.info("Updating pathway/interaction/participant counts - per data source...");
 		// Prepare a list of all pathway type metadata to update
-		List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
+		List<Metadata> pathwayMetadata = new ArrayList<>();
 		for (Metadata md : metadataRepository.findAll())
 			if (!md.isNotPathwayData())
 				pathwayMetadata.add(md);
@@ -821,8 +822,8 @@ public class CPathServiceImpl implements CPathService {
 
 			// in addition, collect ChEBI and UniProt IDs and then
 			// use id-mapping to associate the bpe with more IDs:
-			final List<String> uniprotIds = new ArrayList<String>();
-			final List<String> chebiIds = new ArrayList<String>();
+			final List<String> uniprotIds = new ArrayList<>();
+			final List<String> chebiIds = new ArrayList<>();
 			for(String id : ids)
 			{
 				if(id.startsWith("CHEBI:")) {

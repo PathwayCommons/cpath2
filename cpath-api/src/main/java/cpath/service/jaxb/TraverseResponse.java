@@ -36,7 +36,7 @@ public class TraverseResponse extends ServiceResponse {
 
 	public List<TraverseEntry> getTraverseEntry() {
 		if(traverseEntry == null) {
-			traverseEntry = new ArrayList<TraverseEntry>();
+			traverseEntry = new ArrayList<>();
 		}
 		return traverseEntry;
 	}

@@ -30,7 +30,7 @@ public class TraverseEntry implements Serializable {
 	
 	public List<String> getValue() {
 		if(value == null) {
-			value = new ArrayList<String>();
+			value = new ArrayList<>();
 		}
 		return value;
 	}

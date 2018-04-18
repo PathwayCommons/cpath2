@@ -40,66 +40,57 @@ final class PantherCleaner implements Cleaner {
 		Model originalModel = simpleReader.convertFromOWL(data);
 		
 		//find "human" (BioSource); it's already there normalized - uses Identifiers.org URI
-		final BioSource human = (BioSource) originalModel.getByID("NCBITaxon:9606");
+		final BioSource human = (BioSource) originalModel.getByID("9606");
 		// - new version PANTHER pathway data contain URIS and xrefs like that, unfortunately...
 		if(human == null) //fail shortly (importer must skip this dataFile)
 			throw new RuntimeException("Human data (e.g. BioSource) not found.");
+
+		// fix the taxonomy xref.db standard name
+		human.getXref().iterator().next().setDb("Taxonomy");
 		
 		//Remove/replace non-human BioSources, SequenceEntityReferences 
 		//Pathways all have organism=null; let's set 'human' for all
 		//Use parallel execution
 		ExecutorService exec = Executors.newFixedThreadPool(3);
 		//make a copy of all model's objects set to avoid concurrent modification exceptions.
-		final Set<BioPAXElement> objects = new HashSet<BioPAXElement>(originalModel.getObjects());
+		final Set<BioPAXElement> objects = new HashSet<>(originalModel.getObjects());
 		final Model model = originalModel;
-		exec.execute(new Runnable() {
-			@Override
-			public void run() {
-				for(BioPAXElement o : objects) {
-					if((o instanceof BioSource) && !human.equals(o)) {
-						model.remove(o);
-					}
+		exec.execute(() -> {
+			for(BioPAXElement o : objects) {
+				if((o instanceof BioSource) && !human.equals(o)) {
+					model.remove(o);
 				}
 			}
 		});
-		exec.execute(new Runnable() {
-			@Override
-			public void run() {
-				for(SequenceEntityReference er : new ClassFilterSet<BioPAXElement, SequenceEntityReference>(objects, SequenceEntityReference.class)) {
-					if(er.getOrganism() != null && !er.getOrganism().equals(human)) {
-						model.remove(er);
-						for(SimplePhysicalEntity spe : new HashSet<SimplePhysicalEntity>(er.getEntityReferenceOf()))
-							spe.setEntityReference(null);
-						for(EntityReference generic : new HashSet<EntityReference>(er.getMemberEntityReferenceOf()))
-							generic.removeMemberEntityReference(er);						
-					}
+		exec.execute(() -> {
+			for(SequenceEntityReference er : new ClassFilterSet<BioPAXElement, SequenceEntityReference>(objects, SequenceEntityReference.class)) {
+				if(er.getOrganism() != null && !er.getOrganism().equals(human)) {
+					model.remove(er);
+					for(SimplePhysicalEntity spe : new HashSet<>(er.getEntityReferenceOf()))
+						spe.setEntityReference(null);
+					for(EntityReference generic : new HashSet<>(er.getMemberEntityReferenceOf()))
+						generic.removeMemberEntityReference(er);
 				}
 			}
 		});
-		exec.execute(new Runnable() {
-			@Override
-			public void run() {
-				for(Pathway p : new ClassFilterSet<BioPAXElement, Pathway>(objects, Pathway.class)) {
-					if(p.getUri().startsWith("http://identifiers.org/panther.pathway/")
-							|| !p.getPathwayComponent().isEmpty()
-							|| !p.getPathwayOrder().isEmpty()) { //- seems they don't use pathwayOrder property, anyway
-						p.setOrganism(human);
-					} else //black box and no-components pathways
-						p.setOrganism(null); //clear in case it's set to other org.
-				}
+		exec.execute(() -> {
+			for(Pathway p : new ClassFilterSet<BioPAXElement, Pathway>(objects, Pathway.class)) {
+				if(p.getUri().startsWith("http://identifiers.org/panther.pathway/")
+						|| !p.getPathwayComponent().isEmpty()
+						|| !p.getPathwayOrder().isEmpty()) { //- seems they don't use pathwayOrder property, anyway
+					p.setOrganism(human);
+				} else //black box and no-components pathways
+					p.setOrganism(null); //clear in case it's set to other org.
 			}
 		});
-		exec.execute(new Runnable() {
+		exec.execute(() -> {
 			// remove ALL "PANTHER Pathway" and "PANTHER Pathway Component" xrefs
 			// (they collide with UniProt IDs like P01234 and confuse id-mapping, full-text search)
-			@Override
-			public void run() {
-				for(BioPAXElement o : objects) {
-					if((o instanceof Xref) && CPathUtils
-							.startsWithAnyIgnoreCase(String.valueOf(((Xref)o).getDb()),"panther pathway"))
-					{
-						model.remove(o);
-					}
+			for(BioPAXElement o : objects) {
+				if((o instanceof Xref) && CPathUtils
+						.startsWithAnyIgnoreCase(String.valueOf(((Xref)o).getDb()),"panther pathway"))
+				{
+					model.remove(o);
 				}
 			}
 		});
@@ -122,7 +113,7 @@ final class PantherCleaner implements Cleaner {
 		
 		//replace generic ERs that have only one non-generic memberER with that member
 		//(should not be nested generics; if so, won't replace those)
-		for(SequenceEntityReference generic : new HashSet<SequenceEntityReference>(
+		for(SequenceEntityReference generic : new HashSet<>(
 				cleanModel.getObjects(SequenceEntityReference.class)))
 		{
 			if(generic.getMemberEntityReference().size() != 1)
@@ -149,7 +140,7 @@ final class PantherCleaner implements Cleaner {
 				if(member.getStandardName() == null)
 					member.setStandardName(generic.getStandardName());
 				// replace
-				for(SimplePhysicalEntity spe : new HashSet<SimplePhysicalEntity>(generic.getEntityReferenceOf()))
+				for(SimplePhysicalEntity spe : new HashSet<>(generic.getEntityReferenceOf()))
 					spe.setEntityReference(member);
 				
 				generic.removeMemberEntityReference(member);				

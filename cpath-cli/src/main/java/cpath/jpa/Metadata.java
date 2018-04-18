@@ -119,7 +119,7 @@ public final class Metadata {
 	 * Default Constructor.
 	 */
 	Metadata() {
-		content = new HashSet<Content>();
+		content = new HashSet<>();
 	}
 
     /**
@@ -368,7 +368,7 @@ public final class Metadata {
 		
 		// replace for all entities
 		for (org.biopax.paxtools.model.level3.Entity ent : model.getObjects(org.biopax.paxtools.model.level3.Entity.class)) {
-			for(Provenance ds : new HashSet<Provenance>(ent.getDataSource()))
+			for(Provenance ds : new HashSet<>(ent.getDataSource()))
 				ent.removeDataSource(ds);
 			ent.addDataSource(pro);
 		}

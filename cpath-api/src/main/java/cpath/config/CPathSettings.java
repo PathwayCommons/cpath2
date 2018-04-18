@@ -247,7 +247,7 @@ public final class CPathSettings
 	 * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
 	 */
 	public Set<String> getOrganismTaxonomyIds() {
-		Set<String> taxids = new HashSet<String>();
+		Set<String> taxids = new HashSet<>();
 		final Pattern taxIdPattern = Pattern.compile("\\(\\s*(\\d+)\\s*\\)");
 		for(String org : getOrganisms()) {
 			//extract and collect taxIDs

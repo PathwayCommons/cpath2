@@ -49,10 +49,10 @@ final class InohCleaner implements Cleaner {
 		log.info("Cleaning INOH data, please be patient...");
 		
 		//convert "UniProt" PublichationXrefs (usually owned by some Evidence) to Rel.Xrefs.
-		for(PublicationXref x : new HashSet<PublicationXref>(model.getObjects(PublicationXref.class))) {
+		for(PublicationXref x : new HashSet<>(model.getObjects(PublicationXref.class))) {
 			if("UniProt".equalsIgnoreCase(x.getDb())) {
 				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+				for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 					owner.removeXref(x);
 					owner.addXref(rx);
 					log.debug("replaced PX " + x + " with RX " + rx);
@@ -62,9 +62,9 @@ final class InohCleaner implements Cleaner {
 
 		// using PhysicalEntity instead SimplePhysicalEntity below also fixes for Complexes' xrefs;
 		// move some of unification xrefs from physical entity to entity reference
-		for(PhysicalEntity spe : new HashSet<PhysicalEntity>(model.getObjects(PhysicalEntity.class))) {			
-			Set<UnificationXref> xrefs = new ClassFilterSet<Xref,UnificationXref>(new HashSet<Xref>(spe.getXref()), UnificationXref.class);
-			Set<UnificationXref> proteinUniprotUnifXrefs = new HashSet<UnificationXref>();
+		for(PhysicalEntity spe : new HashSet<>(model.getObjects(PhysicalEntity.class))) {
+			Set<UnificationXref> xrefs = new ClassFilterSet<Xref,UnificationXref>(new HashSet<>(spe.getXref()), UnificationXref.class);
+			Set<UnificationXref> proteinUniprotUnifXrefs = new HashSet<>();
 			//first pass (do not move/convert proteins' uniprot unif. xrefs yet)
 			for(UnificationXref x : xrefs) {
 				if("INOH".equalsIgnoreCase(x.getDb())) 
@@ -113,7 +113,7 @@ final class InohCleaner implements Cleaner {
 		
 		//fix CV (InteractionVocabulary) terms that contain one of xref.id in them (e.g., "IEV_0000183:Transcription")
 		for(ControlledVocabulary cv : model.getObjects(ControlledVocabulary.class)) {		
-	terms:	for(String term : new HashSet<String>(cv.getTerm())) {
+	terms:	for(String term : new HashSet<>(cv.getTerm())) {
 				for(Xref xref : cv.getXref()) {
 					if(term.startsWith(xref.getId() + ":")) {
 						cv.removeTerm(term);
@@ -128,12 +128,12 @@ final class InohCleaner implements Cleaner {
 		
 		
 		//fix shared UnificationXrefs
-		Set<UnificationXref> uxrefs =  new HashSet<UnificationXref>(model.getObjects(UnificationXref.class));
+		Set<UnificationXref> uxrefs =  new HashSet<>(model.getObjects(UnificationXref.class));
 		for(UnificationXref x : uxrefs) {
 			if(x.getXrefOf().size() > 1) {
 				//convert to RX, re-associate
 				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+				for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 					if(owner instanceof ControlledVocabulary)
 						continue; //CVs can use same UX, but that means they are to merge...
 					owner.removeXref(x);
@@ -144,13 +144,13 @@ final class InohCleaner implements Cleaner {
 		}
 		
 		//remove all TRs where template is null (due to illegal property range, Complex values were ignored by the reader)
-		for(TemplateReaction tr : new HashSet<TemplateReaction>(model.getObjects(TemplateReaction.class))) {
+		for(TemplateReaction tr : new HashSet<>(model.getObjects(TemplateReaction.class))) {
 			if(tr.getTemplate() == null) {
 				model.remove(tr);
-				for(PathwayStep ps : new HashSet<PathwayStep>(tr.getStepProcessOf())) {
+				for(PathwayStep ps : new HashSet<>(tr.getStepProcessOf())) {
 					ps.removeStepProcess(tr);
 				}		
-				for(Control co : new HashSet<Control>(tr.getControlledOf())) {
+				for(Control co : new HashSet<>(tr.getControlledOf())) {
 					co.removeControlled(tr);
 				}
 			}

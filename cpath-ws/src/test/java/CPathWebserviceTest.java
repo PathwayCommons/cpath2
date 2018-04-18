@@ -27,7 +27,7 @@ public class CPathWebserviceTest {
 	
 	static {
 		template = new RestTemplate();
-		List<HttpMessageConverter<?>> msgCovs = new ArrayList<HttpMessageConverter<?>>();
+		List<HttpMessageConverter<?>> msgCovs = new ArrayList<>();
 		msgCovs.add(new FormHttpMessageConverter());
 		msgCovs.add(new StringHttpMessageConverter());
 		template.setMessageConverters(msgCovs);

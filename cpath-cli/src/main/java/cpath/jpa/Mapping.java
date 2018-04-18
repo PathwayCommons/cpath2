@@ -50,14 +50,14 @@ public final class Mapping {
 
  
     public Mapping(String src, String srcId, String dest, String destId) {
-		Assert.hasText(src);
-		Assert.hasText(srcId);
-		Assert.hasText(dest);
-		Assert.hasText(destId);
-		Assert.isTrue(srcId.length()<=30);
-		Assert.isTrue(src.length()<=30);
-		Assert.isTrue(destId.length()<=15);
-		Assert.isTrue(dest.length()<=15);
+		Assert.hasText(src,"src must not be null, empty, or blank");
+		Assert.hasText(srcId, "srcId must not be null, empty, or blank");
+		Assert.hasText(dest,"dest must not be null, empty, or blank");
+		Assert.hasText(destId,"destId must not be null, empty, or blank");
+		Assert.isTrue(srcId.length()<=30,"srcId is too long (>30)");
+		Assert.isTrue(src.length()<=30,"src is too long (>30)");
+		Assert.isTrue(destId.length()<=15,"destId is too long (>15)");
+		Assert.isTrue(dest.length()<=15, "dest is too long (>15)");
 
 		src = src.toUpperCase();
 		//replace a uniprot* db name with simply 'UNIPROT'

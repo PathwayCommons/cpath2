@@ -86,7 +86,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 	private Collection<String> getValuesByREGEX(StringBuilder entryBuffer,
 			Pattern regex) throws IOException {
 
-		Collection<String> toReturn = new ArrayList<String>();
+		Collection<String> toReturn = new ArrayList<>();
 		Scanner scanner = new Scanner(entryBuffer.toString());
 
 		if (log.isDebugEnabled()) {

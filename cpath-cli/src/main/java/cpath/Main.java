@@ -4,12 +4,10 @@ import static cpath.config.CPathSettings.*;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.Mapping;
-import cpath.jpa.MappingsRepository;
 import cpath.service.Merger;
 import cpath.service.PreMerger;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
-import cpath.jpa.MetadataRepository;
 import cpath.service.*;
 import cpath.service.jaxb.*;
 
@@ -79,7 +77,7 @@ public final class Main {
 
     	// Cleanup arguments - remove empty/null strings from the end, which were
     	// possibly the result of calling this method from a shell script
-    	final List<String> filteredArguments = new ArrayList<String>();
+    	final List<String> filteredArguments = new ArrayList<>();
     	for(String a : params)
     		if(a != null && !a.isEmpty() && !a.equalsIgnoreCase("null"))
 				filteredArguments.add(a);
@@ -397,7 +395,7 @@ public final class Main {
 			// initialize the search engine
 			Searcher searcher = new SearchEngine(model, cpath.indexDir());
 
-			Collection<String> selectedUris = new HashSet<String>();
+			Collection<String> selectedUris = new HashSet<>();
 			
 			if(types.length>0) {
 				//collect biopax object URIs of the specified types and sub-types, and data sources if specified
@@ -497,8 +495,8 @@ public final class Main {
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
-		
-		MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
+		CPathService service = context.getBean(CPathService.class);
+
 		// create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator + "datasources.txt");
 		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
@@ -506,7 +504,7 @@ public final class Main {
 			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));		
-		Iterable<Metadata> allMetadata = metadataRepository.findAll();
+		Iterable<Metadata> allMetadata = service.metadata().findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
 				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
@@ -517,18 +515,24 @@ public final class Main {
 		LOG.info("generated datasources.txt");
 
 		//export the list of unique UniProt primary accession numbers
-		MappingsRepository mappingsRepository = context.getBean(MappingsRepository.class);
-		List<String> xrefids = new ArrayList<>();
-		for(Xref x : model.getObjects(Xref.class))
-			if (!(x instanceof PublicationXref) && x.getId() != null)
-				xrefids.add(x.getId());
+		LOG.info("creating the list of primary uniprot IDs...");
+		Set<String> acs = new TreeSet<>();
+		//exclude publication xrefs
+		Set<Xref> xrefs = new HashSet<>(model.getObjects(UnificationXref.class));
+		xrefs.addAll(model.getObjects(RelationshipXref.class));
+		long left = xrefs.size();
+		for(Xref x : xrefs) {
+			String id = x.getId();
+			if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(),"uniprot")
+					&& id != null && !acs.contains(id))
+				acs.addAll(service.map(id, "UNIPROT"));
+			if(--left % 10000 == 0)
+				LOG.info(left + " xrefs to map...");
+		}
 		writer = new PrintWriter(cpath.downloadsDir() + File.separator + "uniprot.txt");
 		writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:", cpath.getVersion()));
-		//map to the primary IDs, sort, and write
-		Set<String> acs = new TreeSet<>();
-		for(Mapping m : mappingsRepository.findBySrcIdInAndDestIgnoreCase(xrefids, "UNIPROT"))
-			acs.add(m.getDestId());
-		for(String ac : acs) writer.println(ac);
+		for(String ac : acs)
+			writer.println(ac);
 		writer.close();
 		LOG.info("generated uniprot.txt");
 
@@ -606,7 +610,7 @@ public final class Main {
 	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
     {
-    	Collection<String> uris = new ArrayList<String>();
+    	Collection<String> uris = new ArrayList<>();
     	
     	SearchResponse resp = searcher.search("*", 0, type, ds, org);
     	int page = 0;
@@ -626,7 +630,7 @@ public final class Main {
 	private static void createDetailedBiopax(final Model mainModel, Searcher searcher, Iterable<Metadata> allMetadata)
 	{
 		//collect BioPAX pathway data source names
-		final Set<String> pathwayDataSources = new HashSet<String>();
+		final Set<String> pathwayDataSources = new HashSet<>();
 		for(Metadata md : allMetadata) {
 			if (md.getType() == METADATA_TYPE.BIOPAX || md.getType() == METADATA_TYPE.SBML)
 				pathwayDataSources.add(md.standardName());
@@ -658,7 +662,7 @@ public final class Main {
         	LOG.info("creating new " + 	biopaxArchive);
 			try {
 				//find all entities (all child elements will be then exported too)
-				Collection<String> uris = new HashSet<String>();
+				Collection<String> uris = new HashSet<>();
 				uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));
 				uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
 				uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));

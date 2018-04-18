@@ -47,7 +47,7 @@ public class WarehouseCVsTest {
 	@Test
 	public void testOntologyTermsToUris() {
 		OntologyTermI term = new OntologyTermImpl("GO", "GO:0005654", "nucleoplasm");
-		Set<OntologyTermI> terms = new HashSet<OntologyTermI>();
+		Set<OntologyTermI> terms = new HashSet<>();
 		terms.add(term);
 		Set<String> urns = cvRepository.ontologyTermsToUris(terms);
 		assertFalse(urns.isEmpty());

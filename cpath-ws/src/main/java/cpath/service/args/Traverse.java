@@ -22,7 +22,7 @@ public class Traverse extends ServiceQuery {
 	}
 
 	public void setUri(String[] uri) {
-		Set<String> uris = new HashSet<String>(uri.length);
+		Set<String> uris = new HashSet<>(uri.length);
 		for(String item : uri) {
 			if(item.contains(",")) {
 				//split by ',' ignoring spaces and empty values (between ,,)

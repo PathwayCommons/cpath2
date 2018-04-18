@@ -82,7 +82,7 @@ public final class CPathUtils {
     {
         // order of lines/records in the Metadata table does matter (since 2013/03);
 		// so List is used here instead of HashSet
-		List<Metadata> toReturn = new ArrayList<Metadata>();
+		List<Metadata> toReturn = new ArrayList<>();
 
         // check args
         if (url == null) {
@@ -181,7 +181,7 @@ public final class CPathUtils {
      */
     public static void analyzeAndOrganizeContent(final Metadata metadata) 
     {
-		Collection<Content> contentCollection = new HashSet<Content>();
+		Collection<Content> contentCollection = new HashSet<>();
 
 		try {
 			String fname = (metadata.getUrlToData().startsWith("classpath:")) //a hack for junit tests
@@ -491,7 +491,7 @@ public final class CPathUtils {
 
 	public static Set<String> getXrefIds(BioPAXElement bpe)
 	{
-		final Set<String> ids = new HashSet<String>();
+		final Set<String> ids = new HashSet<>();
 
 		//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)

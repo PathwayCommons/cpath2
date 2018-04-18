@@ -41,7 +41,7 @@ final class WikipathwaysCleaner implements Cleaner {
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning NetPath data, please be patient...");
 
-		for(Xref x : new HashSet<Xref>(model.getObjects(Xref.class))) {
+		for(Xref x : new HashSet<>(model.getObjects(Xref.class))) {
 
 			//skip for PublicationXref
 			if(x instanceof PublicationXref) continue;
@@ -58,7 +58,7 @@ final class WikipathwaysCleaner implements Cleaner {
 				//If a UnificationXref has db:uniprot* but belongs to not a ProteinReference object,
 				//then we're replacing it there with a similar RelationshipXref:
 				if(x instanceof UnificationXref && x.getDb().toLowerCase().startsWith("uniprot")) {
-					for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+					for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 						if(!(owner instanceof ProteinReference)) {
 							owner.removeXref(x);
 							owner.addXref(BaseCleaner.getOrCreateRx(x, model));
@@ -71,7 +71,7 @@ final class WikipathwaysCleaner implements Cleaner {
 			} else {
 				//delete bad UX or RX:
 				model.remove(x);
-				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+				for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 					owner.removeXref(x);
 				}
 				log.info("Deleted an incomplete/invalid xref both from the model and 'xref' properties: " + x);

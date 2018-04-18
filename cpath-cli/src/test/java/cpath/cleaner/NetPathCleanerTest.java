@@ -41,9 +41,9 @@ public class NetPathCleanerTest {
 		
 		for(ControlledVocabulary cv : m.getObjects(ControlledVocabulary.class)) {
 			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(cv.getXref()), UnificationXref.class);
+					new HashSet<>(cv.getXref()), UnificationXref.class);
 			Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
-					new HashSet<Xref>(cv.getXref()), RelationshipXref.class);
+					new HashSet<>(cv.getXref()), RelationshipXref.class);
 			
 			assertFalse(urefs.isEmpty() && !rxrefs.isEmpty()); //some CVs had no xrefs at all
 			

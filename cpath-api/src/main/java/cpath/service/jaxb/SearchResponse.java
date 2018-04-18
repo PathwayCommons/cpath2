@@ -53,7 +53,7 @@ public class SearchResponse extends ServiceResponse {
 
 	public List<SearchHit> getSearchHit() {
         if (searchHit == null) {
-            searchHit = new ArrayList<SearchHit>();
+            searchHit = new ArrayList<>();
         }
         return this.searchHit;
     }
@@ -121,7 +121,7 @@ public class SearchResponse extends ServiceResponse {
 	@XmlTransient
 	public Set<String> getProviders() {
 		if(providers == null)
-			providers = new HashSet<String>();
+			providers = new HashSet<>();
 		
 		return providers;
 	}
@@ -131,7 +131,7 @@ public class SearchResponse extends ServiceResponse {
 	
 	
 	public Set<String> provenanceUris() {
-		Set<String> provUris = new HashSet<String>();
+		Set<String> provUris = new HashSet<>();
 		
 		if(searchHit != null) {
 			for(SearchHit hit : searchHit) {

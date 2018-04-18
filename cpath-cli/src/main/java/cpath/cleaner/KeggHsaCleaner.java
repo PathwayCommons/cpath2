@@ -9,7 +9,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +37,11 @@ final class KeggHsaCleaner implements Cleaner {
 		log.info("Cleaning KEGG biopax data, please wait...");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
-		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
+		Set<Pathway> pathways = new HashSet<>(model.getObjects(Pathway.class));
 		Map<String, Pathway> newUriToEntityMap = new HashMap<String, Pathway>();
 		for(Pathway pw : pathways) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
+					new HashSet<>(pw.getXref()), UnificationXref.class);
 			//normally there is only one such xref
 			if(!uxrefs.isEmpty()) {
 				UnificationXref x = uxrefs.iterator().next();
@@ -57,7 +56,7 @@ final class KeggHsaCleaner implements Cleaner {
 								+ x.getXrefOf());
 						
 						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);						
-						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+						for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 							if(owner.equals(newUriToEntityMap.get(uri)))
 								continue; //keep the entity to be updated unchanged
 							owner.removeXref(x);
@@ -82,12 +81,7 @@ final class KeggHsaCleaner implements Cleaner {
 					if(!(named.getStandardName()==null || named.getStandardName().contains("..."))) {
 						named.setDisplayName(named.getStandardName()); //usually it's like "C12345" (KEGG Compound ID)
 					} else {
-						Set<String> sortedByLengthNames = new TreeSet<String>(new Comparator<String>(){
-							@Override
-							public int compare(String o1, String o2) {
-								return o1.length() - o2.length();
-							}
-						});
+						Set<String> sortedByLengthNames = new TreeSet<>(Comparator.comparingInt(String::length));
 						sortedByLengthNames.addAll(named.getName());
 						named.setDisplayName(null);
 						for(String name : sortedByLengthNames) {
@@ -112,7 +106,7 @@ final class KeggHsaCleaner implements Cleaner {
 		for(SimplePhysicalEntity spe : model.getObjects(SimplePhysicalEntity.class)) {
 			EntityReference er = spe.getEntityReference();
 			if(er != null) {
-				for(Xref x : new HashSet<Xref>(spe.getXref())) {
+				for(Xref x : new HashSet<>(spe.getXref())) {
 					if(er.getXref().contains(x)) {
 						spe.removeXref(x);
 					}

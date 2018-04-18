@@ -72,9 +72,9 @@ public class MetadataController extends BasicController {
     public List<Metadata> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	//pathway/interaction data sources
-		List<Metadata> ds = new ArrayList<Metadata>();
+		List<Metadata> ds = new ArrayList<>();
 		//warehouse data sources
-		List<Metadata> wh = new ArrayList<Metadata>();
+		List<Metadata> wh = new ArrayList<>();
 		
 		for(Metadata m : service.metadata().findAll()) {
 			//set dynamic extra fields

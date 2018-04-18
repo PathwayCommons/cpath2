@@ -117,7 +117,7 @@ public class HumanCycCleaner implements Cleaner
 	{
 		for (PhysicalEntity pe : model.getObjects(PhysicalEntity.class))
 		{
-			for (Xref xref : new HashSet<Xref>(pe.getXref()))
+			for (Xref xref : new HashSet<>(pe.getXref()))
 			{
 				if (xref instanceof UnificationXref)
 				{
@@ -199,7 +199,7 @@ public class HumanCycCleaner implements Cleaner
 		nd.setStandardName("NT5C1B");
 
 		// We need only one unification xref. Clear all others. 
-		for (Xref xref : new HashSet<Xref>(nd.getXref()))
+		for (Xref xref : new HashSet<>(nd.getXref()))
 		{
 			if (xref instanceof UnificationXref && !xref.getUri().equals("UnificationXref147997"))
 			{
@@ -207,7 +207,7 @@ public class HumanCycCleaner implements Cleaner
 			}
 		}
 
-		for (String name : new HashSet<String>(nd.getName()))
+		for (String name : new HashSet<>(nd.getName()))
 		{
 			if (name.startsWith("RETINOL") || name.startsWith("PANCREAS"))
 			{
@@ -249,7 +249,7 @@ public class HumanCycCleaner implements Cleaner
 	
 	protected void keepOnlyThis(XReferrable ele, String ref)
 	{
-		Set<UnificationXref> removeSet = new HashSet<UnificationXref>();
+		Set<UnificationXref> removeSet = new HashSet<>();
 
 		for (Xref xref : ele.getXref())
 		{

@@ -232,7 +232,7 @@ public class BiopaxConverter {
 		else
 		{
 			//default: apply all SIF rules but neighbor_of
-			Collection<SIFType> c = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
+			Collection<SIFType> c = new HashSet<>(Arrays.asList(SIFEnum.values()));
 			c.remove(SIFEnum.NEIGHBOR_OF); //exclude NEIGHBOR_OF
 			sifTypes = c.toArray(new SIFType[c.size()]);
 		}
@@ -261,7 +261,7 @@ public class BiopaxConverter {
 		if(m != null) {
 			Set<Provenance> provs = m.getObjects(Provenance.class);		
 			if(provs!= null && !provs.isEmpty()) {
-				names = new TreeSet<String>();
+				names = new TreeSet<>();
 				for(Provenance prov : provs) {
 					String name = prov.getStandardName();
 					if(name != null)

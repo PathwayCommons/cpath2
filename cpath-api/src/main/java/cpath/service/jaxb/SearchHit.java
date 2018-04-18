@@ -82,7 +82,7 @@ public class SearchHit implements Serializable {
      */
     public List<String> getDataSource() {
         if (dataSource == null) {
-            dataSource = new ArrayList<String>();
+            dataSource = new ArrayList<>();
         }
         return this.dataSource;
     }
@@ -96,7 +96,7 @@ public class SearchHit implements Serializable {
      */
     public List<String> getOrganism() {
         if (organism == null) {
-            organism = new ArrayList<String>();
+            organism = new ArrayList<>();
         }
         return this.organism;
     }
@@ -110,7 +110,7 @@ public class SearchHit implements Serializable {
      */
     public List<String> getPathway() {
         if (pathway == null) {
-            pathway = new ArrayList<String>();
+            pathway = new ArrayList<>();
         }
         return this.pathway;
     }

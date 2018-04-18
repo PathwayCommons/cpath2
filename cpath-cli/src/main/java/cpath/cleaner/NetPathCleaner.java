@@ -41,13 +41,13 @@ final class NetPathCleaner implements Cleaner {
 		// a CV must have one unification xref;
 		// if there are also relationship and publication xrefs, it's a biopax error, but we'll keep as is (not critical);
 		// So, if there is no unification xref but rel. xrefs (in fact, one or none in NetPath), we convert rel. to unif. xref.
-		Set<ControlledVocabulary> cvs = new HashSet<ControlledVocabulary>(model.getObjects(ControlledVocabulary.class));
+		Set<ControlledVocabulary> cvs = new HashSet<>(model.getObjects(ControlledVocabulary.class));
 		for(ControlledVocabulary cv : cvs) {			
 			log.info("Processing " + cv.toString() + "; xrefs: " + cv.getXref());			
 			
 			//insert "L-" after "phospho-" in MFV terms (if it does not contain "phospho-L-" already)
 			if(cv instanceof SequenceModificationVocabulary) {
-				for(String t: new HashSet<String>(cv.getTerm())) {
+				for(String t: new HashSet<>(cv.getTerm())) {
 					if(t.contains("phospho-") && !t.contains("phospho-L-")) {
 						//insert "L-", replace term
 						cv.removeTerm(t);
@@ -59,7 +59,7 @@ final class NetPathCleaner implements Cleaner {
 			}
 			
 			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(cv.getXref()), UnificationXref.class);
+					new HashSet<>(cv.getXref()), UnificationXref.class);
 			//skip if there is a unif. xref
 			if(!urefs.isEmpty()) {
 				log.info("(skip) there are unif.xref: " + urefs); 
@@ -67,7 +67,7 @@ final class NetPathCleaner implements Cleaner {
 			}
 				
 			Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
-					new HashSet<Xref>(cv.getXref()), RelationshipXref.class);
+					new HashSet<>(cv.getXref()), RelationshipXref.class);
 			
 			for(RelationshipXref x : rxrefs) {
 				//remove and skip for bad xref (just in case there are any)
@@ -91,12 +91,12 @@ final class NetPathCleaner implements Cleaner {
 		}
 		
 		//convert shared UnificationXrefs into RelationshipXrefs (in fact, some of those are just invalid db/id)
-		Set<UnificationXref> uxrefs =  new HashSet<UnificationXref>(model.getObjects(UnificationXref.class));
+		Set<UnificationXref> uxrefs =  new HashSet<>(model.getObjects(UnificationXref.class));
 		for(UnificationXref x : uxrefs) {
 			if(x.getXrefOf().size() > 1) {
 				//convert to RX, re-associate
 				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+				for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 					if(owner instanceof ControlledVocabulary)
 						continue; //CVs can use same UX, but that means they are to merge...
 					owner.removeXref(x);

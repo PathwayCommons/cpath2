@@ -41,14 +41,14 @@ final class ReactomeCleaner implements Cleaner {
 		// Normalize pathway URIs, where possible, using Reactome stable IDs
 		// Since v54, Reactome stable ID format has been changed to like: "R-HSA-123456"
 		final Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
-		final Set<Process> processes = new HashSet<Process>(model.getObjects(Process.class));
+		final Set<Process> processes = new HashSet<>(model.getObjects(Process.class));
 
 		for(Process proc : processes) {
 			if (proc.getUri().startsWith("http://identifiers.org/reactome/"))
 				continue; //skip for already normalized pathway or interaction
 
 			final Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(proc.getXref()), UnificationXref.class);
+					new HashSet<>(proc.getXref()), UnificationXref.class);
 			for (UnificationXref x : uxrefs) {
 				if (x.getDb() != null && x.getDb().equalsIgnoreCase("Reactome")) {
 					String stableId = x.getId();
@@ -65,7 +65,7 @@ final class ReactomeCleaner implements Cleaner {
 					} else { //fix the 'shared unification xref' problem right away
 						log.warn("Fixing " + x.getId() + " UX that's shared by several objects: " + x.getXrefOf());
 						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-						for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+						for (XReferrable owner : new HashSet<>(x.getXrefOf())) {
 							if (owner.equals(newUriToEntityMap.get(uri)))
 								continue; //keep the entity to be updated unchanged
 							owner.removeXref(x);
@@ -83,7 +83,7 @@ final class ReactomeCleaner implements Cleaner {
 		
 		// All Conversions in Reactome are LEFT-TO-RIGH, 
 		// unless otherwise was specified (confirmed with Guanming Wu, 2013/12)
-		final Set<Conversion> conversions = new HashSet<Conversion>(model.getObjects(Conversion.class));
+		final Set<Conversion> conversions = new HashSet<>(model.getObjects(Conversion.class));
 		for(Conversion ent : conversions) {
 			if(ent.getConversionDirection() == null)
 				ent.setConversionDirection(ConversionDirectionType.LEFT_TO_RIGHT);
@@ -92,8 +92,8 @@ final class ReactomeCleaner implements Cleaner {
 		// Remove unstable UnificationXrefs like "Reactome Database ID Release XX"
 		// if there is a stable one in the same object
 		// Since Reactome v54, stable ID format is different (not like REACT_12345...)
-		final Set<Xref> xrefsToRemove = new HashSet<Xref>();
-		for(Xref xref: new HashSet<Xref>(model.getObjects(Xref.class))) {
+		final Set<Xref> xrefsToRemove = new HashSet<>();
+		for(Xref xref: new HashSet<>(model.getObjects(Xref.class))) {
 			if(xref.getDb() != null && xref.getDb()
 				.toLowerCase().startsWith("reactome database"))
 			{
@@ -103,8 +103,8 @@ final class ReactomeCleaner implements Cleaner {
 
 				//proceed with a unification xref only...
 				if(xref instanceof UnificationXref) {
-					for(XReferrable owner :  new HashSet<XReferrable>(xref.getXrefOf())) {
-						for(Xref x : new HashSet<Xref>(owner.getXref())) {
+					for(XReferrable owner :  new HashSet<>(xref.getXrefOf())) {
+						for(Xref x : new HashSet<>(owner.getXref())) {
 							if(!(x instanceof UnificationXref) || x.equals(xref))
 								continue;
 							//another unif. xref present in the same owner object
