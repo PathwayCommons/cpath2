@@ -7,6 +7,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.PathwayStep;
 import org.junit.Test;
 
 import java.io.File;
@@ -38,38 +39,10 @@ public class SmpdbCleanerTest {
 		cleaner.clean(new FileInputStream(getClass().getResource("/PW000005.owl").getFile()),
 				new FileOutputStream(f57));
 		Model m57 = new SimpleIOHandler().convertFromOWL(new FileInputStream(f57));
-		assertTrue(m57.containsID(uri57));
-		assertTrue(m57.containsID(uri40));
 
-		//Test whether the simple merging of these two files does not depend on the order of sub-models
-		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.merge(m40); //contains full definition of SMP00040 pathway
-		model.merge(m57); //contains a trivial version of SMP00040 as sub-pathway
-		assertTrue(model.containsID(uri40));
-		assertTrue(model.containsID(uri57));
-		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(
-				getClass().getClassLoader().getResource("").getPath() + File.separator
-						+ "testCleanSmpdbMerge_40_57.owl"));
-		Pathway pw = (Pathway) model.getByID(uri40);
-		assertEquals(47, pw.getPathwayComponent().size());
-		
-		//Merge again in reverse order
-		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.merge(m57); //contains a trivial version of SMP00040 as sub-pathway
-		model.merge(m40); //contains full definition of SMP00040 pathway
-		assertTrue(model.containsID(uri40));
-		assertTrue(model.containsID(uri57));
-		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(
-				getClass().getClassLoader().getResource("").getPath() 
-					+ File.separator + "testCleanSmpdbMerge_57_40.owl"));
-		
-		pw = (Pathway) model.getByID(uri40);
-		//with SimpleMerger only, pathways with the same URI do not merge properly...
-		assertEquals(1, pw.getPathwayComponent().size()); // sub-pathway replaced the full pathway!
-		
-		//It works properly when using SimpleMerger with a Filter argument -
+		//Using SimpleMerger with Filter makes merging by URI work properly (regardless order of sub-models)-
 		SimpleMerger merger = new SimpleMerger(SimpleEditorMap.L3, (o)-> o instanceof Pathway);
-		model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 		merger.merge(model, m57);
 		merger.merge(model, m40);
 		assertTrue(model.containsID(uri40));
@@ -78,8 +51,11 @@ public class SmpdbCleanerTest {
 				getClass().getClassLoader().getResource("").getPath() 
 					+ File.separator + "testCleanSmpdbMergeOK.owl"));
 		
-		pw = (Pathway) model.getByID(uri40);
-		assertEquals(48, pw.getPathwayComponent().size());
+		Pathway pw = (Pathway) model.getByID(uri40);
+		assertEquals(37, pw.getPathwayComponent().size());
+		assertTrue(pw.getPathwayOrder().isEmpty());
+		assertEquals(2, model.getObjects(Pathway.class).size());
+		assertTrue(model.getObjects(PathwayStep.class).isEmpty());
 	}
 
 }
