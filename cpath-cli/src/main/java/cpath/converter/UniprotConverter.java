@@ -78,7 +78,7 @@ final class UniprotConverter extends BaseConverter {
 						// also add Gene Names to PR names (can be >1 due to isoforms)
 						proteinReference.addName(symbol);
 						RelationshipXref rXRef = CPathUtils
-								.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model);
+								.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model, false);
 						proteinReference.addXref(rXRef);
 					}
 				}
@@ -326,7 +326,7 @@ final class UniprotConverter extends BaseConverter {
 				}
 				
 				//ok to create a new rel. xref with type "identity"
-				RelationshipXref rXRef = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, fixedDb, id, model);
+				RelationshipXref rXRef = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, fixedDb, id, model, false);
 				proteinReference.addXref(rXRef);
 				// this xref type is then used for id-mapping in the Merger and queries;
 			}
@@ -390,12 +390,11 @@ final class UniprotConverter extends BaseConverter {
 
     /**
      * Sets Unification XRefs.
-	 * 
-	 * @param dbName value for 'db' property of the xref
+	 *  @param dbName value for 'db' property of the xref
      * @param id value for 'id' property of the xref
-     * @param proteinReference a protein reference to add the xref
-     * @param model the BioPAX model
-     */
+	 * @param proteinReference a protein reference to add the xref
+	 * @param model the BioPAX model
+	 */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
         id = id.trim();
         dbName = dbName.trim();
@@ -406,6 +405,7 @@ final class UniprotConverter extends BaseConverter {
 			x = model.addNew(UnificationXref.class, rdfId);
 			x.setDb(dbName);
 			x.setId(id);
+			x.addComment("PRIMARY");
 		}
 		
 		proteinReference.addXref(x);
@@ -429,7 +429,7 @@ final class UniprotConverter extends BaseConverter {
 		String entryId = idLine.split("\\s+")[0]; //such as 'CALM_HUMAN'
 		proteinReference.setDisplayName(entryId);
 		//also use the ID (e.g., CALM_HUMAN) for a special RelationshipXref
-		RelationshipXref rXRef = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot", entryId, model);
+		RelationshipXref rXRef = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot", entryId, model, false);
 		proteinReference.addXref(rXRef);
 
 		//add the primary accession number unification xref
@@ -438,7 +438,7 @@ final class UniprotConverter extends BaseConverter {
 		// add 'secondary-ac' type RXs:
 		for (String acEntry : acList) {
 			rXRef = CPathUtils.findOrCreateRelationshipXref(
-				RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt Knowledgebase", acEntry.trim(), model);
+				RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt Knowledgebase", acEntry.trim(), model, false);
 			proteinReference.addXref(rXRef);
 		}
 		proteinReference.addComment(idLine);

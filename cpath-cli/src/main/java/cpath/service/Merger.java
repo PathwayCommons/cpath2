@@ -485,17 +485,17 @@ public final class Merger {
 						continue; //skip for just merged, canonical ERs
 
 					if(pe instanceof SmallMolecule) {
-						chemXrefByMapping(target, pe, 6);
+						chemXrefByMapping(target, pe, 5);
 					} else {//Protein, Dna*, Rna* - SequenceEntity types
-						genomicXrefByMapping(target, pe, 6);
+						genomicXrefByMapping(target, pe, 5);
 					}
 				}
 				else { // base PE class or Complex
-					genomicXrefByMapping(target, pe, 6);
-					chemXrefByMapping(target, pe, 6);
+					genomicXrefByMapping(target, pe, 5);
+					chemXrefByMapping(target, pe, 5);
 				}
 			} else if(pe instanceof Gene) {
-				genomicXrefByMapping(target, pe, 6);
+				genomicXrefByMapping(target, pe, 5);
 			}
 		}
 	}
@@ -539,7 +539,7 @@ public final class Merger {
 			// (otherwise we'd lost most of original xrefs...) TODO review; shall we copy only PXs?
 			for(Xref x : new HashSet<>(old.getXref())) {
 				if(x instanceof UnificationXref) //sub with RX
-					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model);
+					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model, false);
 
 				for(SimplePhysicalEntity owner : old.getEntityReferenceOf()) {
 					owner.addXref(x);
@@ -583,11 +583,8 @@ public final class Merger {
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryIds.isEmpty() && primaryIds.size() <= maxNumXrefsToAdd) {
-				addRelXrefs(m, bpe, "CHEBI", primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
+				addRelXrefs(m, bpe, "CHEBI", primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION, false);
 			}
-//			else {
-//				log.debug("skip " + bpe.getUri() + " that maps to none/tons (" + primaryIds.size() + ") CHEBI IDs");
-//			}
 		}
 	}
 
@@ -635,12 +632,19 @@ public final class Merger {
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryACs.isEmpty() && primaryACs.size() <= maxNumXrefsToAdd) {
-				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION);
+				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION, true);
 			}
-//			else {
-//				log.debug("skip " + bpe.getUri() + ", " + organismRemark +
-//						", that maps to none/tons (" + primaryACs.size() + ") UNIPROT IDs");
-//			}
+			else if(primaryACs.size() > maxNumXrefsToAdd) {
+				log.debug(bpe.getUri() + ", " + organismRemark + ", ambiguously maps to many UNIPROT ACs: "
+						+ primaryACs.size());
+				//remove some
+				Iterator<String> it = primaryACs.iterator();
+				while (it.hasNext() && primaryACs.size() > maxNumXrefsToAdd) {
+					it.next();
+					it.remove();
+				}
+				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION, true);
+			}
 		} else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
 			// let's map those to primary accessions, then - to HGNC Symbols, and then remove other ids
 			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT", "uniprot"));
@@ -654,16 +658,14 @@ public final class Merger {
                             && CPathUtils.startsWithAnyIgnoreCase(x.getDb(),"uniprot"))
 					{
                         if (primaryACs.contains(x.getId())) {
-                            newACs.remove(x.getId()); //won't add again
+                            newACs.remove(x.getId()); //won't add the same xref again below
+							x.addComment("PRIMARY");
                         } else {
                             bpe.removeXref(x); //remove a secondary or unsupported species uniprot xref
                         }
                     }
 				}
-				for(String ac : newACs) {
-					bpe.addXref(CPathUtils
-                            .findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot knowledgebase", ac, m));
-				}
+				addRelXrefs(m, bpe, "UNIPROT", newACs, RelTypeVocab.IDENTITY,true);
 			}
 		}
 
@@ -692,7 +694,7 @@ public final class Merger {
 		}
 		// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd)
-			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
+			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION, false);
 	}
 
 	private static boolean xrefsContainDb(XReferrable xr, String db)
@@ -715,24 +717,17 @@ public final class Merger {
 	 * @param db ref. target database name for new xrefs; normally, 'uniprot', 'chebi', 'hgnc symbol'
 	 * @param accessions bio/chem identifiers
 	 * @param relType - vocabulary term to use with the Xref
+	 * @param isPrimaryIds - if so, adds a comment "PRIMARY" to xrefs
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
 	private static void addRelXrefs(Model model, XReferrable bpe, String db,
-									Collection<String> accessions, RelTypeVocab relType)
+									Collection<String> accessions, RelTypeVocab relType, boolean isPrimaryIds)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("addRelXrefs: not a Gene, ER, or PE: " + bpe.getUri());
 		
-		ac: for(String ac : accessions) {
-			// find or create
-			RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(relType, db, ac, model);
-			
-			//check if an equivalent rel. xref is already present (skip it then)
-			for(Xref x : bpe.getXref()) {
-				if(x instanceof RelationshipXref && x.isEquivalent(rx))
-					continue ac; //break and go to next ac
-			}
-			
+		for(String ac : accessions) {
+			RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(relType, db, ac, model, isPrimaryIds);
 			bpe.addXref(rx);
 		}
 	}

@@ -62,7 +62,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
 		for (String parentChebiID : parentChebiIDs) {
 			RelationshipXref xref = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE,
-						"chebi", "CHEBI:"+parentChebiID, model);
+						"chebi", "CHEBI:"+parentChebiID, model, false);
 			thisSMR.addComment("is_a CHEBI:" + parentChebiID);
 			thisSMR.addXref(xref);
 		}
@@ -72,7 +72,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		for (String relationship : relationships) {
 			String[] parts = relationship.split(_COLON);
 			RelationshipXref xref = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION,
-						"chebi", "CHEBI:"+parts[1], model);
+						"chebi", "CHEBI:"+parts[1], model, false);
 			thisSMR.addComment(parts[0].toLowerCase() + " CHEBI:" + parts[1]);
 			thisSMR.addXref(xref);
 		}

@@ -150,7 +150,7 @@ class ChebiOboConverter extends BaseConverter
 			String[] alt = chebiEntryMap.get(_ALT_ID).split("\t");
 			for(String altid : alt) {
 				RelationshipXref rx = CPathUtils
-						.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model);
+						.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model, false);
 				smr.addXref(rx);
 			} 
 		}
@@ -176,7 +176,7 @@ class ChebiOboConverter extends BaseConverter
 					}
 					//add RX because a InChIKey can map to several CHEBI IDs
 					RelationshipXref rx = CPathUtils
-							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
+							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model, false);
 					smr.addXref(rx);
 				} else if (sy.contains("InChI=")) {
 					String structureUri = Normalizer
@@ -213,7 +213,7 @@ class ChebiOboConverter extends BaseConverter
 					// Skip all xrefs except CAS, KEGG (C*, D*), etc.,
 					// which are used for id-mapping, merging, full-text search, and graph queries.
 					if (DB.equals("CAS") || DB.equals("DRUGBANK") || DB.equals("HMDB")) {
-						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model, false);
 						smr.addXref(rx);
 					} else if (DB.startsWith("WIKIPEDIA")) {
 						smr.addName(id);
@@ -222,7 +222,7 @@ class ChebiOboConverter extends BaseConverter
 							xdb += " Compound";
 						else if(xid.startsWith("D"))
 							xdb += " Drug";
-						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model, false);
 						smr.addXref(rx);
 					}
 				} else {

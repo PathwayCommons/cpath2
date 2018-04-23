@@ -447,12 +447,12 @@ public final class CPathUtils {
 	 *
 	 * Note: the corresponding CV does not have a unification xref
 	 * (this method won't validate; so, non-standard CV terms can be used).
-	 *
-	 * @param vocab relationship xref type
+	 *  @param vocab relationship xref type
 	 * @param model a biopax model where to find/add the xref
+	 * @param isPrimaryId whether it's a primary ID/AC (then adds a comment)
 	 */
 	public static RelationshipXref findOrCreateRelationshipXref(
-			RelTypeVocab vocab, String db, String id, Model model)
+			RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId)
 	{
 		Assert.notNull(vocab);
 
@@ -467,6 +467,8 @@ public final class CPathUtils {
 		toReturn = model.addNew(RelationshipXref.class, uri);
 		toReturn.setDb(db.toLowerCase());
 		toReturn.setId(id);
+		if(isPrimaryId)
+			toReturn.addComment("PRIMARY");
 
 		// create/add the relationship type vocabulary
 		String relTypeCvUri = vocab.uri; //identifiers.org standard URI
