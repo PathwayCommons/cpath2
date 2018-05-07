@@ -150,7 +150,7 @@ public interface CPathService {
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
 
 	/**
-	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
+	 * Lists (some non-trivial) parent pathways in the current BioPAX model.
 	 * 
 	 *
 	 * @param q query string (keywords or Lucene syntax query string)

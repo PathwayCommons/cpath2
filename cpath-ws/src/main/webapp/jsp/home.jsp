@@ -381,7 +381,7 @@ or the fat JAR with embedded application server was started) -->
 	less than three components, none of which being a non-empty sub-pathway.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
-		<li><em>q=</em> [Optional] a keyword, name, external identifier, or a Lucene query string,
+		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string,
 		like in <a href="#search_parameters">'search'</a>, but the default is '*' (match all).</li>
 		<li><em>datasource=</em> [Optional] filter by data source (same as for <a href="#search_parameters">'search'</a>).
 		</li>
@@ -393,10 +393,10 @@ or the fat JAR with embedded application server was started) -->
 	Schema</a>&nbsp;(SearchResponse type; pagination is disabled to return all top pathways at once)<br/>
 	<h4>Examples:</h4>
 	<ol>
-		<li><a rel="nofollow" href="top_pathways"> get top pathways (XML)</a></li>
-		<li><a rel="nofollow" href="top_pathways.json"> get top pathways in JSON format</a></li>
+		<li><a rel="nofollow" href="top_pathways?q=TP53">
+			get top pathways related to 'TP53'</a></li>
 		<li><a rel="nofollow" href="top_pathways.json?q=insulin&datasource=reactome">
-			get top pathways from Reactome, matching 'insulin'; return JSON format</a></li>
+			get top pathways from Reactome, matching 'insulin'; request JSON format</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>

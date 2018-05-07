@@ -487,20 +487,9 @@ public class CPathServiceImpl implements CPathService {
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * "Top pathway" can mean different things...
-	 * 
-	 * 1) One may want simply collect pathways which are not 
-	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
-	 * used by {@link ModelUtils#getRootElements(org.biopax.paxtools.model.Model, Class)} method) and by
-	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
-	 * for all Entities, generates relationship xrefs to their "parent" pathways.
-	 * 
-	 * 2) Another approach would be to check whether specific (inverse) 
-	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
-	 * 
-	 * Here we follow the second method.
-	 *
-	 * Also, let's exclude "pathways" having two or less components, none of which is a non-empty pathway.
+	 * Collect "top" pathways pathways (sort of) such as those having
+	 * controlledOf, pathwayComponentOf and stepProcessOf properties empty, and
+	 * excluding pathways with less than three components unless there is a non-trivial sub-pathway.
 	 */
 	@Override
 	public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
@@ -508,7 +497,8 @@ public class CPathServiceImpl implements CPathService {
 		if(!paxtoolsModelReady() || searcher == null) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
-		if(q==null || q.isEmpty()) q = "*"; //for backward compatibility
+		if(q==null || q.isEmpty()) //too much data
+			return new ErrorResponse(BAD_REQUEST,"Query string was empty.");
 
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
@@ -541,7 +531,7 @@ public class CPathServiceImpl implements CPathService {
 						Pathway hp = (Pathway) getModel().getByID(h.getUri());
 						for(Process component : hp.getPathwayComponent()) {
 							if(component instanceof Pathway
-								&& !((Pathway)component).getPathwayComponent().isEmpty())
+								&& ((Pathway)component).getPathwayComponent().size()>2)
 							{
 								hits.add(h);
 								break;
