@@ -26,9 +26,9 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 		CPathQuery<Model> {
 
 	private boolean mergeEquivalentInteractions = false;
-    private Integer limit = 1;
+    private Integer limit;
     private Direction direction;
-    private GraphType graphType = GraphType.NEIGHBORHOOD;
+    private GraphType graphType;
 	private String[] source;
 	private String[] target;
 	private String[] organism; // filter by

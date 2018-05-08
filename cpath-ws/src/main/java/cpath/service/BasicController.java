@@ -126,7 +126,6 @@ public abstract class BasicController {
 					response.setContentType(dataResponse.getFormat().getMediaType());
 					long size = Files.size(resultFile);
 					if(size > 13) { // TODO: why, a hack to skip for trivial/empty results
-						response.setHeader("Content-Length", String.valueOf(size));
 						Writer writer = response.getWriter();
 						BufferedReader bufferedReader = Files.newBufferedReader(resultFile);
 						try {

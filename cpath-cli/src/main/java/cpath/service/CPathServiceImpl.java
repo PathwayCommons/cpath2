@@ -241,7 +241,7 @@ public class CPathServiceImpl implements CPathService {
 		final String[] src = findUrisByIds(sources);
 
 		if(direction == null) {
-			direction = Direction.UNDIRECTED;
+			direction = Direction.UNDIRECTED; //TODO: use BOTHSTREAM (less data as it ignores MIs)?
 		}
 
 		// execute the paxtools graph query
