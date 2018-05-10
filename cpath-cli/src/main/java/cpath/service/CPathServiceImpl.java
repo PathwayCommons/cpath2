@@ -744,50 +744,37 @@ public class CPathServiceImpl implements CPathService {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Admin mode is not enabled");
 
-		if(paxtoolsModel==null)
-			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
-		// set for this service
+        // Updates counts of pathways, etc. and saves in the Metadata table.
+        // This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
+        log.info("Updating pathway/interaction/participant counts per data source...");
+        List<Metadata> pathwayMetadata = new ArrayList<>();
+        for (Metadata md : metadataRepository.findAll())
+            if (!md.isNotPathwayData())
+                pathwayMetadata.add(md);
+        // update counts for each non-warehouse metadata entry
+        for (Metadata md : pathwayMetadata) {
+            Model m = CPathUtils.loadBiopaxModelByDatasource(md); //to count objects, by type
+            String name = md.standardName();
+            md.setNumPathways(m.getObjects(Pathway.class).size());
+            log.info(name + " - pathways: " + md.getNumPathways());
+            md.setNumInteractions(m.getObjects(Interaction.class).size());
+            log.info(name + " - interactions: " + md.getNumInteractions());
+            md.setNumPhysicalEntities(m.getObjects(PhysicalEntity.class).size() + m.getObjects(Gene.class).size());
+            log.info(name + " - participants: " + md.getNumPhysicalEntities());
+        }
 
-		log.info("Associating more biological IDs with BioPAX objects using nested Xrefs and id-mapping...");
+        metadataRepository.save(pathwayMetadata);
+
+		if(paxtoolsModel==null) {
+		    setModel(CPathUtils.loadMainBiopaxModel());
+        }
+
+		log.info("Associating bio IDs with BioPAX objects using nested Xrefs and id-mapping...");
 		addIdsAsBiopaxAnnotations();
 
 		//Build the full-text (lucene) index
 		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
 		searchEngine.index();
-
-		// Updates counts of pathways, etc. and saves in the Metadata table.
-     	// This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
-		setSearcher(searchEngine);
-		log.info("Updating pathway/interaction/participant counts - per data source...");
-		// Prepare a list of all pathway type metadata to update
-		List<Metadata> pathwayMetadata = new ArrayList<>();
-		for (Metadata md : metadataRepository.findAll())
-			if (!md.isNotPathwayData())
-				pathwayMetadata.add(md);
-
-		// for each non-warehouse metadata entry, update counts of pathways, etc.
-		for (Metadata md : pathwayMetadata) {
-			String name = md.standardName();
-			String[] dsUrisFilter = new String[] { md.getUri() };
-
-			SearchResponse sr = searcher.search("*", 0, Pathway.class, dsUrisFilter, null);
-			md.setNumPathways(sr.getNumHits());
-			log.info(name + " - pathways: " + sr.getNumHits());
-
-			sr = searcher.search("*", 0, Interaction.class, dsUrisFilter, null);
-			md.setNumInteractions(sr.getNumHits());
-			log.info(name + " - interactions: " + sr.getNumHits());
-
-			Integer count;
-			sr = searcher.search("*", 0, PhysicalEntity.class, dsUrisFilter, null);
-			count = sr.getNumHits();
-			sr = searcher.search("*", 0, Gene.class, dsUrisFilter, null);
-			count += sr.getNumHits();
-			md.setNumPhysicalEntities(count);
-			log.info(name + " - molecules, complexes and genes: " + count);
-		}
-
-		metadataRepository.save(pathwayMetadata);
 
 		log.info("index(), all done.");
 	}

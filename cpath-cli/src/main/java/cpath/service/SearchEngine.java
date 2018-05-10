@@ -132,7 +132,11 @@ public class SearchEngine implements Indexer, Searcher {
 	public void setMaxHitsPerPage(int maxHitsPerPage) {
 		this.maxHitsPerPage = maxHitsPerPage;
 	}
-	
+
+	/**
+	 * The max no. hits to return per results page (pagination).
+	 * @return
+	 */
 	public int getMaxHitsPerPage() {
 		return maxHitsPerPage;
 	}
@@ -227,8 +231,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 	
 	// Transform Lucene docs to hits (xml/java beans)
-	private SearchResponse transform(Query query, IndexSearcher searcher, TopDocs topDocs)
-			throws CorruptIndexException, IOException 
+	private SearchResponse transform(Query query, IndexSearcher searcher, TopDocs topDocs) throws IOException
 	{	
 		if(topDocs == null)
 			throw new IllegalArgumentException("topDocs is null");
@@ -397,18 +400,18 @@ public class SearchEngine implements Indexer, Searcher {
 						//|| prop.equalsIgnoreCase("conversionDirection")
 						|| prop.equalsIgnoreCase("eCNumber")
 						|| prop.equalsIgnoreCase("id")
-						|| prop.equalsIgnoreCase("name")
-						|| prop.equalsIgnoreCase("displayName")
-						|| prop.equalsIgnoreCase("standardName")
+						|| prop.equalsIgnoreCase("name") //it includes the following two as well
+//						|| prop.equalsIgnoreCase("displayName")
+//						|| prop.equalsIgnoreCase("standardName")
 						|| prop.equalsIgnoreCase("sequence")
 						//|| prop.equalsIgnoreCase("source")
 						//|| prop.equalsIgnoreCase("year")
 						|| prop.equalsIgnoreCase("term")
 						//|| prop.equalsIgnoreCase("stepDirection")
-						|| prop.equalsIgnoreCase("structureData")
+//						|| prop.equalsIgnoreCase("structureData")
 						//|| prop.equalsIgnoreCase("templateDirection")
 						|| prop.equalsIgnoreCase("title")
-						|| prop.equalsIgnoreCase("url")
+//						|| prop.equalsIgnoreCase("url")
 				);
 			}
 		};
@@ -426,12 +429,12 @@ public class SearchEngine implements Indexer, Searcher {
 		for(final BioPAXElement bpe : model.getObjects())
 		{
 			//Skip for UtilityClass but EntityReference and Provenance -
+			//TODO: indexing of only processes (not physical entities, genes) would help most our use cases...
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof Provenance))
 				continue;
 
 			// prepare & index each element in a separate thread
-			exec.execute(new Runnable() {
-				public void run() {					
+			exec.execute(() -> {
 					// get or infer some important values if possible from this, child or parent objects:
 					Set<String> keywords = ModelUtils.getKeywords(bpe, 2, dataPropertiesToConsider);
 
@@ -467,7 +470,6 @@ public class SearchEngine implements Indexer, Searcher {
 					int left = numLeft.decrementAndGet();
 					if(left % 10000 == 0)
 						LOG.info("index(), biopax objects left to index: " + left);
-				}
 			});
 		}
 		
@@ -570,7 +572,8 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 
-			//add relevant xref IDs to the index
+			// Add xref IDs to the index (IDs are prepared and stored in advance
+			// in the annotations map, under FIELD_XREFID key)
 			Set<String> ids = (bpe.getAnnotations().containsKey(FIELD_XREFID))
 				? (Set<String>)bpe.getAnnotations().get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
 			for (String id : ids) {
