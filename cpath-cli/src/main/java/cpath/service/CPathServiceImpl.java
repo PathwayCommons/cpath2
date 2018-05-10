@@ -90,20 +90,13 @@ public class CPathServiceImpl implements CPathService {
 	synchronized public void init() {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
-		executor.execute(
-			new Runnable() {
-			@Override
-			public void run() {
-				paxtoolsModel = CPathUtils.loadMainBiopaxModel();
-				// set for this service
-				if(paxtoolsModel != null) {
-					paxtoolsModel.setXmlBase(cpath.getXmlBase());
-					log.info("Main BioPAX model (in-memory) is now ready for queries.");
-					searcher = new SearchEngine(paxtoolsModel, 
-							cpath.indexDir());
-					((SearchEngine) searcher).setMaxHitsPerPage(
-						Integer.parseInt(cpath.getMaxHitsPerPage()));
-				}
+		executor.execute(() -> {
+			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
+			if(paxtoolsModel != null) {
+				paxtoolsModel.setXmlBase(cpath.getXmlBase());
+				log.info("Main BioPAX model (in-memory) is now ready for queries.");
+				searcher = new SearchEngine(paxtoolsModel, cpath.indexDir());
+				((SearchEngine) searcher).setMaxHitsPerPage(Integer.parseInt(cpath.getMaxHitsPerPage()));
 			}
 		});
 		executor.shutdown();
@@ -740,41 +733,32 @@ public class CPathServiceImpl implements CPathService {
 		return metadataRepository;
 	}
 
-	public void index() throws IOException {
+	/**
+	 * Make sure you called {@link #init()} first
+	 * to load the model and init the indexer/searcher.
+	*/
+	public void index() {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Admin mode is not enabled");
 
-        // Updates counts of pathways, etc. and saves in the Metadata table.
-        // This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
-        log.info("Updating pathway/interaction/participant counts per data source...");
-        List<Metadata> pathwayMetadata = new ArrayList<>();
-        for (Metadata md : metadataRepository.findAll())
-            if (!md.isNotPathwayData())
-                pathwayMetadata.add(md);
-        // update counts for each non-warehouse metadata entry
-        for (Metadata md : pathwayMetadata) {
-            Model m = CPathUtils.loadBiopaxModelByDatasource(md); //to count objects, by type
-            String name = md.standardName();
-            md.setNumPathways(m.getObjects(Pathway.class).size());
-            log.info(name + " - pathways: " + md.getNumPathways());
-            md.setNumInteractions(m.getObjects(Interaction.class).size());
-            log.info(name + " - interactions: " + md.getNumInteractions());
-            md.setNumPhysicalEntities(m.getObjects(PhysicalEntity.class).size() + m.getObjects(Gene.class).size());
-            log.info(name + " - participants: " + md.getNumPhysicalEntities());
-        }
-
-        metadataRepository.save(pathwayMetadata);
-
-		if(paxtoolsModel==null) {
-		    setModel(CPathUtils.loadMainBiopaxModel());
-        }
+		if(paxtoolsModel == null) {
+			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
+			if(paxtoolsModel != null) {
+				paxtoolsModel.setXmlBase(cpath.getXmlBase());
+				log.info("Main BioPAX model (in-memory) is now ready for queries.");
+			}
+		}
 
 		log.info("Associating bio IDs with BioPAX objects using nested Xrefs and id-mapping...");
 		addIdsAsBiopaxAnnotations();
 
-		//Build the full-text (lucene) index
-		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
-		searchEngine.index();
+		if(searcher == null) {
+			SearchEngine searchEngine = new SearchEngine(paxtoolsModel, cpath.indexDir());
+			searchEngine.setMaxHitsPerPage(Integer.parseInt(cpath.getMaxHitsPerPage()));
+			setSearcher(searchEngine);
+		}
+
+		((Indexer)searcher).index();
 
 		log.info("index(), all done.");
 	}

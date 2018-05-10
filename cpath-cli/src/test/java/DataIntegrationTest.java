@@ -183,12 +183,13 @@ public class DataIntegrationTest {
 
 		// SERVICE-TIER features tests
 
-		// Before the tests -
-		// update the main file due to changes to dataSource prop. above (persistent and in-memory models must be the same)
+		// Before next tests - update the main file due to changes to dataSource prop. above
+		// (persistent and in-memory models must be the same as the indexer/searcher reads the model from file)
 		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m, 
 			new GZIPOutputStream(new FileOutputStream(
 					CPathSettings.getInstance().mainModelFile())));
-		//index (using additional id-mapping service repository)
+
+		//index (it uses additional id-mapping service internally)
 		CPathSettings.getInstance().setAdminEnabled(true);
 		service.index();
 		CPathSettings.getInstance().setAdminEnabled(false);

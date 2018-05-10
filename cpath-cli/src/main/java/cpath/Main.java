@@ -250,9 +250,28 @@ public final class Main {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
 		final CPathService service = context.getBean(CPathService.class);
-
 		LOG.info("index: indexing...");
 		service.index();
+
+		// Updates counts of pathways, etc. and saves in the Metadata table.
+		// This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
+		LOG.info("Updating pathway/interaction/participant counts per data source...");
+		List<Metadata> pathwayMetadata = new ArrayList<>();
+		for (Metadata md : service.metadata().findAll())
+			if (!md.isNotPathwayData())
+				pathwayMetadata.add(md);
+		// update counts for each non-warehouse metadata entry
+		for (Metadata md : pathwayMetadata) {
+			Model m = CPathUtils.loadBiopaxModelByDatasource(md); //to count objects, by type
+			String name = md.standardName();
+			md.setNumPathways(m.getObjects(Pathway.class).size());
+			LOG.info(name + " - pathways: " + md.getNumPathways());
+			md.setNumInteractions(m.getObjects(Interaction.class).size());
+			LOG.info(name + " - interactions: " + md.getNumInteractions());
+			md.setNumPhysicalEntities(m.getObjects(PhysicalEntity.class).size() + m.getObjects(Gene.class).size());
+			LOG.info(name + " - participants: " + md.getNumPhysicalEntities());
+		}
+		service.metadata().save(pathwayMetadata);
 
 		context.close();
 
