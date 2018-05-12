@@ -385,35 +385,20 @@ public class SearchEngine implements Indexer, Searcher {
 
 		ExecutorService exec = Executors.newFixedThreadPool(30);
 
-		final org.biopax.paxtools.util.Filter<DataPropertyEditor> dataPropertiesToConsider
-				= new org.biopax.paxtools.util.Filter<DataPropertyEditor>() {
-			@Override
-			public boolean filter(DataPropertyEditor editor) {
-				final String prop = editor.getProperty();
-				//to include in the index, as keywords, only the following properties
-				// (basically, to exclude float type properties, embedded xml, db names, etc.):
-				return (prop.equalsIgnoreCase("author")
-						//|| prop.equalsIgnoreCase("availability")
-						|| prop.equalsIgnoreCase("chemicalFormula")
-						|| prop.equalsIgnoreCase("comment")
-						|| prop.equalsIgnoreCase("controlType")
-						//|| prop.equalsIgnoreCase("conversionDirection")
-						|| prop.equalsIgnoreCase("eCNumber")
-						|| prop.equalsIgnoreCase("id")
-						|| prop.equalsIgnoreCase("name") //it includes the following two as well
-//						|| prop.equalsIgnoreCase("displayName")
-//						|| prop.equalsIgnoreCase("standardName")
-						|| prop.equalsIgnoreCase("sequence")
-						//|| prop.equalsIgnoreCase("source")
-						//|| prop.equalsIgnoreCase("year")
-						|| prop.equalsIgnoreCase("term")
-						//|| prop.equalsIgnoreCase("stepDirection")
-//						|| prop.equalsIgnoreCase("structureData")
-						//|| prop.equalsIgnoreCase("templateDirection")
-						|| prop.equalsIgnoreCase("title")
-//						|| prop.equalsIgnoreCase("url")
-				);
-			}
+		final org.biopax.paxtools.util.Filter<DataPropertyEditor> dataPropertiesToConsider = (editor) -> {
+			final String prop = editor.getProperty();
+			//to include in the index, as keywords, only the following properties
+			// (basically, to exclude float type properties, embedded xml, db names, etc.):
+			return (prop.equalsIgnoreCase("author")
+					|| prop.equalsIgnoreCase("chemicalFormula")
+					|| prop.equalsIgnoreCase("comment")
+					|| prop.equalsIgnoreCase("controlType")
+					|| prop.equalsIgnoreCase("eCNumber")
+					|| prop.equalsIgnoreCase("id")
+					|| prop.equalsIgnoreCase("name") //it includes the following two as well
+					|| prop.equalsIgnoreCase("term")
+					|| prop.equalsIgnoreCase("title")
+			);
 		};
 
 		final int numObjectsToIndex = model.getObjects(Entity.class).size()
