@@ -249,7 +249,7 @@ public class SearchEngine implements Indexer, Searcher {
 			BioPAXElement bpe = model.getByID(uri);
 			
 			// use a highlighter (get matching fragments)
-			if (CPathSettings.getInstance().isDebugEnabled() && doc.get(FIELD_KEYWORD) != null) {
+			if (CPathSettings.getInstance().isDebugEnabled()) {
 				// to use a Highlighter, store.YES must be enabled for 'keyword' field
 				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD);
 				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)
@@ -260,7 +260,7 @@ public class SearchEngine implements Indexer, Searcher {
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
-				final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");
+				final String text = StringUtils.join(ModelUtils.getKeywords(bpe,2, keywordsFilter), " ");
 				try {
 					TokenStream tokenStream = analyzer.tokenStream("", new StringReader(text));
 					String res = highlighter.getBestFragments(tokenStream, text, 7, "...");
@@ -360,6 +360,21 @@ public class SearchEngine implements Indexer, Searcher {
 		return response;
 	}
 
+	public static final org.biopax.paxtools.util.Filter<DataPropertyEditor> keywordsFilter = (editor) -> {
+		final String prop = editor.getProperty();
+		//to include in the index, as keywords, only the following properties
+		// (basically, to exclude float type properties, embedded xml, db names, etc.):
+		return (prop.equalsIgnoreCase("author")
+				|| prop.equalsIgnoreCase("chemicalFormula")
+				|| prop.equalsIgnoreCase("comment")
+				|| prop.equalsIgnoreCase("controlType")
+				|| prop.equalsIgnoreCase("eCNumber")
+				|| prop.equalsIgnoreCase("id")
+				|| prop.equalsIgnoreCase("name") //it includes the following two as well
+				|| prop.equalsIgnoreCase("term")
+				|| prop.equalsIgnoreCase("title")
+		);
+	};
 
 	public void index() {
 
@@ -385,22 +400,6 @@ public class SearchEngine implements Indexer, Searcher {
 
 		ExecutorService exec = Executors.newFixedThreadPool(30);
 
-		final org.biopax.paxtools.util.Filter<DataPropertyEditor> dataPropertiesToConsider = (editor) -> {
-			final String prop = editor.getProperty();
-			//to include in the index, as keywords, only the following properties
-			// (basically, to exclude float type properties, embedded xml, db names, etc.):
-			return (prop.equalsIgnoreCase("author")
-					|| prop.equalsIgnoreCase("chemicalFormula")
-					|| prop.equalsIgnoreCase("comment")
-					|| prop.equalsIgnoreCase("controlType")
-					|| prop.equalsIgnoreCase("eCNumber")
-					|| prop.equalsIgnoreCase("id")
-					|| prop.equalsIgnoreCase("name") //it includes the following two as well
-					|| prop.equalsIgnoreCase("term")
-					|| prop.equalsIgnoreCase("title")
-			);
-		};
-
 		final int numObjectsToIndex = model.getObjects(Entity.class).size()
 				+ model.getObjects(EntityReference.class).size();
 		LOG.info("index(), there are " + numObjectsToIndex + " Entity or EntityReference objects to index.");
@@ -421,7 +420,7 @@ public class SearchEngine implements Indexer, Searcher {
 			// prepare & index each element in a separate thread
 			exec.execute(() -> {
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 2, dataPropertiesToConsider);
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 2, keywordsFilter);
 
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<>(keywords)) {
@@ -534,7 +533,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 			if(bpe.getAnnotations().containsKey(FIELD_KEYWORD)) {
 				for (String keyword : (Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD)) {
-					Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
+					Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.NO);
 					doc.add(f);
 				}
 			}
@@ -601,7 +600,7 @@ public class SearchEngine implements Indexer, Searcher {
 					field = new StringField(FIELD_NAME, name, Field.Store.NO);
 					doc.add(field);
 				}
-				field = new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.YES);
+				field = new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.NO);
 				field.setBoost(2.0f);
 				doc.add(field);
 			}
