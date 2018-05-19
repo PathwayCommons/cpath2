@@ -66,6 +66,22 @@ public class MetadataController extends BasicController {
         return bytes;
     }
 
+
+	@RequestMapping("/metadata")
+	public Map<String,Object> queryForMetadata() {
+		TreeMap<String,Object> props = new TreeMap();
+
+		props.put("version", instance().getVersion());
+		props.put("name", instance().getName());
+		props.put("description", instance().getDescription());
+		props.put("logo", instance().getLogoUrl());
+		props.put("xmlBase", instance().getXmlBase());
+		props.put("url", instance().getUrl());
+		props.put("organisms", instance().getOrganismsAsTaxonomyToNameMap());
+		props.put("debug", instance().isDebugEnabled());
+
+		return props;
+	}
     
     // to return a xml or json data http response
     @RequestMapping("/metadata/datasources")
