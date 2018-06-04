@@ -325,15 +325,14 @@ public class SearchEngine implements Indexer, Searcher {
 				hit.getDataSource().addAll(uniqueVals);
 			}	
 			
-			// extract only pathway URIs 
-			//(because names and IDs used to be stored in the index field as well)
+			// extract only (parent) pathway URIs
+			//only URIs were stored "as is" (names, ids were indexed but not stored in the index doc.)
 			if(doc.get(FIELD_PATHWAY) != null) {
 				Set<String> uniqueVals = new TreeSet<>();
 				for(String d : doc.getValues(FIELD_PATHWAY)) {
-					//only URIs were stored (though all names/ids were indexed/analyzed)
-					if(!d.equals(uri)) //exclude itself
-						uniqueVals.add(d);
+					uniqueVals.add(d);
 				}
+				uniqueVals.remove(uri); //exclude itself
 				hit.getPathway().addAll(uniqueVals);
 			}
 			
@@ -508,8 +507,11 @@ public class SearchEngine implements Indexer, Searcher {
 		// create a new document
 		final Document doc = new Document();
 
-		// save URI (not indexed, not analyzed)
+		// save URI 'as is' (not indexed, not analyzed)
 		Field field = new StoredField(FIELD_URI, bpe.getUri());
+		doc.add(field);
+		// lowercase URI and index, but store=no, analyze=no (this is to find an object exactly by its URI)
+		field = new StringField(FIELD_URI, bpe.getUri().toLowerCase(), Field.Store.NO);
 		doc.add(field);
 		
 		// index and store but not analyze/tokenize the biopax class name:
@@ -667,9 +669,12 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addPathways(Set<Pathway> set, Document doc) {
 		for(Pathway pw : set) {
-			//add URI as is (do not lowercase; do not index; store=yes - required to report hits, e.g., as xml)
+			//store the URI 'as is' (don't lowercase, index/analyze=no, store=yes - required to report hits, e.g., as xml)
 			doc.add(new StoredField(FIELD_PATHWAY, pw.getUri()));
-			
+
+			//lowercase URI, index=yes, analyze=no, store=no (this is to find child objects by absolute pathway URI)
+			doc.add(new StringField(FIELD_PATHWAY, pw.getUri().toLowerCase(), Field.Store.NO));
+
 			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
 			// (this allows to find a biopax element, e.g., protein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
@@ -677,7 +682,7 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 			
 			// add unification xref IDs too
-			for (UnificationXref x : new ClassFilterSet<Xref, UnificationXref>(
+			for (UnificationXref x : new ClassFilterSet<>(
 					pw.getXref(), UnificationXref.class)) {
 				if (x.getId() != null) {
 					// index in both 'pathway' (don't store) and 'keywords' (store)
@@ -691,9 +696,7 @@ public class SearchEngine implements Indexer, Searcher {
 	private String getTaxonId(BioSource bioSource) {
 		String id = null;
 		if(!bioSource.getXref().isEmpty()) {
-			Set<UnificationXref> uxs = new 
-				ClassFilterSet<Xref,UnificationXref>(bioSource.getXref(), 
-						UnificationXref.class);
+			Set<UnificationXref> uxs = new ClassFilterSet<>(bioSource.getXref(), UnificationXref.class);
 			for(UnificationXref ux : uxs) {
 				if("taxonomy".equalsIgnoreCase(ux.getDb())) {
 					id = ux.getId();
