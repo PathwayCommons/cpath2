@@ -294,10 +294,8 @@
 			an illustration of how various BioPAX slots should be filled; it is
 			not intended to provide useful (or even accurate) biological
 			information</bp:comment>
-		<bp:displayName rdf:datatype="xsd:string">Glycolysis Pathway
-		</bp:displayName>
-		<bp:standardName rdf:datatype="xsd:string">glycolysis
-		</bp:standardName>
+		<bp:displayName rdf:datatype="xsd:string">Glycolysis Pathway</bp:displayName>
+		<bp:standardName rdf:datatype="xsd:string">glycolysis</bp:standardName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
 		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
 		<bp:pathwayComponent

@@ -70,7 +70,7 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
-	public static final String FIELD_SIZE = "size"; //since cPath2 v7.., size == numparticipants + numprocesses
+	public static final String FIELD_SIZE = "size"; //since cPath2 v7.., size == numparticipants + numprocesses TODO: remove 'size' from index and hit bean
 	public static final String FIELD_N_PARTICIPANTS = "participants"; // num. of PEs or Genes in a process or Complex
 	public static final String FIELD_N_PROCESSES = "processes"; // is same as 'size' used to be before cPath2 v7
 
@@ -114,6 +114,8 @@ public class SearchEngine implements Indexer, Searcher {
 		Map<String,Analyzer> analyzersPerField = new HashedMap();
 		analyzersPerField.put(FIELD_NAME, new KeywordAnalyzer());
 		analyzersPerField.put(FIELD_XREFID, new KeywordAnalyzer());
+		analyzersPerField.put(FIELD_URI, new KeywordAnalyzer());
+		analyzersPerField.put(FIELD_PATHWAY, new KeywordAnalyzer());
 		this.analyzer = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzersPerField);
 	}
 
@@ -484,9 +486,9 @@ public class SearchEngine implements Indexer, Searcher {
 	 * the biopax object but also from its child elements, up to some depth 
 	 * (using key-value pairs in the pre-computed bpe.annotations map):
 	 * 
-	 *  'uri' - biopax object's absolute URI, index=no, analyze=no, store=yes;
+	 *  'uri' - biopax object's absolute URI, index=yes, analyze=no, store=yes;
 	 * 
-	 *  'name' - names, analyze=yes, store=yes; boosted;
+	 *  'name' - names, analyze=yes, store=yes;
 	 * 
 	 *  'keyword' - infer from this bpe and its child objects' data properties,
 	 *            such as Score.value, structureData, structureFormat, chemicalFormula, 
@@ -503,20 +505,26 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  'size', 'numprocesses', 'numparticipants' - number of child processes,
 	 *  											participants; integer values as string; analyze=no, store=yes.
 	*/
-	void index(BioPAXElement bpe, IndexWriter indexWriter) {		
+	void index(BioPAXElement bpe, IndexWriter indexWriter)
+    {
 		// create a new document
 		final Document doc = new Document();
 
-		// save URI 'as is' (not indexed, not analyzed)
-		Field field = new StoredField(FIELD_URI, bpe.getUri());
-		doc.add(field);
-		// lowercase URI and index, but store=no, analyze=no (this is to find an object exactly by its URI)
-		field = new StringField(FIELD_URI, bpe.getUri().toLowerCase(), Field.Store.NO);
-		doc.add(field);
-		
+		//(will be using StringField and KeywordAnalyser for this field)
+		final String uri = bpe.getUri();
+        // save URI: indexed, not analyzed, stored
+		doc.add(new StringField(FIELD_URI, uri, Field.Store.YES));
+//		doc.add(new StringField(FIELD_URI, uri.toLowerCase(), Field.Store.NO));
+        //extract and index the last part of the uri (e.g., 'hsa00010' or like 'ProteinReference_ca123bd44...')
+        if(uri.startsWith("http://")) {
+        	String id = (uri.endsWith("/")) ? uri.substring(0, uri.length()-1) : uri;
+            id = id.replaceAll(".*[/#]", "").trim();
+            doc.add(new StringField(FIELD_URI, id, Field.Store.NO));
+//			doc.add(new StringField(FIELD_URI, id.toLowerCase(), Field.Store.NO)); //let it be case-sensitive
+        }
+
 		// index and store but not analyze/tokenize the biopax class name:
-		field = new StringField(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), Field.Store.YES);
-		doc.add(field);
+		doc.add(new StringField(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), Field.Store.YES));
 		
 		// make index fields from the annotations map (of pre-calculated/inferred values)
 		if(!bpe.getAnnotations().isEmpty())
@@ -541,21 +549,17 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
-				field = new StoredField(FIELD_SIZE,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE)));
-				doc.add(field);
+				doc.add(new StoredField(FIELD_SIZE, Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE))));
 			}
 
 			if(bpe.getAnnotations().containsKey(FIELD_N_PARTICIPANTS)) {
-				field = new StoredField(FIELD_N_PARTICIPANTS,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS)));
-				doc.add(field);
+				doc.add(new StoredField(FIELD_N_PARTICIPANTS,
+                    Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS))));
 			}
 
 			if(bpe.getAnnotations().containsKey(FIELD_N_PROCESSES)) {
-				field = new StoredField(FIELD_N_PROCESSES,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)));
-				doc.add(field);
+				doc.add(new StoredField(FIELD_N_PROCESSES,
+                    Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES))));
 			}
 
 			// Add xref IDs to the index (IDs are prepared and stored in advance
@@ -564,10 +568,8 @@ public class SearchEngine implements Indexer, Searcher {
 				? (Set<String>)bpe.getAnnotations().get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
 			for (String id : ids) {
 				//index as not analyzed, not tokenized
-				field = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
-				doc.add(field);
-				field = new StringField(FIELD_XREFID, id, Field.Store.NO);
-				doc.add(field);
+				doc.add(new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO));
+				doc.add(new StringField(FIELD_XREFID, id, Field.Store.NO));
 			}
 		}
 
@@ -580,31 +582,26 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_N_PROCESSES);
 		bpe.getAnnotations().remove(FIELD_XREFID);
 
-		// name
+		// name (we store both original and lowercased names due to use of StringField and KeywordAnalyser)
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
 			if(named.getStandardName() != null) {
-				field = new StringField(FIELD_NAME, named.getStandardName().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-				field = new StringField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
-				doc.add(field);
+				String stdName = named.getStandardName().trim();
+				doc.add(new StringField(FIELD_NAME, stdName.toLowerCase(), Field.Store.NO));
+				doc.add(new StringField(FIELD_NAME, stdName, Field.Store.NO));
 			}
 			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
-				field = new StringField(FIELD_NAME, named.getDisplayName().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-				field = new StringField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
-				doc.add(field);
+				String dspName = named.getDisplayName().trim();
+				doc.add(new StringField(FIELD_NAME, dspName.toLowerCase(), Field.Store.NO));
+				doc.add(new StringField(FIELD_NAME, dspName, Field.Store.NO));
 			}
 			for(String name : named.getName()) {
 				if(!name.equalsIgnoreCase(named.getDisplayName()) && !name.equalsIgnoreCase(named.getStandardName())) {
-					field = new StringField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
-					doc.add(field);
-					field = new StringField(FIELD_NAME, name, Field.Store.NO);
-					doc.add(field);
+					name = name.trim();
+					doc.add(new StringField(FIELD_NAME, name.toLowerCase(), Field.Store.NO));
+					doc.add(new StringField(FIELD_NAME, name, Field.Store.NO));
 				}
-				field = new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.NO);
-				field.setBoost(2.0f);
-				doc.add(field);
+				doc.add(new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.NO));
 			}
 		}
 
@@ -624,8 +621,8 @@ public class SearchEngine implements Indexer, Searcher {
 			String u = p.getUri();
 			doc.add(new StringField(FIELD_DATASOURCE, u, Field.Store.YES));
 
+            //index the identifier part of uri as well
 			if(u.startsWith("http://")) {
-				//index the identifier
 				if (u.endsWith("/"))
 					u = u.substring(0, u.length() - 1);
 				u = u.replaceAll(".*/", "");
@@ -668,27 +665,28 @@ public class SearchEngine implements Indexer, Searcher {
 	}
 
 	private void addPathways(Set<Pathway> set, Document doc) {
-		for(Pathway pw : set) {
-			//store the URI 'as is' (don't lowercase, index/analyze=no, store=yes - required to report hits, e.g., as xml)
-			doc.add(new StoredField(FIELD_PATHWAY, pw.getUri()));
-
-			//lowercase URI, index=yes, analyze=no, store=no (this is to find child objects by absolute pathway URI)
-			doc.add(new StringField(FIELD_PATHWAY, pw.getUri().toLowerCase(), Field.Store.NO));
-
-			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
+		for(Pathway pw : set)
+		{
+            final String uri = pw.getUri();
+			//URI, index=yes, analyze=no, store=yes (this is to find child objects by pathway URI)
+            // we want searching by URI or its ending part (id) be case sensitive
+			doc.add(new StringField(FIELD_PATHWAY, uri, Field.Store.YES));
+//			doc.add(new StringField(FIELD_PATHWAY, uri.toLowerCase(), Field.Store.NO));
+			//also, extract and index the last part of the uri (e.g., 'hsa00010' or 'r-hsa-201451')
+            if(uri.startsWith("http://")) {
+                String id = uri.replaceAll(".*[/#]", "").trim();
+                doc.add(new StringField(FIELD_PATHWAY, id, Field.Store.NO));
+//				doc.add(new StringField(FIELD_PATHWAY, id.toLowerCase(), Field.Store.NO));
+            }
+			// add names to the 'pathway' (don't store); will be case-insensitive (if using StandardAnalyser)
 			// (this allows to find a biopax element, e.g., protein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
 			}
-			
-			// add unification xref IDs too
-			for (UnificationXref x : new ClassFilterSet<>(
-					pw.getXref(), UnificationXref.class)) {
-				if (x.getId() != null) {
-					// index in both 'pathway' (don't store) and 'keywords' (store)
-					doc.add(new TextField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
-				}
-			}
+			// add unification xref IDs too (case-sensitive)
+			for (UnificationXref x : new ClassFilterSet<>(pw.getXref(), UnificationXref.class))
+				if (x.getId() != null)
+					doc.add(new StringField(FIELD_PATHWAY, x.getId().trim(), Field.Store.NO));
 		}
 	}
 

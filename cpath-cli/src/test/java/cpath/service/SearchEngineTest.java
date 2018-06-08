@@ -104,7 +104,22 @@ public class SearchEngineTest {
 		
 		response = searchEngine.search("pathway:glycolysis", 0, SmallMoleculeReference.class, null, null);
 		assertEquals(5, response.getSearchHit().size());
-		
+		response = searchEngine.search("pathway:GlycoLysis", 0, SmallMoleculeReference.class, null, null);
+		assertTrue(response.isEmpty()); //case-sensitive
+		response = searchEngine.search("pathway:pathway50", 0, SmallMoleculeReference.class, null, null);
+		assertTrue(response.getSearchHit().isEmpty()); //ending part of URI - case-sensitive
+		response = searchEngine.search("pathway:Pathway50", 0, SmallMoleculeReference.class, null, null);
+		assertEquals(5, response.getSearchHit().size()); //ok
+		response = searchEngine.search("uri:pathway50", 0, null, null, null);
+		assertTrue(response.isEmpty()); //part of URI - case-sensitive
+		response = searchEngine.search("uri:Pathway50", 0, null, null, null);
+		assertFalse(response.isEmpty());//1
+		//find by absolute URI (quoted)
+		response = searchEngine.search("uri:\""+model.getXmlBase()+"Pathway50\"", 0, null, null, null);
+		assertEquals(1, response.getSearchHit().size());
+		response = searchEngine.search("pathway:\""+model.getXmlBase()+"Pathway50\"", 0, Pathway.class, null, null);
+		assertEquals(1, response.getSearchHit().size());
+
 		//test search with pagination
 		searchEngine.setMaxHitsPerPage(10);
 		response = searchEngine.search("*", 0, null, null, null);
