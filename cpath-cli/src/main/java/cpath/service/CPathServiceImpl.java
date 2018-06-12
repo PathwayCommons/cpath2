@@ -50,7 +50,9 @@ import static cpath.service.Status.*;
 @Service
 public class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
-	
+
+	static final Class<? extends BioPAXElement>[] DEFAULT_SEED_TYPES = new Class[]{PhysicalEntity.class, Gene.class};
+
 	Searcher searcher;
 
 	@Autowired
@@ -152,15 +154,12 @@ public class CPathServiceImpl implements CPathService {
 		
 		// extract/convert a sub-model
 		try {
-			final String[] mappedUris = findUrisByIds(uris); //TODO: use the second arg. (biopax types, e.g., Pathway)?
-
-			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
+			Set<BioPAXElement> elements = seedBiopaxElements(uris);
 			Model m = autoCompleteAndClone(elements, subPathways);
-
 			//name the sub-model - can be useful when converted to GSEA, etc...
 			if(m!= null && !m.getObjects().isEmpty()) {
-				if(mappedUris.length==1) {
-					String uri = mappedUris[0];
+				if(elements.size()==1) {
+					String uri = elements.iterator().next().getUri();
 					m.setUri(uri);
 					BioPAXElement b = m.getByID(uri);
 					if(b instanceof Named) {
@@ -174,7 +173,6 @@ public class CPathServiceImpl implements CPathService {
 					m.setName(desc);
 				}
 			}
-
 			return convert(m, format, formatOptions);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -230,8 +228,6 @@ public class CPathServiceImpl implements CPathService {
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
-		
-		final String[] src = findUrisByIds(sources);
 
 		if(direction == null) {
 			direction = Direction.UNDIRECTED; //TODO: use BOTHSTREAM (less data as it ignores MIs)?
@@ -239,13 +235,11 @@ public class CPathServiceImpl implements CPathService {
 
 		// execute the paxtools graph query
 		try {
-			// init source elements
-			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-
+			Set<Set<BioPAXElement>> elements = seedBiopaxElementGroups(sources);
 			// Execute the query, get result elements
-			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
+			Set<BioPAXElement> nhood = QueryExecuter.runNeighborhoodMultiSet(elements, paxtoolsModel,
 					limit, direction, createFilters(organisms, datasources));
-			Model m = autoCompleteAndClone(elements, subPathways);
+			Model m = autoCompleteAndClone(nhood, subPathways);
 			if( m != null) {
 				String desc = ArrayUtils.toString(sources);
 				m.setUri("PC_graph_neighborhood_" + desc.hashCode());
@@ -266,23 +260,19 @@ public class CPathServiceImpl implements CPathService {
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
-		final String[] src = findUrisByIds(sources);
-		
 		// execute the paxtools graph query
 		try {
 			// init source elements
-			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-
+			Set<Set<BioPAXElement>> elements = seedBiopaxElementGroups(sources);
 			// Execute the query, get result elements
-			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
+			Set<BioPAXElement> result = QueryExecuter.runPathsBetweenMultiSet(elements, paxtoolsModel, limit,
 					createFilters(organisms, datasources));
-			Model m = autoCompleteAndClone(elements,subPathways);
+			Model m = autoCompleteAndClone(result,subPathways);
 			if(m != null) {
 				String desc = ArrayUtils.toString(sources);
 				m.setUri("PC_graph_pathsbetween_" + desc.hashCode());
 				m.setName(desc);
 			}
-
 			return convert(m, format, formatOptions);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -298,25 +288,24 @@ public class CPathServiceImpl implements CPathService {
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
-		final String[] src = findUrisByIds(sources);
-		final String[] tgt = findUrisByIds(targets);
-		
 		// execute the paxtools graph query	
 		try {
 			// init source and target elements
-			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
-			Set<BioPAXElement> target = urisToBpes(paxtoolsModel, tgt);
+			Set<Set<BioPAXElement>> source = seedBiopaxElementGroups(sources);
+			Set<Set<BioPAXElement>> target = seedBiopaxElementGroups(targets);
 
 			Model m = null;
-			if(!source.isEmpty() && !target.isEmpty())
+			if(!source.isEmpty())
 			{
 				// Execute the query
 				Set<BioPAXElement> elements = (target == null || target.isEmpty())
-					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit, createFilters(organisms, datasources))
-					: QueryExecuter.runPathsFromTo(source, target,
-							paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
+					? QueryExecuter.runPathsBetweenMultiSet(source, paxtoolsModel, limit,
+						createFilters(organisms, datasources))
+					: QueryExecuter.runPathsFromToMultiSet(source, target, paxtoolsModel, LimitType.NORMAL, limit,
+						createFilters(organisms, datasources));
 
 				m = autoCompleteAndClone(elements,subPathways);
+
 				if(m != null) {
 					String desc = ArrayUtils.toString(sources) + "-to-" + ArrayUtils.toString(targets);
 					m.setUri("PC_graph_pathsfromto_" + desc.hashCode());
@@ -349,13 +338,12 @@ public class CPathServiceImpl implements CPathService {
 
 	@Override
 	public ServiceResponse getCommonStream(final OutputFormat format,
-										   Map<String, String> formatOptions, final String[] sources, final Integer limit, Direction direction,
+										   Map<String, String> formatOptions, final String[] sources,
+										   final Integer limit, Direction direction,
 										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
-		
-		final String[] src = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
 			return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
@@ -366,26 +354,48 @@ public class CPathServiceImpl implements CPathService {
 		// execute the paxtools graph query
 		try {
 			// init source elements
-			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-
+			Set<Set<BioPAXElement>> elements = seedBiopaxElementGroups(sources);
 			// Execute the query, get result elements
-			elements = QueryExecuter
-					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
+			Set<BioPAXElement> result = QueryExecuter
+					.runCommonStreamWithPOIMultiSet(elements, paxtoolsModel, direction, limit,
 							createFilters(organisms, datasources));
-			Model m = autoCompleteAndClone(elements,subPathways);
+			Model m = autoCompleteAndClone(result, subPathways);
 			if(m != null) {
 				String desc = ArrayUtils.toString(sources);
 				m.setUri("PC_graph_commonstream_" + desc.hashCode());
 				m.setName(desc);
 			}
-
 			return convert(m, format, null);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 	}
 
-	
+
+	/**
+	 * Map IDs to BioPAX entity URIs.
+	 *
+	 * This method is to replace {@link #findUrisByIds(String[], Class[])}
+	 * in the graph query methods; see issue #296 for more info.
+	 *
+	 * @param identifiers - a list of genes/protein or molecules as: \
+	 * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
+	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, \
+	 * 	    KEGG Compound, PharmGKB.
+	 * @return URIs of matching Xrefs
+	 *
+	 */
+	private Set<Set<String>> mapToSeeds(String[] identifiers)
+	{
+		Set<Set<String>> sets = new HashSet<>();
+
+		if(identifiers != null)
+			for(String identifier: identifiers)
+				sets.add(findUrisById(identifier));
+
+		return sets;
+	}
+
 	/**
 	 * Mapping IDs to BioPAX entity URIs.
 	 *
@@ -394,15 +404,17 @@ public class CPathServiceImpl implements CPathService {
 	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB.
 	 * @param types filter search to get back URIs of given biopax types and sub-types
 	 * @return URIs of matching Xrefs
+	 *
+	 * See also: issue #296
 	 */
 	private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
 	{
 		if (identifiers.length == 0)
 			return identifiers; //empty array
 		
-		final Set<String> uris = new TreeSet<>();
+		Set<String> uris = new TreeSet<>();
 
-		final StringBuilder q = new StringBuilder();
+		StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers)
 		{
 			if(identifier.startsWith("http://")) {
@@ -410,9 +422,7 @@ public class CPathServiceImpl implements CPathService {
 				uris.add(identifier);
 			} else {
 				//Build a Lucene query (eq. to xrefid:"A" OR xrefid:"B" OR ...);
-				//let's sanitize the ID - escape symbols having special meaning for the Lucene query parser:
-				//'!','*','+','-','&','|','(',')','[',']','{','}','^','~','?',':','/','\','"','\s',
-				// - or simply use double quotes around each identifier:
+				//let's sanitize the ID by simply using double quotes around each identifier:
 				if (!q.toString().contains(identifier)) {
 					q.append("xrefid:\"").append(identifier).append("\" ");
 				}
@@ -422,24 +432,55 @@ public class CPathServiceImpl implements CPathService {
 		if (q.length() > 0) {
 			//find all entity URIs by IDs using a specific full-text search
 			final String query = q.toString().trim();
-			//default BioPAX classes
-			if(types.length==0)
-				types = new Class[]{PhysicalEntity.class, Gene.class};
+
+			if(types.length==0) types = DEFAULT_SEED_TYPES; //BioPAX types to search in
+
 			for(Class type : types) {
 				findAllUris(uris, query, type);
 			}
-			log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
 		}
 
 		return uris.toArray(new String[]{});
+	}
+
+	/**
+	 * Mapping some ID to the BioPAX entity URI(s).
+	 *
+	 * @param idOrUri - a genes/protein or molecule identifier or uri.
+	 * @return URIs of matching Xrefs
+	 *
+	 * See also: issue #296
+	 */
+	private Set<String> findUrisById(String idOrUri)
+	{
+		if (idOrUri == null)
+			return Collections.emptySet();
+
+		Set<String> uris = new TreeSet<>();
+
+		if(idOrUri.startsWith("http://")) {
+			// must be valid URI of some existing BioPAX object in our model
+			uris.add(idOrUri);
+		} else {
+			//Find all entity URIs by ID and specific Lucene query (eq. to xrefid:"A" OR xrefid:"B" OR ...
+			//sanitize the ID by simply using double quotes around each id):
+			String query = "xrefid:\""+idOrUri+"\"";
+			for(Class type : DEFAULT_SEED_TYPES) {
+				findAllUris(uris, query, type);
+			}
+		}
+
+		return uris;
 	}
 
 	void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
 		log.debug("findAllUris, search in " + biopaxTypeFilter.getSimpleName() + " using query: " + query);
 		int page = 0; // will use search pagination; collect all hits from all result pages
 		SearchResponse resp = (SearchResponse) search(query, page, biopaxTypeFilter, null, null);
-		while (!resp.isEmpty()) {
-			for (SearchHit h : resp.getSearchHit()) collectedUris.add(h.getUri());
+		while (!resp.isEmpty())
+		{
+			for (SearchHit h : resp.getSearchHit())
+				collectedUris.add(h.getUri());
 			// go to next page
 			resp = (SearchResponse) search(query, ++page, biopaxTypeFilter, null, null);
 		}
@@ -569,29 +610,44 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	/**
-	 * This utility method prepares the source or target 
-	 * object sets for a graph query.
+	 * Prepares the seed objects for a get(fetch) or traverse query.
 	 * 
-	 * @param model source model
-	 * @param ids specific source or target set of IDs
-	 * @return related biopax elements
+	 * @param ids an array of IDs to map
+	 * @return matched biopax elements
 	 */
-	private static Set<BioPAXElement> urisToBpes(Model model, String[] ids)
+	private Set<BioPAXElement> seedBiopaxElements(String[] ids)
 	{
+		String[] mappedUris = findUrisByIds(ids);
 		Set<BioPAXElement> elements = new HashSet<>();
-
-		for(Object id : ids) {
-			BioPAXElement e = model.getByID(id.toString());
-
+		for(String id : mappedUris) {
+			BioPAXElement e = paxtoolsModel.getByID(id);
 			if(e != null)
 				elements.add(e);
-			else
-				log.warn("urisToBpes: unknown/broken URI: " + id);
 		}
-
 		return elements;
 	}
-	
+
+	/**
+	 * Prepares the sets of seed objects for a BioPAX graph query.
+	 *
+	 * @param ids an array of IDs to map
+	 * @return groups of seed biopax elements (- one group per input id/uri)
+	 */
+	private Set<Set<BioPAXElement>> seedBiopaxElementGroups(String[] ids)
+	{
+		Set<Set<BioPAXElement>> ret = new HashSet<>();
+		Set<Set<String>> uris = mapToSeeds(ids);
+		for(Set<String> set : uris) {
+			Set<BioPAXElement> bpes = new HashSet<>();
+			for (String id : set) {
+				BioPAXElement e = paxtoolsModel.getByID(id);
+				if (e != null)
+					bpes.add(e);
+			}
+			ret.add(bpes);
+		}
+		return ret;
+	}
 
 	private synchronized void loadBlacklist() 
 	{	
