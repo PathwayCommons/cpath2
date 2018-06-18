@@ -42,11 +42,9 @@ public class CPathClientTest {
 	final String testBioSourceUri="http://identifiers.org/taxonomy/9606";
 	final String testPathwayUri="http://identifiers.org/reactome/R-HSA-201451";
 
-
 	@Test
 	public final void testBiopaxMediaType() {
 		String biopaxContentType = "application/vnd.biopax.rdf+xml";
-//		MimeTypeUtils.parseMimeType("application/vnd.biopax.rdf+xml");
 		MediaType mediaType = MediaType.parseMediaType(biopaxContentType);
 		assertNotNull(mediaType);
 		assertEquals(biopaxContentType, mediaType.toString());
@@ -54,41 +52,42 @@ public class CPathClientTest {
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {
-		
 		String endPointURL = client.getEndPointURL();
 		System.out.println("cpath2 instance: " + endPointURL
 			+ " (actual location: " + client.getActualEndPointURL() + ")");
 		
 		//GET usually works ok with different kind of redirects...
-    	String res = client.get("help", null, String.class);
-//    	assertTrue(res.startsWith("<?xml version=")); //not valid assertion, since beta pc9
-		assertNull(res);
+    String res = client.get("help/types.json", null, String.class);
+		assertTrue(res.contains("BioSource"));
 
-    	//POST
-    	res = client.post("help/types", null, String.class);
-//    	System.out.println(res);
-    	assertTrue(res.contains("BioSource"));
+    //POST
+		res = client.post("help/types", null, String.class);
+    assertTrue(res.contains("BioSource"));
 	}
 	
 		
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"reactome"}).result();
+		result = client.createTopPathwaysQuery()
+				.queryString("*").datasourceFilter(new String[]{"reactome"}).result();
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
 
-		//not a valid assertion after client has been modified -
-		//to always throw an exception if response code is not OK
-//		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
-//		assertNull(result);
+		try {
+			client.createTopPathwaysQuery().result();
+			fail("must throw the exc. due to error 400 - since PC10 beta");
+		} catch (CPathException e) {}
 
 		result = null;
 		try {
-			result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
-		} catch (CPathException e) {}
-//		assertNull(result); //it does not error anymore, since pc9 beta; it sends "empty" data result...
-		assertTrue(result.isEmpty());
+			//no error - since pc9 beta - but "empty" result
+			result = client.createTopPathwaysQuery()
+					.queryString("*").datasourceFilter(new String[]{"foo"}).result();
+			assertTrue(result.isEmpty());
+		} catch (CPathException e) {
+			fail("Should not be error");
+		}
 	}
 
 	
@@ -202,8 +201,6 @@ public class CPathClientTest {
 		assertTrue(res.contains("<sbgn"));		
 	}
 
-	
-	//@Ignore
 	@Test
 	public final void testPathsBetweenQuery() throws CPathException
 	{	

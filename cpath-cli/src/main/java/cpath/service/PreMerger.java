@@ -181,7 +181,7 @@ public final class PreMerger {
 					continue;
 				}
 				if(mappings != null) //i.e., when no exception was thrown above
-					service.mapping().save(mappings);
+					service.mapping().saveAll(mappings);
 			}
 		}
 
@@ -304,7 +304,7 @@ public final class PreMerger {
 
 		//save/update to the id-mapping database
 		log.info("buildIdMappingFromWarehouse(), saving all...");
-		service.mapping().save(mappings);
+		service.mapping().saveAll(mappings);
 
 		log.info("buildIdMappingFromWarehouse(), done.");
 	}

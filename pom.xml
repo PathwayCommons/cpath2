@@ -6,6 +6,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<packaging>pom</packaging>
 
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.0.3.RELEASE</version>
+	</parent>
+
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>parent</artifactId>
@@ -149,11 +155,8 @@
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring.version>4.3.7.RELEASE</spring.version>
-		<hibernate.version>5.2.9.Final</hibernate.version>
 		<lucene.version>6.5.0</lucene.version>
 		<h2.version>1.4.196</h2.version>
-		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
 		<validator.version>4.0.0-SNAPSHOT</validator.version>
@@ -161,29 +164,8 @@
 		<commons-lang.version>3.4</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.2</commons-collections.version>
-		<httpclient.version>4.5.3</httpclient.version>
-		<javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
-		<hibernate-validator.version>5.4.1.Final</hibernate-validator.version>
-		<jackson.version>2.8.9</jackson.version>
-		<slf4j.version>1.7.25</slf4j.version>
-		<logback.version>1.2.2</logback.version>
-		<spring-data-jpa.version>1.11.7.RELEASE</spring-data-jpa.version>
-		<aspectjrt.version>1.8.10</aspectjrt.version>
-		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
-		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
-		<maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
-		<maven-jar-plugin.version>2.6</maven-jar-plugin.version>
-		<maven-source-plugin.version>2.4</maven-source-plugin.version>
-		<maven-site-plugin.version>3.4</maven-site-plugin.version>
-		<maven-javadoc-plugin.version>2.10.2</maven-javadoc-plugin.version>
-		<maven-jxr-plugin.version>2.5</maven-jxr-plugin.version>
-		<maven-project-info-reports-plugin.version>2.8</maven-project-info-reports-plugin.version>
-		<maven-resources-plugin.version>2.7</maven-resources-plugin.version>
-		<jaxb2-maven-plugin>1.6</jaxb2-maven-plugin>
-		<maven-enforcer-plugin>1.4</maven-enforcer-plugin>
+		<httpclient.version>4.5.5</httpclient.version>
 		<maven.version.range>[3.0,4)</maven.version.range>
-		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
-		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 		<doxia-integration-tools.version>1.7.4</doxia-integration-tools.version>
 		<wagon-ssh.version>2.8</wagon-ssh.version>
@@ -196,7 +178,6 @@
 			<plugins>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>${maven-compiler-plugin.version}</version>
 					<configuration>
 						<source>${java.version}</source>
 						<target>${java.version}</target>
@@ -205,26 +186,15 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
-						<forkCount>1</forkCount>
+						<!--<forkCount>1</forkCount>-->
 						<argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-source-plugin</artifactId>
-					<version>${maven-source-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-resources-plugin</artifactId>
-					<version>${maven-resources-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-release-plugin</artifactId>
-					<version>${maven-release-plugin.version}</version>
+					<!--<version>${maven-release-plugin.version}</version>-->
                     <configuration>
                         <goals>deploy site-deploy</goals>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -232,53 +202,6 @@
                         <releaseProfiles>sonatype-release-profile</releaseProfiles>
                     </configuration>
 				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>${maven-javadoc-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-jar-plugin</artifactId>
-					<version>${maven-jar-plugin.version}</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>test-jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-jxr-plugin</artifactId>
-					<version>${maven-jxr-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-project-info-reports-plugin</artifactId>
-					<version>${maven-project-info-reports-plugin.version}</version>					
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>				
-					<artifactId>maven-site-plugin</artifactId>
-					<version>${maven-site-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.sonatype.plugins</groupId>
-					<artifactId>nexus-staging-maven-plugin</artifactId>
-					<version>${nexus-staging-maven-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>jaxb2-maven-plugin</artifactId>
-					<version>${jaxb2-maven-plugin}</version>
-				</plugin>	
-				<plugin>
-                	<artifactId>maven-gpg-plugin</artifactId>
-                	<groupId>org.apache.maven.plugins</groupId>
-                	<version>${maven-gpg-plugin.version}</version>
-                </plugin>		
 			</plugins>			
 		</pluginManagement>
 		<extensions>
@@ -302,7 +225,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>${maven-enforcer-plugin}</version>
+				<!--<version>${maven-enforcer-plugin}</version>-->
 				<executions>
 					<execution>
 						<id>enforce-banned-dependencies</id>
@@ -500,116 +423,9 @@
 				</exclusions>
 			</dependency>
 			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${junit.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-test</artifactId>
-				<version>${spring.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-core</artifactId>
-				<version>${spring.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-context</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-context-support</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-beans</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-aop</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-orm</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-jdbc</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-tx</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-oxm</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-webmvc</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-web</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-aspects</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>
 				<version>${commons-collections.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-core</artifactId>
-				<version>${hibernate.version}</version>
-			</dependency>					
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-entitymanager</artifactId>
-				<version>${hibernate.version}</version>
-				<scope>runtime</scope>
-				<exclusions>
-					<exclusion>
-						<artifactId>c3p0</artifactId>
-						<groupId>c3p0</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-ehcache</artifactId>
-				<version>${hibernate.version}</version>
-				<scope>runtime</scope>
-			</dependency>
-			<dependency>
-				<groupId>net.sf.ehcache</groupId>
-				<artifactId>ehcache-core</artifactId>
-				<version>${ehcache-core.version}</version>
-				<scope>runtime</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
@@ -628,66 +444,9 @@
 				<version>${commons-lang.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>javax.validation</groupId>
-				<artifactId>validation-api</artifactId>
-				<version>${javax.validation-api.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-validator</artifactId>
-				<version>${hibernate-validator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-core</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>			
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>com.h2database</groupId>
 				<artifactId>h2</artifactId>
 				<version>${h2.version}</version>
-			</dependency>
-
-			<!-- Logging with SLF4J & LogBack -->
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>jcl-over-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>jul-to-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>log4j-over-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-classic</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-data-jpa</artifactId>
-				<version>${spring-data-jpa.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.aspectj</groupId>
-				<artifactId>aspectjrt</artifactId>
-				<version>${aspectjrt.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
@@ -709,11 +468,6 @@
 				<artifactId>lucene-queryparser</artifactId>
 				<version>${lucene.version}</version>
 			</dependency>
-	        <dependency>
-    	        <groupId>org.hibernate.javax.persistence</groupId>
-        	    <artifactId>hibernate-jpa-2.1-api</artifactId>
-            	<version>1.0.0.Final</version>
-        	</dependency>							
 		</dependencies>
 	</dependencyManagement>
 
@@ -823,7 +577,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${maven-javadoc-plugin.version}</version>
+				<!--<version>${maven-javadoc-plugin.version}</version>-->
 				<configuration>
 					<linksource>true</linksource>
 					<notimestamp>true</notimestamp>
@@ -852,7 +606,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>${maven-jxr-plugin.version}</version>
+				<!--<version>${maven-jxr-plugin.version}</version>-->
 				<reportSets>
 					<reportSet>
 						<id>aggregate</id>
@@ -865,7 +619,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>${maven-project-info-reports-plugin.version}</version>
+				<!--<version>${maven-project-info-reports-plugin.version}</version>-->
 				<configuration>
 					<dependencyDetailsEnabled>false</dependencyDetailsEnabled>
 					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>

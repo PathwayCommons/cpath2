@@ -37,7 +37,7 @@
                     	</ul>
                 	</li>
 					<li><a href="<spring:url value='/datasources'/>">Providers</a></li>
-					<li><a href="<spring:url value='/downloads'/>">Downloads</a></li>
+					<li><a href="${cpath.url}/archives/">Downloads</a></li>
                   </ul>
           	  </div> <!-- collapse -->
       </div> <!-- container -->

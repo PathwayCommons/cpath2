@@ -16,24 +16,24 @@ public enum Cmd {
 		"extract the corresponding sub-model to BioPAX or another supported format. ",
 		"/search?q=brca*&organism=9606",
 		"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search.json?')",
-		new CmdArgs[]{q, page, type, organism, datasource, user}),
+		q, page, type, organism, datasource, user),
 	GET("Gets a BioPAX element or sub-model by ID(s).",
         "/get?uri=http://identifiers.org/uniprot/P38398",
         "BioPAX by default, other formats as specified by the format parameter.",
-        new CmdArgs[]{uri, format, user, pattern, subpw}),
+        uri, format, user, pattern, subpw),
 	GRAPH("Executes an advanced graph query on the data within pathway commons. " +
         "Returns a sub-model as the result. This command can have the following parameters.",
         "/graph?kind=neighborhood&source=URI1&source=URI2&...",
         "BioPAX by default, other formats as specified by the format parameter.",
-        new CmdArgs[]{kind, source, target, format, limit, direction, organism, datasource, user, pattern, subpw}),
+        kind, source, target, format, limit, direction, organism, datasource, user, pattern, subpw),
     TOP_PATHWAYS("Gets Top Pathways. This command accepts optional filter by organism and by datasource values",
     	"/top_pathways",
         "Search Response - XML (JSON, when called as '/top_pathways.json?') contains the list of all top pathways.", 
-        new CmdArgs[]{organism, datasource, q, user}),
+        organism, datasource, q, user),
     TRAVERSE("Gets data property values (or elements's URIs) at the end of the property path.",
     	"/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName",
     	"Traverse Response - XML (or JSON, when called as '/traverse.json?').", 
-    	new CmdArgs[]{path, uri, user})
+    	path, uri, user)
     ;
 	
 	private final CmdArgs[] args; //Array is better for use in json/jsp than List/Set

@@ -1,50 +1,27 @@
 
 import static org.junit.Assert.*;
 
-import java.util.*;
-
+import cpath.service.Application;
 import org.junit.*;
-import org.springframework.http.converter.FormHttpMessageConverter;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
-
-/**
- * Requires system property "cPath2Url", e.g, 
- * -DcPath2Url="http://localhost:8080/"
- * JVM property
- */
-@Ignore // TODO comment out @Ignore and run tests when the WS is up and running
+@Ignore
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CPathWebserviceTest {
-	
-	static RestTemplate template;
 
-	//default test endpoint
-	static String serviceUrl = "http://localhost:8080/";
-	
-	static {
-		template = new RestTemplate();
-		List<HttpMessageConverter<?>> msgCovs = new ArrayList<>();
-		msgCovs.add(new FormHttpMessageConverter());
-		msgCovs.add(new StringHttpMessageConverter());
-		template.setMessageConverters(msgCovs);
-		
-		String url = System.getProperty("cPath2Url");
-		if(url != null && !url.isEmpty())
-			serviceUrl = url;
-		
-	}
-	
-	@Before
-	public void setUp() throws Exception {
-	}
+	@Autowired
+	private TestRestTemplate template;
 
 	@Test
 	public void testGetTypes() {
-		String result = template.getForObject(serviceUrl+"/help/types", String.class);
+		String result = template.getForObject("/help/types", String.class);
 		assertNotNull(result);
 		System.out.println(result);
 	}
@@ -53,8 +30,7 @@ public class CPathWebserviceTest {
 	@Test
 	public void testSearchPathway() {
 		String result = null;
-		result = template.getForObject(serviceUrl + 
-				"/search?type={t}&q={q}", String.class, "Pathway", "Gly*"); 
+		result = template.getForObject("/search?type={t}&q={q}", String.class, "Pathway", "Gly*");
 		//note: pathway and Pathway both works (both converted to L3 Pathway class)
 		assertNotNull(result);
 		assertTrue(result.contains("Pathway50"));
@@ -64,9 +40,8 @@ public class CPathWebserviceTest {
 	//HTTP GET
 	@Test
 	public void testGetQueryById() {
-		String result = template.getForObject(serviceUrl+"/get?uri={uri}", 
-				String.class, 
-				"http://identifiers.org/uniprot/P27797");
+		String result = template.getForObject("/get?uri={uri}",
+				String.class, "http://identifiers.org/uniprot/P27797");
 		assertNotNull(result);
 	}
 	
@@ -74,10 +49,9 @@ public class CPathWebserviceTest {
 	//HTTP POST
 	@Test
 	public void testPostQueryById() {
-		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
+		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		map.add("uri", "http://identifiers.org/uniprot/P27797");
-		String result = template.postForObject(serviceUrl+"/get", 
-				map, String.class);
+		String result = template.postForObject("/get", map, String.class);
 		assertNotNull(result);
 	}
 

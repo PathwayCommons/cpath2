@@ -2,110 +2,35 @@ package cpath.service;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Map;
-import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.web.ErrorController;
+import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
 
 @Controller
-public class PagesController extends BasicController
-		implements ErrorController
+public class PagesController extends BasicController implements ErrorController
 {
 	private static final Logger LOG = LoggerFactory.getLogger(PagesController.class);
-	
-	private final CPathSettings cpath;
-	
-	public PagesController() {
-		cpath = CPathSettings.getInstance();
-	}
-	
-	
-    @ModelAttribute("cpath")
-    public CPathSettings instance() {
-    	return cpath;
-    }
 
 	@RequestMapping("/")
 	public String wroot() {
 		return "home";
 	}
 
-	@RequestMapping("/home")
-	public String home() {
-		return "home";
-	}
+	@RequestMapping("/favicon.ico")
+	public  @ResponseBody byte[] icon() throws IOException {
 
-	@RequestMapping("/formats")
-    public String getOutputFormatsDescr()
-    {
-    	return "formats";
-    }
+		String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
 
-    @RequestMapping("/datasources")
-    public String datasources() {
-    	return "datasources";
-    }
-
-	//handle error responses
-    @RequestMapping("/error")
-    public String error() {
-    	return "error";
-    }
-	@Override
-	public String getErrorPath() {
-		return "/error";
-	}
-
-    @RequestMapping("/downloads")
-    public String downloads(Model model, HttpServletRequest request) {
-
-    	// get the sorted list of files to be shared on the web
-    	String path = CPathSettings.getInstance().downloadsDir(); 
-    	File[] list = new File(path).listFiles();
-    	
-    	Map<String,String> files = new TreeMap<String,String>();
-    	
-    	for(int i = 0 ; i < list.length ; i++) {
-    		File f = list[i];
-    		String name = f.getName();
-    		long size = f.length();
-    		
-    		if(!name.startsWith(".")) {
-    			StringBuilder sb = new StringBuilder();
-    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));    			
-    			files.put(name, sb.toString());
-    		}
-    	}
-    	
-    	model.addAttribute("files", files.entrySet());
-		model.addAttribute("prefix", cpath.exportArchivePrefix());
-
-		return "downloads";
-    }
-
-    // OTHER resources
-    
-    @RequestMapping("/favicon.ico")
-    public  @ResponseBody byte[] icon() throws IOException {
-    	
-    	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
-    	
 		byte[] iconData = null;
 
 		BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
@@ -116,15 +41,9 @@ public class PagesController extends BasicController
 			baos.flush();
 			iconData = baos.toByteArray();
 		}
-		
-        return iconData;
-    }
-    
-    @RequestMapping("/tests")
-    public String tests() {
-    	return "tests";
-    }
 
+		return iconData;
+	}
 
 	@RequestMapping("/robots.txt")
 	public @ResponseBody String robots() {
@@ -140,4 +59,8 @@ public class PagesController extends BasicController
 				"Disallow: /help\n" +
 				"Disallow: /metadata\n";
 	}
+
+	public String getErrorPath() {
+	  return "/error";
+  }
 }

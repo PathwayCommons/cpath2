@@ -56,10 +56,10 @@ public class CPathServiceImpl implements CPathService {
 	Searcher searcher;
 
 	@Autowired
-    MetadataRepository metadataRepository;
+	MetadataRepository metadataRepository;
 	
 	@Autowired
-    MappingsRepository mappingsRepository;
+	MappingsRepository mappingsRepository;
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -324,7 +324,7 @@ public class CPathServiceImpl implements CPathService {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 
 		if(format != OutputFormat.BIOPAX && m != null) {
-			// remove all Pathway objects from the result model (TODO: think again...e.g., to keep pathway name/uri somehow)
+			// remove all Pathway objects from the result model (TODO: keep pathway name,uri somehow)
 			// (- pathways become incomplete after detaching from main PC model;
 			// these look confusing after converting to other format.)
 			for(Pathway p : new HashSet<>(m.getObjects(Pathway.class))) {

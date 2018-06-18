@@ -438,6 +438,7 @@
 	<bp:PublicationXref rdf:about="PublicationXref:PUBMED_2549346">
 		<bp:db rdf:datatype="xsd:string">PubMed</bp:db>
 		<bp:id rdf:datatype="xsd:string">2549346</bp:id>
+		<bp:author>Müller (utf-8 issue #298)</bp:author>
 	</bp:PublicationXref>
 
 	<bp:BiochemicalPathwayStep rdf:ID="BiochemicalPathwayStep_2">

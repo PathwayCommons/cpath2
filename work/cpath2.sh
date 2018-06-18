@@ -17,5 +17,5 @@ elif [ "$1" = "console" ] ; then
 else
   #start the web app using the default (dev) profile, small test data in the temp. dir, etc.
   #(optionally, include $CPATH2_DEBUG_OPTS)
-  $JAVA_HOME/bin/java -Dfile.encoding=UTF-8 -Xmx4g -jar ../cpath-ws/target/cpath2.war --server.port=8280
+  $JAVA_HOME/bin/java -Dfile.encoding=UTF-8 -Xmx4g -jar ../cpath-ws/target/cpath2.war
 fi

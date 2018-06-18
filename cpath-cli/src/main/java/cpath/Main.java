@@ -271,7 +271,7 @@ public final class Main {
 			md.setNumPhysicalEntities(m.getObjects(PhysicalEntity.class).size() + m.getObjects(Gene.class).size());
 			LOG.info(name + " - participants: " + md.getNumPhysicalEntities());
 		}
-		service.metadata().save(pathwayMetadata);
+		service.metadata().saveAll(pathwayMetadata);
 
 		context.close();
 

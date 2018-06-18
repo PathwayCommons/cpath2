@@ -67,7 +67,7 @@ public class BiopaxConverter {
 		try {
 			switch (format) {
 				case BIOPAX: //to OWL (RDF/XML)
-					new SimpleIOHandler().convertToOWL(m, os);
+					(new SimpleIOHandler()).convertToOWL(m, os);
 					break;
 				case BINARY_SIF:
 				case SIF:

@@ -14,9 +14,7 @@
 <div class="jumbotron">
 <h2>Output Formats</h2>
 <p>
-The GET and GRAPH web service commands, as well as 
-<a href="downloads">batch downloads</a>,
-provide output data in several formats explained below.
+The GET and GRAPH web service commands return data in several formats explained below.
 </p>
 </div>
 
