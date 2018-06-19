@@ -1,9 +1,6 @@
-package cpath;
-
-import static cpath.config.CPathSettings.*;
+package cpath.console;
 
 import cpath.config.CPathSettings;
-import cpath.jpa.Mapping;
 import cpath.service.Merger;
 import cpath.service.PreMerger;
 import cpath.jpa.Metadata;
@@ -24,6 +21,13 @@ import org.h2.tools.Csv;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ConfigurableApplicationContext;
+//import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.*;
@@ -36,14 +40,23 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * The cPath2 console application for a pathway data manager
- * to create or re-build a cPath2 instance
- * (metadata db, BioPAX model, full-text index, downloads)
+ * to build a new cPath2 instance (metadata, BioPAX model, full-text index, downloads)
  */
-public final class Main {
-	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-	private static final CPathSettings cpath = CPathSettings.getInstance();
+@SpringBootApplication
+@EnableConfigurationProperties(CPathSettings.class)
+public class Application implements CommandLineRunner {
+	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
-    public static enum Cmd {
+	@Autowired
+	private CPathSettings cpath;
+
+	@Autowired
+	private CPathService service;
+
+	@Autowired
+	private Validator validator;
+
+	public enum Cmd {
         // command types
         METADATA("-metadata"),
 		PREMERGE("-premerge"),
@@ -64,16 +77,21 @@ public final class Main {
     }
 
 	final static String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
- 
-    /**
-     * The big deal main.
-     * 
-     * @param params String[]
-     */    
-    public static void main(String[] params) throws Exception {
+
+
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+		context.getBean(CPathService.class).init();
+	}
+
+	@Override
+	public void run(String... params) throws Exception {
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
 			LOG.error("Default Charset, " + Charset.defaultCharset() +
 					" (is NOT 'UTF-8'); problems with input data are possible...");
+
+		if(!cpath.isAdminEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
 
     	// Cleanup arguments - remove empty/null strings from the end, which were
     	// possibly the result of calling this method from a shell script
@@ -86,7 +104,7 @@ public final class Main {
 
         if (args.length == 0 || args[0].isEmpty()) {
             LOG.error("No cPath2 command name nor arguments provided; exit.");
-			System.err.println(Main.usage());
+			System.err.println(usage());
             System.exit(-1);
         }
 
@@ -97,7 +115,7 @@ public final class Main {
 		}
 		else if (args[0].equals(Cmd.METADATA.toString())) {
 			if (args.length == 1) {
-				fetchMetadata("file:" + cpath.property(PROP_METADATA_LOCATION));
+				fetchMetadata("file:" + cpath.getMetadataLocation());
 			} else {
 				fetchMetadata(args[1]);
 			}
@@ -123,7 +141,8 @@ public final class Main {
 		else if (args[0].equals(Cmd.EXPORT.toString())) {
 			//(the first args[0] is the command name
 			if (args.length < 2) {
-				LOG.info("Default mode: creating datasources.txt, summary.txt and data archives in the downloads dir...");
+				LOG.info("Default mode: creating datasources.txt, " +
+					"summary.txt and data archives in the downloads dir...");
 				createDownloads();
 			} else {
 				String[] uris = new String[] {};
@@ -172,11 +191,8 @@ public final class Main {
      * @param analysisClass a class that implements {@link Analysis} 
      * @param readOnly
      */
-    public static void executeAnalysis(String analysisClass, boolean readOnly) {
-    	
-    	if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	
+    public void executeAnalysis(String analysisClass, boolean readOnly)
+	{
     	Analysis analysis = null;
 		try {
 			Class<Analysis> c = (Class<Analysis>) Class.forName(analysisClass);
@@ -185,7 +201,7 @@ public final class Main {
 			throw new RuntimeException(e);
 		}
     	
-		Model model = CPathUtils.loadMainBiopaxModel();
+		Model model = CPathUtils.importFromTheArchive(cpath.mainModelFile());
  		analysis.execute(model);
  		
  		if(!readOnly) { //replace the main BioPAX model archive
@@ -202,10 +218,7 @@ public final class Main {
  			
 	}
 
-    public static void pack() throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-
+    public void pack() {
 		//backup and purge the cpath2 intermediate id-mapping db to save disk space
 // 		String h2db = cpath.dataDir() + File.separator + "cpath2.h2.db"; //make a copy?
  		String idmap = cpath.dataDir() + File.separator + "idmapping.csv";
@@ -225,11 +238,10 @@ public final class Main {
 		} finally {
 			try {conn.close();} catch (Exception e) {}
 		}
-
 		//TODO: generate downloads.zip (move almost all files from cpath2 /data and /downloads folders to the archive)
 	}
 
-	private static void fail(String[] args, String details) {
+	private void fail(String[] args, String details) {
         throw new IllegalArgumentException(
         	"Invalid cpath2 command: " +  Arrays.toString(args)
         	+ "; " + details);		
@@ -243,13 +255,7 @@ public final class Main {
 	 * @throws IOException
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void index() throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
-		final CPathService service = context.getBean(CPathService.class);
+    public void index() throws IOException {
 		LOG.info("index: indexing...");
 		service.index();
 
@@ -262,7 +268,7 @@ public final class Main {
 				pathwayMetadata.add(md);
 		// update counts for each non-warehouse metadata entry
 		for (Metadata md : pathwayMetadata) {
-			Model m = CPathUtils.loadBiopaxModelByDatasource(md); //to count objects, by type
+			Model m = service.loadBiopaxModelByDatasource(md); //to count objects, by type
 			String name = md.standardName();
 			md.setNumPathways(m.getObjects(Pathway.class).size());
 			LOG.info(name + " - pathways: " + md.getNumPathways());
@@ -272,8 +278,6 @@ public final class Main {
 			LOG.info(name + " - participants: " + md.getNumPhysicalEntities());
 		}
 		service.metadata().saveAll(pathwayMetadata);
-
-		context.close();
 
 		LOG.info("Generating the blacklist.txt...");
 		//Generates, if not exist, the blacklist.txt -
@@ -293,26 +297,13 @@ public final class Main {
      * 
      * @throws IllegalStateException when not maintenance mode
      */
-    public static void runMerge() {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	
+    public void runMerge() {
 		//disable 2nd level hibernate cache (ehcache)
 		// otherwise the merger eventually fails with a weird exception
 		// (this probably depends on the cache config. parameters)
 		System.setProperty("net.sf.ehcache.disabled", "true");
-		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext(new String[] {
-					"classpath:META-INF/spring/applicationContext-jpa.xml"
-			});
-
-		//create CPathService bean that provides access to JPA repositories (metadata, mapping)
-		CPathService service = context.getBean(CPathService.class);
 		Merger merger = new Merger(service);
 		merger.merge();
-		//at the end, it saves the resulting integrated main biopax model to a special file at known location.
-		
-		context.close();		
 	}
 
 	
@@ -324,10 +315,7 @@ public final class Main {
 	 * @param rebuildWarehouse
      * @throws IllegalStateException when not maintenance mode
      */
-	public static void runPremerge(boolean rebuildWarehouse, boolean force) {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");		
-		
+	public void runPremerge(boolean rebuildWarehouse, boolean force) {
         LOG.info("runPremerge: initializing (DAO, validator, premerger)...");
 		//test that officially supported organisms are specified (throws a runtime exception otherwise)
 		cpath.getOrganismTaxonomyIds();
@@ -336,22 +324,12 @@ public final class Main {
 
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		System.setProperty("net.sf.ehcache.disabled", "true");
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
-            		"classpath:META-INF/spring/applicationContext-validator.xml"
-            		});
-		CPathService service = context.getBean(CPathService.class);
-		Validator validator = (Validator) context.getBean("validator");
         PreMerger premerger = new PreMerger(service, validator, force);
         premerger.premerge();
 
 		// create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
 		if(rebuildWarehouse)
 			premerger.buildWarehouse();
-
-		//shutdown the Spring context (services and databases)
-        context.close();
 
 		//back to read-only schema mode (useful when called from the web Main page)
 		System.setProperty("hibernate.hbm2ddl.auto", "validate");
@@ -363,20 +341,10 @@ public final class Main {
      * @param location String PROVIDER_URL or local file.
      * @throws IOException, IllegalStateException (when not maintenance mode)
      */
-    public static void fetchMetadata(final String location) throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
+    public void fetchMetadata(final String location) throws IOException {
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
-            		});
-		CPathService service = context.getBean(CPathService.class);
         // grab the data
         service.addOrUpdateMetadata(location);       
-        context.close(); 
-        
         //back to read-only schema mode (useful when called from the web admin app)
         System.setProperty("hibernate.hbm2ddl.auto", "validate");
     }
@@ -395,7 +363,7 @@ public final class Main {
 	 * 
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String output, String[] uris, boolean outputAbsoluteUris, 
+	public void exportData(final String output, String[] uris, boolean outputAbsoluteUris,
 			String[] datasources, String[] types) throws IOException 
 	{	
 		if(uris == null) 
@@ -406,7 +374,7 @@ public final class Main {
 			types = new String[]{};
 		
 		//load the model
-		Model model = CPathUtils.loadMainBiopaxModel();
+		Model model = CPathUtils.importFromTheArchive(cpath.mainModelFile());
 		LOG.info("Loaded the BioPAX Model");
 
 		if(uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
@@ -443,7 +411,7 @@ public final class Main {
 	}	
 	
 			
-	private static Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type) 
+	private Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type)
 	{	
 		// 'type' (a BioPAX L3 interface class name) is case insensitive 
 		for(Class<? extends BioPAXElement> c : SimpleEditorMap.L3
@@ -458,7 +426,7 @@ public final class Main {
 	}
 
 
-	private static String usage() 
+	private String usage()
 	{
 		final String NEWLINE = System.getProperty ( "line.separator" );
 		StringBuilder toReturn = new StringBuilder();
@@ -499,16 +467,13 @@ public final class Main {
      * 
      * @throws IOException, IllegalStateException (when not in maintenance mode), InterruptedException
      */
-	public static void createDownloads() throws IOException, InterruptedException
+	public void createDownloads() throws IOException, InterruptedException
     {
 		LOG.info("createDownloads(), started...");
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-
 
 		//load the main model
 		LOG.info("loading the Main BioPAX Model...");
-		Model model = CPathUtils.loadMainBiopaxModel();
+		Model model = CPathUtils.importFromTheArchive(cpath.mainModelFile());
 		LOG.info("loaded.");
 
 		ClassPathXmlApplicationContext context = 
@@ -520,13 +485,13 @@ public final class Main {
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator + "datasources.txt");
 		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
 		writer.println(StringUtils.join(Arrays.asList(
-			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
+			"#CPATH2:", cpath.getProviderName(), "version", cpath.getProviderVersion(), date), " "));
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));		
 		Iterable<Metadata> allMetadata = service.metadata().findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
-				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
+				CPathUtils.getMetadataUri(model,m), m.getDescription(), m.getType(), m.getUrlToHomepage(),
 				m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
 		}
 		writer.flush();
@@ -549,7 +514,8 @@ public final class Main {
 				LOG.info(left + " xrefs to map...");
 		}
 		writer = new PrintWriter(cpath.downloadsDir() + File.separator + "uniprot.txt");
-		writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:", cpath.getVersion()));
+		writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
+			cpath.getProviderVersion()));
 		for(String ac : acs)
 			writer.println(ac);
 		writer.close();
@@ -603,7 +569,7 @@ public final class Main {
 		LOG.info("createDownloads: done.");
 	}
 
-	private static void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
+	private void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
 		//make output file name prefix that includes datasource and ends with '.':
 		final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
@@ -626,7 +592,7 @@ public final class Main {
 		writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");
 	}
 
-	private static Collection<String> findAllUris(Searcher searcher, 
+	private Collection<String> findAllUris(Searcher searcher,
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
     {
     	Collection<String> uris = new ArrayList<>();
@@ -646,7 +612,7 @@ public final class Main {
     	return uris;
     }
 
-	private static void createDetailedBiopax(final Model mainModel, Searcher searcher, Iterable<Metadata> allMetadata)
+	private void createDetailedBiopax(final Model mainModel, Searcher searcher, Iterable<Metadata> allMetadata)
 	{
 		//collect BioPAX pathway data source names
 		final Set<String> pathwayDataSources = new HashSet<>();
@@ -658,7 +624,7 @@ public final class Main {
 		exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
 	}
 
-	private static void createBySpeciesBiopax(final Model mainModel, Searcher searcher) {
+	private void createBySpeciesBiopax(final Model mainModel, Searcher searcher) {
     	// export by organism (name)
 		Set<String> organisms = cpath.getOrganismTaxonomyIds();
         if(organisms.size()>1) {
@@ -669,13 +635,16 @@ public final class Main {
         	}
         } else {
         	LOG.info("won't generate any 'by organism' archives, for only one " +
-				Arrays.toString(cpath.getOrganisms()) + " is listed in the cpath2.properties");
+				cpath.getOrganisms() + " is listed in the properties file");
         }
 	}
 
 	
-	private static void exportBiopax(final Model mainModel, final Searcher searcher,
-									 final String biopaxArchive, final String[] datasources, final String[] organisms){
+	private void exportBiopax(
+		final Model mainModel, final Searcher searcher,
+		final String biopaxArchive, final String[] datasources,
+		final String[] organisms)
+	{
         // check file exists
         if(!(new File(biopaxArchive)).exists()) {
         	LOG.info("creating new " + 	biopaxArchive);

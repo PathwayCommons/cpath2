@@ -53,7 +53,7 @@ public final class Merger {
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
 		this.supportedTaxonomyIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		
-		this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
+		this.warehouseModel = service.loadWarehouseModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
 		log.info("Successfully imported Warehouse BioPAX archive.");	
 		
@@ -92,7 +92,7 @@ public final class Merger {
 				continue;
 			}
 
-			Model providerModel = CPathUtils.loadBiopaxModelByDatasource(metadata);
+			Model providerModel = service.loadBiopaxModelByDatasource(metadata);
 			if(providerModel == null) {
 				// merge all (normalized BioPAX) data files of the same provider into one-provider model:
 				providerModel = merge(metadata);
@@ -148,7 +148,7 @@ public final class Merger {
 	}
 
 	private Model merge(Metadata metadata) {
-		Model providerModel = CPathUtils.loadBiopaxModelByDatasource(metadata);
+		Model providerModel = service.loadBiopaxModelByDatasource(metadata);
 		if(providerModel == null)
 		{
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -156,7 +156,7 @@ public final class Merger {
 
 			for (Content pwdata : metadata.getContent()) {
 				final String description = pwdata.toString();
-				if (!new File(pwdata.normalizedFile()).exists()) {
+				if (!new File(service.normalizedFile(pwdata)).exists()) {
 					log.warn("Skip '" + description + "' - no normalized data found (failed premerge)");
 					continue;
 				}
@@ -164,9 +164,9 @@ public final class Merger {
 				log.info("Merging: " + description);
 
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream = CPathUtils.gzipInputStream(pwdata.normalizedFile());
+				InputStream inputStream = CPathUtils.gzipInputStream(service.normalizedFile(pwdata));
 				if(inputStream == null) {
-					log.error("Skipped " + description + " - " + "cannot read " + pwdata.normalizedFile());
+					log.error("Skipped " + description + " - " + "cannot read " + service.normalizedFile(pwdata));
 					continue;
 				}
 

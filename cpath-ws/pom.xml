@@ -37,7 +37,6 @@
 				</executions>
 				<configuration>
 					<mainClass>${start-class}</mainClass>
-					<!--<layout>ZIP</layout>-->
 				</configuration>
 			</plugin>
 			<plugin>

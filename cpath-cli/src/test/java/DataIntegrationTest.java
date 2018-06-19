@@ -1,3 +1,5 @@
+import cpath.console.BiopaxValidatorConfig;
+import cpath.console.CPathApplicationConfig;
 import cpath.config.CPathSettings;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
@@ -21,12 +23,11 @@ import static org.junit.Assert.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -42,30 +43,33 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author rodche
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={
-		"classpath:META-INF/spring/applicationContext-jpa.xml",
-		"classpath:META-INF/spring/appContext-validator.xml"})
-//@ActiveProfiles("default") //develop
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {CPathApplicationConfig.class, BiopaxValidatorConfig.class})
+//@ActiveProfiles("default") //is our test/demo profile - is the default anyway
 public class DataIntegrationTest {
 	static final Logger log = LoggerFactory.getLogger(DataIntegrationTest.class);
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
-	static final String XML_BASE = CPathSettings.getInstance().getXmlBase();
-		
+
 	@Autowired
 	CPathService service;
 	
 	@Autowired
 	Validator validator;
 
+	@Autowired
+    CPathSettings cpath;
+
 	@Test
 	@DirtiesContext
 	public void testPremergeAndMerge() throws IOException {
-		//should not fail:
-		CPathSettings.getInstance().getOrganismTaxonomyIds();
+		//test env. sanity quick-test
+		assertEquals("PathwayCommonsDemo0", cpath.exportArchivePrefix());
 
-		assertTrue(CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
-		assertEquals("Homo sapiens", CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap().get("9606"));
+		//should not fail:
+        cpath.getOrganismTaxonomyIds();
+
+		assertTrue(cpath.getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
+		assertEquals("Homo sapiens", cpath.getOrganismsAsTaxonomyToNameMap().get("9606"));
 
 		// prepare the metadata (always cleanup the data output directories FOR TESTS, because of recent updates in PreMerger!)
 		// load the test metadata and create warehouse
@@ -85,7 +89,7 @@ public class DataIntegrationTest {
 		premerger.buildWarehouse(); //- also writes Warehouse archive
 		
 		//Some assertions about the initial biopax warehouse model (before the merger is run)	
-		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();
+		Model warehouse = CPathUtils.importFromTheArchive(cpath.warehouseModelFile());
 		assertNotNull(warehouse);
 		assertFalse(warehouse.getObjects(ProteinReference.class).isEmpty());
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/P62158"));
@@ -163,7 +167,7 @@ public class DataIntegrationTest {
 		//because doing so repairs inverse properties (e.g. entityReferenceOf)!
 		merger.save(); 
 		//load back the model from archive
-		Model m = CPathUtils.loadMainBiopaxModel();
+		Model m = CPathUtils.importFromTheArchive(cpath.mainModelFile());
 		
 		//Check the all-data integrated model
 		assertMerge(m);
@@ -186,13 +190,12 @@ public class DataIntegrationTest {
 		// Before next tests - update the main file due to changes to dataSource prop. above
 		// (persistent and in-memory models must be the same as the indexer/searcher reads the model from file)
 		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m, 
-			new GZIPOutputStream(new FileOutputStream(
-					CPathSettings.getInstance().mainModelFile())));
+			new GZIPOutputStream(new FileOutputStream(cpath.mainModelFile())));
 
 		//index (it uses additional id-mapping service internally)
-		CPathSettings.getInstance().setAdminEnabled(true);
+        cpath.setAdminEnabled(true);
 		service.index();
-		CPathSettings.getInstance().setAdminEnabled(false);
+        cpath.setAdminEnabled(false);
 
 		// Test FULL-TEXT SEARCH
 		SearchResponse resp;
@@ -241,10 +244,8 @@ public class DataIntegrationTest {
 		assertTrue(((DataResponse)res).getData().toString().length()>0);		
 		
 		// fetch as SIF; apply only one SIF rule
-		res = service.fetch(OutputFormat.BINARY_SIF,
-				Collections.singletonMap("pattern","controls-production-of"),
-				false,
-				"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
+		res = service.fetch(OutputFormat.SIF, Collections.singletonMap("pattern","controls-production-of"),
+		false, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		Object respData = ((DataResponse)res).getData();
@@ -254,7 +255,8 @@ public class DataIntegrationTest {
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
 
 		// fetch a small molecule by URI
-		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, null, false, "http://identifiers.org/chebi/CHEBI:20");
+		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, null, false,
+			"http://identifiers.org/chebi/CHEBI:20");
 		assertNotNull(res);
 		assertFalse(res.isEmpty());
 		// fetch the same small molecule by ID (ChEBI, contains ":" in it...)
@@ -289,6 +291,7 @@ public class DataIntegrationTest {
 	// test everything
 	// WARN: CHEBI ID, names, relationships here might be FAKE ones - just for these tests!
 	private void assertMerge(Model mergedModel) {
+	    final String XML_BASE = cpath.getXmlBase();
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P27797"));
@@ -429,12 +432,12 @@ public class DataIntegrationTest {
 	}
 		
 	
-	private static List<Model> initPathwayModels() throws IOException {
+	private List<Model> initPathwayModels() throws IOException {
 		final List<Model> pathwayModels = new ArrayList<>();
 		
 		SimpleIOHandler reader = new SimpleIOHandler();
 		Normalizer normalizer = new Normalizer();
-		normalizer.setXmlBase(XML_BASE);
+		normalizer.setXmlBase(cpath.getXmlBase());
 		reader.mergeDuplicates(true);
 
 		Model model = reader.convertFromOWL(resourceLoader

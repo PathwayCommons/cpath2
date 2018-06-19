@@ -1,7 +1,6 @@
 package cpath.jpa;
 
 
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +21,6 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import cpath.config.CPathSettings;
 
 /**
  * Data Provider Metadata.
@@ -114,7 +112,6 @@ public final class Metadata {
     private Integer numInteractions;
     private Integer numPhysicalEntities;
 
-    
 	/**
 	 * Default Constructor.
 	 */
@@ -290,45 +287,6 @@ public final class Metadata {
     public String toString() {
         return identifier;
     }
-    
-    
-	/**
-	 * Full path to the input data archive.
-	 * 
-	 * @see CPathSettings#dataDir()
-	 * @return
-	 */
-    @Transient
-    public String getDataArchiveName() {
-    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier + ".zip").toString();
-    }
-    public void setDataArchiveName(String path) {
-    	//a fake bean property (for js, JSON)
-	}
-    
-    
-    /**
-     * Path to the directory where processed data 
-     * (converted/normalized and validation)
-     * are saved.
-     * 
-     * @return
-     */
-    @Transient
-    public String outputDir() {
-    	return Paths.get(CPathSettings.getInstance().dataDir(),identifier).toString();
-    }
-    
-    
-    /**
-     * Generate a URI (for a Provenance instance.)
-     * 
-     * @return
-     */
-    @Transient
-    public String getUri() {
-    	return CPathSettings.getInstance().getXmlBase() + identifier;
-    }
 
     
 	/**
@@ -345,7 +303,7 @@ public final class Metadata {
 		Provenance pro = null;
 		
 		// we create URI from the Metadata identifier and version.
-		final String uri = getUri();
+		final String uri = model.getXmlBase() + identifier;
 		pro = (model.containsID(uri)) 
 			? (Provenance) model.getByID(uri)
 			: model.addNew(Provenance.class, uri);

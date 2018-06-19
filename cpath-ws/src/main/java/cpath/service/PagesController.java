@@ -26,6 +26,21 @@ public class PagesController extends BasicController implements ErrorController
 		return "home";
 	}
 
+	@RequestMapping("/home")
+	public String whome() {
+		return "home";
+	}
+
+	@RequestMapping("/formats")
+	public String getOutputFormatsDescr() {
+		return "formats";
+	}
+
+	@RequestMapping("/datasources")
+	public String datasources() {
+		return "datasources";
+	}
+
 	@RequestMapping("/favicon.ico")
 	public  @ResponseBody byte[] icon() throws IOException {
 
@@ -63,4 +78,10 @@ public class PagesController extends BasicController implements ErrorController
 	public String getErrorPath() {
 	  return "/error";
   }
+
+//	@RequestMapping("/error")
+//	public String error() {
+//		return "error";
+//	}
+
 }

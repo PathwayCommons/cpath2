@@ -28,17 +28,21 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 {
 	private static final Logger log = LoggerFactory.getLogger(OntologyManagerCvRepository.class);
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
-	
+
+	private final String xmlBase;
+
 	/**
 	 * Constructor
 	 * 
 	 * @param ontologies ontology config XML resource (for OntologyManager)
 	 * @throws Exception
 	 */
-	public OntologyManagerCvRepository(Properties ontologies) 
+	public OntologyManagerCvRepository(Properties ontologies)
 	{
 		super(ontologies);
-		
+
+		this.xmlBase = CPathSettings.getInstance().getXmlBase();//TODO: use parameter instead of the global static object
+
 		//Normalize (for safety :)) ontology names using IDs
 		for(String id : getOntologyIDs()) {
 			String officialName = MiriamLink.getName(id);
@@ -165,7 +169,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		String rdfid = Normalizer.uri(CPathSettings.getInstance().getXmlBase(), db, term.getTermAccession(), UnificationXref.class);
+		String rdfid = Normalizer.uri(xmlBase, db, term.getTermAccession(), UnificationXref.class);
 		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
 		uref.setDb(db); 
 		uref.setId(term.getTermAccession());

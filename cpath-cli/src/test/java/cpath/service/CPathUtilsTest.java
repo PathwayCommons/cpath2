@@ -20,27 +20,22 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.*;
 
-import cpath.config.CPathSettings;
-import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
-
 
 public class CPathUtilsTest {
 	
 	static Model model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
-	static final CPathSettings cpath = CPathSettings.getInstance();
-	
+
 	static {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.setXmlBase(cpath.getXmlBase());
+		model.setXmlBase("test/");
 	}
-	
-	
+
 	@Test
 	public void testCopyWithGzip() throws IOException {
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
@@ -92,36 +87,6 @@ public class CPathUtilsTest {
 		assertEquals(METADATA_TYPE.WAREHOUSE, metadata.getType());
 	}
 
-
-	@Test
-	public void testReadContent() throws IOException {
-		// in case there's no "metadata page" prepared -
-		Metadata metadata = new Metadata("TEST", 
-				"Test;testReadContent", 
-				"N/A",
-				"classpath:test2.owl.zip",
-				"",
-				"", 
-				Metadata.METADATA_TYPE.BIOPAX, 
-				null, // no cleaner (same as using "")
-				"", // no converter
-				null,
-				"free"
-				);
-
-		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
-		assertTrue(metadata.getContent().isEmpty());		
-		CPathUtils.analyzeAndOrganizeContent(metadata);
-		
-		assertFalse(metadata.getContent().isEmpty());
-		Content pd = metadata.getContent().iterator().next();
-		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
-		reader.mergeDuplicates(true);
-		InputStream is = new GZIPInputStream(new FileInputStream(pd.originalFile()));
-		Model m = reader.convertFromOWL(is);
-		assertFalse(m.getObjects().isEmpty());
-	}
-	
 	@Test
 	public final void testReplaceID() {
 		

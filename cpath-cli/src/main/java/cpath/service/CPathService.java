@@ -1,11 +1,13 @@
 package cpath.service;
 
 
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
+import cpath.jpa.Content;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -16,6 +18,11 @@ import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
 import cpath.service.jaxb.ServiceResponse;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.api.beans.Validation;
+import org.springframework.core.io.DefaultResourceLoader;
+
+import javax.xml.transform.stream.StreamSource;
 
 
 /**
@@ -231,6 +238,9 @@ public interface CPathService {
 	 */
 	void index() throws IOException;
 
+
+	// Metadata and data processing methods -
+    // TODO: split into two service beans: IntegrationService and AnalysisService
 	/**
 	 * Clears the metadata object and the db record,
 	 * and also drops/creates the data directory.
@@ -239,4 +249,38 @@ public interface CPathService {
 	 * @return
      */
 	Metadata clear(Metadata metadata);
+
+	Model loadMainModel();
+
+	Model loadWarehouseModel();
+
+	Model loadBiopaxModelByDatasource(Metadata datasource);
+
+	String getDataArchiveName(Metadata metadata);
+
+	String outputDir(Metadata metadata);
+
+    /**
+     * For the given Metadata, unpacks and reads the corresponding
+     * original zip data archive, creating new {@link cpath.jpa.Content} objects
+     * in the metadata's dataFile collection.
+     * Skips for system files/directory entries.
+     *
+     * @param metadata Metadata
+     */
+    void analyzeAndOrganizeContent(Metadata metadata);
+
+    void saveValidationReport(Content c, Validation v);
+
+    String normalizedFile(Content c);
+
+//    String validationXmlFile(Content c);
+
+//    String validationHtmlFile(Content c);
+
+    String convertedFile(Content c);
+
+    String cleanedFile(Content c);
+
+    String originalFile(Content c);
 }

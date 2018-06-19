@@ -11,6 +11,10 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
@@ -26,17 +30,21 @@ import java.util.zip.ZipFile;
 
 /**
  * Test ChEBI to BioPAX converter.
- *
  */
+@RunWith(SpringRunner.class)
+@EnableConfigurationProperties(CPathSettings.class)
 public class ChebiConvertersTest {	
-	
+
+	@Autowired
+	private CPathSettings cpath;
+
 	@Test
 	public void testConvertObo() throws IOException {
 		// convert test data
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
 		Converter converter = ImportFactory.newConverter("cpath.converter.ChebiOboConverter");
-		converter.setXmlBase(CPathSettings.getInstance().getXmlBase());
+		converter.setXmlBase(cpath.getXmlBase());
 
 		ZipFile zf = new ZipFile(getClass().getResource("/chebi.obo.zip").getFile());
 		assertTrue(zf.entries().hasMoreElements());
@@ -100,7 +108,6 @@ public class ChebiConvertersTest {
         // check new elements (created by the OBO converter) exist in the model;
         // (particularly, these assertions are important to test within the persistent model (DAO) session)
         assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_20_see-also", RelationshipXref.class)));
-        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_422_see-also", RelationshipXref.class)));		
-		
+        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_422_see-also", RelationshipXref.class)));
 	}
 }

@@ -1,30 +1,40 @@
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 import cpath.config.CPathSettings;
+import cpath.console.Application;
+import cpath.console.CPathApplicationConfig;
+import cpath.service.CPathUtils;
+import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.jpa.Content;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
+import org.springframework.test.context.junit4.SpringRunner;
+
 import static org.junit.Assert.*;
 
 /**
  *
  * @author rodche
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={
-		"classpath:META-INF/spring/applicationContext-jpa.xml"})
-//@ActiveProfiles("default") //develop
+@RunWith(SpringRunner.class)
+//@EnableConfigurationProperties(CPathSettings.class)
+@SpringBootTest(classes = {CPathApplicationConfig.class})
 public class RepositoriesAndServiceTest {
 	
 	@Autowired
@@ -131,7 +141,7 @@ public class RepositoriesAndServiceTest {
 
         // add validation result());  
         for(Content o : md.getContent())
-        	o.saveValidationReport(new Validation(null));        
+        	service.saveValidationReport(o, new Validation(null));
         // update
         service.save(md);
          
@@ -149,4 +159,35 @@ public class RepositoriesAndServiceTest {
         md = service.metadata().findByIdentifier("TEST");
         assertTrue(md.getContent().isEmpty());         
 	}
+
+    @Test
+    @DirtiesContext
+    public void testReadContent() throws IOException {
+        // in case there's no "metadata page" prepared -
+        Metadata metadata = new Metadata("TEST",
+            "Test;testReadContent",
+            "N/A",
+            "classpath:test2.owl.zip",
+            "",
+            "",
+            Metadata.METADATA_TYPE.BIOPAX,
+            null, // no cleaner (same as using "")
+            "", // no converter
+            null,
+            "free"
+        );
+
+        CPathUtils.cleanupDirectory(service.outputDir(metadata), true);
+        assertTrue(metadata.getContent().isEmpty());
+
+        service.analyzeAndOrganizeContent(metadata);
+        assertFalse(metadata.getContent().isEmpty());
+
+        Content pd = metadata.getContent().iterator().next();
+        SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
+        reader.mergeDuplicates(true);
+        InputStream is = new GZIPInputStream(new FileInputStream(service.originalFile(pd)));
+        Model m = reader.convertFromOWL(is);
+        assertFalse(m.getObjects().isEmpty());
+    }
 }

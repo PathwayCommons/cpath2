@@ -7,6 +7,7 @@ import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 
+import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
@@ -66,7 +67,7 @@ public final class PreMerger {
 		// Iterate over all metadata
 		for (Metadata metadata : service.metadata().findAll())
 		{
-			if(overwrite || !Files.isDirectory(Paths.get(metadata.outputDir()))) {
+			if(overwrite || !Files.isDirectory(Paths.get(service.outputDir(metadata)))) {
 				metadata = service.clear(metadata); //empties the corresponding directory and db entries
 			} else {
 				metadata.getContent().clear();
@@ -75,7 +76,7 @@ public final class PreMerger {
 
 			//read and analyze the input data archive
 			log.info("premerge(), " + metadata.getIdentifier());
-			CPathUtils.analyzeAndOrganizeContent(metadata);
+			service.analyzeAndOrganizeContent(metadata);
 			metadata = service.save(metadata); //inserts content file names into the db table
 			log.debug("premerge(), " + metadata.getIdentifier() + " contains "
 					+ metadata.getContent().size() + " files");
@@ -139,17 +140,17 @@ public final class PreMerger {
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
 				continue;
 
-			log.info("buildWarehouse(), adding data: " + metadata.getUri());
+			log.info("buildWarehouse(), adding data: " + metadata.getIdentifier());
 			InputStream inputStream;
 			for (Content content : metadata.getContent()) {
 				try {
-					inputStream = new GZIPInputStream(new FileInputStream(content.normalizedFile()));
+					inputStream = new GZIPInputStream(new FileInputStream(service.normalizedFile(content)));
 					Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);
 					m.setXmlBase(xmlBase);
 					warehouse.merge(m);
 				} catch (IOException e) {
 					log.error("buildWarehouse(), skip for " + content.toString() +
-							"; failed to read/merge from " + content.convertedFile(), e);
+							"; failed to read/merge from " + service.convertedFile(content), e);
 					continue;
 				}
 			}
@@ -170,7 +171,7 @@ public final class PreMerger {
 			if (metadata.getType() != METADATA_TYPE.MAPPING)
 				continue;
 
-			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
+			log.info("buildWarehouse(), adding id-mapping: " + metadata.getIdentifier());
 			for (Content content : metadata.getContent()) {
 				Set<Mapping> mappings = null;
 				try {
@@ -223,7 +224,7 @@ public final class PreMerger {
 	{
 		Set<Mapping> mappings = new HashSet<>();
 		
-		Scanner scaner = new Scanner(new GZIPInputStream(new FileInputStream(content.originalFile())));
+		Scanner scaner = new Scanner(new GZIPInputStream(new FileInputStream(service.originalFile(content))));
 
 		String line = scaner.nextLine(); //get the first, title line
 		String head[] = line.split("\t");
@@ -323,19 +324,22 @@ public final class PreMerger {
 			Cleaner cleaner, Converter converter) throws IOException
 	{
 		final String info = content.toString();
-		File inputFile = new File(content.originalFile());
+		File inputFile = new File(service.originalFile(content));
 		log.info("pipeline(), do " + inputFile.getPath());
 
 		//Clean the data, i.e., apply data-specific "quick fixes".
 		if(cleaner != null) {
 			String cleanerClassName = cleaner.getClass().getSimpleName();
-			File outputFile = new File(content.cleanedFile());
+			File outputFile = new File(service.cleanedFile(content));
 			if(outputFile.exists()) {
 				log.info("pipeline(), re-use " + outputFile.getName());
 			} else {
 				try {
-					cleaner.clean(new GZIPInputStream(new FileInputStream(inputFile)),
-							new GZIPOutputStream(new FileOutputStream(outputFile))); //os must be closed inside the method
+					InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
+					OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
+					cleaner.clean(is, os);
+					IOUtils.closeQuietly(is);
+					IOUtils.closeQuietly(os);
 				} catch (Exception e) {
 					log.warn("pipeline(), fail " + info + " due to " + cleanerClassName + " failed: " + e);
 					return;
@@ -352,13 +356,16 @@ public final class PreMerger {
 		//Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
 		if (converter != null) {
 			String converterClassName = converter.getClass().getSimpleName();
-			File outputFile = new File(content.convertedFile());
+			File outputFile = new File(service.convertedFile(content));
 			if(outputFile.exists()) {
 				log.info("pipeline(), re-use " + outputFile.getName());
 			} else {
 				try {
-					converter.convert(new GZIPInputStream(new FileInputStream(inputFile)),
-							new GZIPOutputStream(new FileOutputStream(outputFile)));//must be closed inside
+					InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
+					OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
+					converter.convert(is, os);
+					IOUtils.closeQuietly(is);
+					IOUtils.closeQuietly(os);
 				} catch (Exception e) {
 					log.warn("pipeline(), fail " + info + " due to " + converterClassName + " failed: " + e);
 					return;
@@ -370,10 +377,12 @@ public final class PreMerger {
 
 		// Validate & auto-fix and normalize: e.g., synonyms in xref.db may be replaced
 		// with the primary db name, as in Miriam, some URIs get normalized, etc.
-		if(Files.exists(Paths.get(content.normalizedFile()))) {
+		if(Files.exists(Paths.get(service.normalizedFile(content)))) {
 			log.warn("checkAndNormalize, skip validation/normalization - use existing data files.");
 		} else {
-			checkAndNormalize(info, new GZIPInputStream(new FileInputStream(inputFile)), metadata, content);
+			InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
+			checkAndNormalize(info, is, metadata, content);
+			IOUtils.closeQuietly(is);
 		}
 	}
 
@@ -418,7 +427,7 @@ public final class PreMerger {
 				// update dataSource property (force new Provenance) for all entities
 				metadata.setProvenanceFor(model);
 
-				content.saveValidationReport(validation);
+				service.saveValidationReport(content, validation);
 
 				// count critical not fixed error cases (ignore warnings and fixed ones)
 				int noErrors = validation.countErrors(null, null, null, null, true, true);
@@ -437,7 +446,7 @@ public final class PreMerger {
 
 		// save
 		try {
-			OutputStream out = new GZIPOutputStream(new FileOutputStream(content.normalizedFile()));
+			OutputStream out = new GZIPOutputStream(new FileOutputStream(service.normalizedFile(content)));
 			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
 		} catch (Exception e) {
 			throw new RuntimeException("checkAndNormalize(), failed " + title, e);

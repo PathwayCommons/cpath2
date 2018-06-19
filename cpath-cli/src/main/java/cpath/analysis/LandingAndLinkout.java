@@ -10,7 +10,6 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.FileNotFoundException;
@@ -23,7 +22,6 @@ public class LandingAndLinkout implements Analysis<Model> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LandingAndLinkout.class);
 //    public static final String JAVA_OPTION_IDTYPE = "cpath.analysis.linkout.type";
-    private static final CPathSettings cpath = CPathSettings.getInstance();
 
     @Override
     public void execute(Model model) {
@@ -53,9 +51,13 @@ public class LandingAndLinkout implements Analysis<Model> {
             } catch (FileNotFoundException e) {
                 throw new RuntimeException("", e);
             }
-            writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:", cpath.getVersion()));
+
+            writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
+                CPathSettings.getInstance().getProviderVersion()));
+
             for (String ac : acs)
                 writer.println(ac);
+
             writer.close();
 
         } finally {

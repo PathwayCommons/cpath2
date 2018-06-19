@@ -29,29 +29,23 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
-import cpath.config.CPathSettings;
-import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 
 import static cpath.jpa.Metadata.*;
 
-/**
- * @author rodche (Igor Rodchenkov)
- * @author Pathway Commons, G. Bader Lab, UofT
- */
+
 public final class CPathUtils {
 	// logger
     private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
     
 	// LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
 	public static final ResourceLoader LOADER = new DefaultResourceLoader();
-		
-	
+
+
 	private CPathUtils() {
 		throw new AssertionError("Not instantiable");
 	}
 
-    
     /**
      * Empties the directory or creates a new one.
      *
@@ -168,64 +162,6 @@ public final class CPathUtils {
         return toReturn;
     }
 
-	
-    /**
-     * For the given Metadata, unpacks and reads the corresponding 
-     * original zip data archive, creating new {@link Content} objects 
-     * in the metadata's dataFile collection.
-     * Skips for system files/directory entries.
-     *
-     * @see Metadata#getDataArchiveName()
-	 * @param metadata Metadata
-     * @throws RuntimeException if an IO error occurs
-     */
-    public static void analyzeAndOrganizeContent(final Metadata metadata) 
-    {
-		Collection<Content> contentCollection = new HashSet<>();
-
-		try {
-			String fname = (metadata.getUrlToData().startsWith("classpath:")) //a hack for junit tests
-				? LOADER.getResource(metadata.getUrlToData()).getFile().getPath()
-					: metadata.getDataArchiveName();
-			ZipFile zipFile = new ZipFile(fname);
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while(entries.hasMoreElements())
-			{
-				ZipEntry entry = entries.nextElement();
-            	String entryName = entry.getName();
-           		LOGGER.info("analyzeAndOrganizeContent(), processing zip entry: " + entryName);
-				//skip some sys/tmp files (that MacOSX creates sometimes)
-				if(entry.isDirectory() || entryName.contains("__MACOSX") || entryName.startsWith(".")
-						|| entryName.contains("/.") || entryName.contains("\\."))
-				{
-            		LOGGER.info("analyzeAndOrganizeContent(), skipped " + entryName);
-					continue;
-				}
-				
-				// create pathway data object
-				LOGGER.info("analyzeAndOrganizeContent(), adding " + entryName + " of " + metadata.getIdentifier());
-				Content content = new Content(metadata, entryName);
-				// add object to return collection
-				contentCollection.add(content);
-
-				// expand original contend and save to the gzip output file
-				Path out = Paths.get(content.originalFile());
-				if(!Files.exists(out)) {
-					copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out))); //auto-close
-				}
-            }           
-		} catch (IOException e) {
-			throw new RuntimeException("analyzeAndOrganizeContent(), " +
-					"failed reading from: " + metadata.getIdentifier() , e);
-		}
-		
-		if(contentCollection != null && !contentCollection.isEmpty()) {
-			metadata.getContent().addAll(contentCollection);
-		} else
-			LOGGER.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
-    }
-
-
     /**
      * Close the OutputStream quietly.
      * @param os
@@ -287,7 +223,7 @@ public final class CPathUtils {
 	 * @param archive
 	 * @return big BioPAX model
 	 */
-	static Model importFromTheArchive(String archive)
+	public static Model importFromTheArchive(String archive)
 	{
 		Model model = null;
 
@@ -332,44 +268,6 @@ public final class CPathUtils {
 		return uri.substring(uri.lastIndexOf('/')+1);
 	}
 	
-	
-	/**
-	 * Imports the Main BioPAX Model from the merged all-in-one BioPAX archive.
-	 * 
-	 * @return model
-	 */
-	public static Model loadMainBiopaxModel()  {
-		return importFromTheArchive(CPathSettings.getInstance().mainModelFile());
-	}
-
-	
-	/**
-	 * Builds the BioPAX Paxtools model from 
-	 * the warehouse BioPAX archive.
-	 * 
-	 * @return model
-	 */
-	public static Model loadWarehouseBiopaxModel() {
-		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
-	}
-
-
-	/**
-	 * Imports the specified data source BioPAX model from the corresponding merged BioPAX archive.
-	 *
-	 * @return model
-	 */
-	public static Model loadBiopaxModelByDatasource(Metadata datasource) {
-		Path in = Paths.get(CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()));
-		if (Files.exists(in)) {
-			return importFromTheArchive(in.toString());
-		} else {
-			LOGGER.debug("loadBiopaxModelByDatasource, file not found: " + in
-					+ " (not merged yet, or file was deleted)");
-			return null;
-		}
-	}
-
 
 	/**
 	 * Auto-fix an ID of particular type before using it
@@ -382,8 +280,8 @@ public final class CPathUtils {
      * @return "fixed" ID
      */
 	public static String fixSourceIdForMapping(String fromDb, String fromId) {
-		Assert.hasText(fromId);
-		Assert.hasText(fromDb);
+		Assert.hasText(fromId,"fromId is empty");
+		Assert.hasText(fromDb, "fromDb is empty");
 
 		String id = fromId;
 		String db = fromDb.toUpperCase();
@@ -454,7 +352,7 @@ public final class CPathUtils {
 	public static RelationshipXref findOrCreateRelationshipXref(
 			RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId)
 	{
-		Assert.notNull(vocab);
+		Assert.notNull(vocab,"vocab is null");
 
 		RelationshipXref toReturn = null;
 
@@ -532,4 +430,14 @@ public final class CPathUtils {
 		}
 		return null;
 	}
+
+
+    /**
+     * Generate a URI (for a Provenance instance.)
+     *
+     * @return
+     */
+    public static String getMetadataUri(Model model, Metadata metadata) {
+        return model.getXmlBase() + metadata.getIdentifier();
+    }
 }

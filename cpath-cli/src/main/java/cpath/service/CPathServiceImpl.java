@@ -2,11 +2,15 @@ package cpath.service;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.*;
@@ -25,6 +29,8 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.api.beans.Validation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +42,8 @@ import org.springframework.util.Assert;
 import cpath.config.CPathSettings;
 import cpath.jpa.*;
 import cpath.service.jaxb.*;
+
+import javax.xml.transform.stream.StreamSource;
 
 import static cpath.service.Status.*;
 
@@ -73,7 +81,8 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
 	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
-	private final static CPathSettings cpath = CPathSettings.getInstance();
+	@Autowired
+	private CPathSettings cpath;
 
 	/**
 	 * Constructor
@@ -93,17 +102,19 @@ public class CPathServiceImpl implements CPathService {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(() -> {
-			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
+			paxtoolsModel = loadMainModel();
 			if(paxtoolsModel != null) {
 				paxtoolsModel.setXmlBase(cpath.getXmlBase());
 				log.info("Main BioPAX model (in-memory) is now ready for queries.");
 				searcher = new SearchEngine(paxtoolsModel, cpath.indexDir());
-				((SearchEngine) searcher).setMaxHitsPerPage(Integer.parseInt(cpath.getMaxHitsPerPage()));
+				((SearchEngine) searcher).setMaxHitsPerPage(cpath.getMaxSearchHitsPerPage());
 			}
 		});
 		executor.shutdown();
 		//won't wait (nothing else to do)
 		loadBlacklist();
+
+		cpath.init(); //set global static CPathSettings.getInstance()
 	}
 
 	public Model getModel() {
@@ -765,9 +776,9 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public void delete(Metadata metadata) {
     	metadataRepository.delete(metadata);
-		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
+		CPathUtils.cleanupDirectory(outputDir(metadata), true);
 		try {
-			Files.delete(Paths.get(metadata.outputDir()));
+			Files.delete(Paths.get(outputDir(metadata)));
 		} catch (IOException e) {}
 	}
 
@@ -798,7 +809,7 @@ public class CPathServiceImpl implements CPathService {
 			throw new IllegalStateException("Admin mode is not enabled");
 
 		if(paxtoolsModel == null) {
-			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
+			paxtoolsModel = loadMainModel();
 			if(paxtoolsModel != null) {
 				paxtoolsModel.setXmlBase(cpath.getXmlBase());
 				log.info("Main BioPAX model (in-memory) is now ready for queries.");
@@ -810,7 +821,7 @@ public class CPathServiceImpl implements CPathService {
 
 		if(searcher == null) {
 			SearchEngine searchEngine = new SearchEngine(paxtoolsModel, cpath.indexDir());
-			searchEngine.setMaxHitsPerPage(Integer.parseInt(cpath.getMaxHitsPerPage()));
+			searchEngine.setMaxHitsPerPage(cpath.getMaxSearchHitsPerPage());
 			setSearcher(searchEngine);
 		}
 
@@ -821,7 +832,7 @@ public class CPathServiceImpl implements CPathService {
 
 	@Override
 	public synchronized Metadata clear(Metadata metadata) {
-		CPathUtils.cleanupDirectory(metadata.outputDir(), true);
+		CPathUtils.cleanupDirectory(outputDir(metadata), true);
 		metadata.setNumInteractions(null);
 		metadata.setNumPathways(null);
 		metadata.setNumPhysicalEntities(null);
@@ -898,6 +909,153 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
 	}
+
+    public Model loadMainModel() {
+        return CPathUtils.importFromTheArchive(cpath.mainModelFile());
+    }
+
+    public Model loadWarehouseModel() {
+        return CPathUtils.importFromTheArchive(cpath.warehouseModelFile());
+    }
+
+    public Model loadBiopaxModelByDatasource(Metadata datasource) {
+        Path in = Paths.get(CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()));
+        if (Files.exists(in)) {
+            return CPathUtils.importFromTheArchive(in.toString());
+        } else {
+            log.debug("loadBiopaxModelByDatasource, file not found: " + in
+                + " (not merged yet, or file was deleted)");
+            return null;
+        }
+    }
+
+    public String getDataArchiveName(Metadata metadata) {
+        return Paths.get(cpath.dataDir(),metadata.getIdentifier() + ".zip").toString();
+    }
+
+
+    public String outputDir(Metadata metadata) {
+        return Paths.get(cpath.dataDir(), metadata.getIdentifier()).toString();
+    }
+
+	public void analyzeAndOrganizeContent(Metadata metadata)
+	{
+		Collection<Content> contentCollection = new HashSet<>();
+
+		try {
+			String fname = (metadata.getUrlToData().startsWith("classpath:")) //a hack for junit tests
+				? CPathUtils.LOADER.getResource(metadata.getUrlToData()).getFile().getPath()
+				: getDataArchiveName(metadata);
+			ZipFile zipFile = new ZipFile(fname);
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while(entries.hasMoreElements())
+			{
+				ZipEntry entry = entries.nextElement();
+				String entryName = entry.getName();
+				log.info("analyzeAndOrganizeContent(), processing zip entry: " + entryName);
+				//skip some sys/tmp files (that MacOSX creates sometimes)
+				if(entry.isDirectory() || entryName.contains("__MACOSX") || entryName.startsWith(".")
+					|| entryName.contains("/.") || entryName.contains("\\."))
+				{
+					log.info("analyzeAndOrganizeContent(), skipped " + entryName);
+					continue;
+				}
+
+				// create pathway data object
+				log.info("analyzeAndOrganizeContent(), adding " + entryName + " of " + metadata.getIdentifier());
+				Content content = new Content(metadata, entryName);
+				// add object to return collection
+				contentCollection.add(content);
+
+				// expand original contend and save to the gzip output file
+				Path out = Paths.get(originalFile(content));
+				if(!Files.exists(out)) {
+					CPathUtils.copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out)));//auto-close
+				}
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("analyzeAndOrganizeContent(), " +
+				"failed reading from: " + metadata.getIdentifier() , e);
+		}
+
+		if(contentCollection != null && !contentCollection.isEmpty()) {
+			metadata.getContent().addAll(contentCollection);
+		} else
+			log.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
+	}
+
+
+	public void saveValidationReport(Content c, Validation v) {
+        Writer writer;
+        try {
+            writer = new OutputStreamWriter(
+                new GZIPOutputStream(new FileOutputStream(validationXmlFile(c))));
+            ValidatorUtils.write(v, writer, null);
+            writer.flush();
+            writer.close();//important
+        } catch (IOException e) {
+            log.error("saveValidationReport, failed to save the XML report", e);
+        }
+
+        // transform to html report and save (frankly, not needed)
+        // (fails if old saxon libs present in the classpath, e.g., those come with the psimi-converter...)
+        try {
+            writer = new OutputStreamWriter(
+                new GZIPOutputStream(new FileOutputStream(validationHtmlFile(c))));
+            StreamSource xsl = new StreamSource((new DefaultResourceLoader())
+                .getResource("classpath:html-result.xsl").getInputStream());
+            ValidatorUtils.write(v, writer, xsl);
+            writer.flush();
+            writer.close();//important
+        } catch (Exception e) {
+            log.error("saveValidationReport, failed to transform the XML to HTML report", e);
+        }
+    }
+
+    public String normalizedFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".normalized.owl.gz";
+    }
+
+
+    private String validationXmlFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".validation.xml.gz";
+    }
+
+
+    private String validationHtmlFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".validation.html.gz";
+    }
+
+
+    public String convertedFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".converted.owl.gz";
+    }
+
+    public String cleanedFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".cleaned.gz";
+    }
+
+    public String originalFile(Content c) {
+        return cpath.dataDir() +
+            File.separator + c.getProvider()
+            + File.separator + c.getFilename()
+            + ".original.gz";
+    }
 
 }
 
