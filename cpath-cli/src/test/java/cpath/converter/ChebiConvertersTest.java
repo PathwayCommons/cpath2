@@ -1,6 +1,6 @@
 package cpath.converter;
 
-import cpath.config.CPathSettings;
+import cpath.Settings;
 import cpath.service.Converter;
 import cpath.service.ImportFactory;
 
@@ -32,11 +32,11 @@ import java.util.zip.ZipFile;
  * Test ChEBI to BioPAX converter.
  */
 @RunWith(SpringRunner.class)
-@EnableConfigurationProperties(CPathSettings.class)
+@EnableConfigurationProperties(Settings.class)
 public class ChebiConvertersTest {	
 
 	@Autowired
-	private CPathSettings cpath;
+	private Settings cpath;
 
 	@Test
 	public void testConvertObo() throws IOException {

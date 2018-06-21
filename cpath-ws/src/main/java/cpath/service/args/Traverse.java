@@ -1,8 +1,7 @@
 package cpath.service.args;
 
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
-
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;

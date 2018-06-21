@@ -1,7 +1,7 @@
 package cpath.service;
 
-import cpath.config.CPathSettings;
-import cpath.console.CPathApplicationConfig;
+import cpath.Settings;
+import cpath.JpaConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,8 +16,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
 @SpringBootApplication
-@EnableConfigurationProperties(CPathSettings.class)
-@Import(CPathApplicationConfig.class)
+@EnableConfigurationProperties(Settings.class)
+@Import(JpaConfig.class)
 public class Application {
 
     public static void main(String[] args) {

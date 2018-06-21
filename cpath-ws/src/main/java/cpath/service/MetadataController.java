@@ -7,7 +7,6 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
-import cpath.config.CPathSettings;
 import cpath.jpa.Metadata;
 import cpath.service.args.binding.MetadataTypeEditor;
 
@@ -17,11 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 
- * @author rodche
- */
+
 @RestController
+@RequestMapping(method = RequestMethod.GET)
 //@CrossOrigin //enabled, allowed *, get/post/head by default for a spring-boot app
 public class MetadataController extends BasicController {
     
@@ -32,18 +29,6 @@ public class MetadataController extends BasicController {
         binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
 	}
     
-    
-    /*
-     * Makes current cpath2 instance properties 
-     * available to the JSP views.
-     * @return
-     */
-    @ModelAttribute("cpath")
-    public CPathSettings instance() {
-    	return CPathSettings.getInstance();
-    }
-
-
     @RequestMapping("/metadata/logo/{identifier}")
     public byte[] queryForLogo(@PathVariable String identifier)
     		throws IOException
@@ -71,14 +56,13 @@ public class MetadataController extends BasicController {
 	public Map<String,Object> queryForMetadata() {
 		TreeMap<String,Object> props = new TreeMap();
 
-		props.put("version", instance().getVersion());
-		props.put("name", instance().getName());
-		props.put("description", instance().getDescription());
-		props.put("logo", instance().getLogoUrl());
-		props.put("xmlBase", instance().getXmlBase());
-		props.put("url", instance().getUrl());
-		props.put("organisms", instance().getOrganismsAsTaxonomyToNameMap());
-		props.put("debug", instance().isDebugEnabled());
+		props.put("version", service.settings().getProviderVersion());
+		props.put("name", service.settings().getProviderName());
+		props.put("description", service.settings().getProviderDescription());
+		props.put("logo", service.settings().getProviderLogoUrl());
+		props.put("xmlBase", service.settings().getXmlBase());
+		props.put("url", service.settings().getProviderUrl());
+		props.put("organisms", service.settings().getOrganismsAsTaxonomyToNameMap());
 
 		return props;
 	}

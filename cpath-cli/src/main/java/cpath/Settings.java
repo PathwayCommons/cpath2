@@ -1,4 +1,4 @@
-package cpath.config;
+package cpath;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -15,14 +15,14 @@ import cpath.service.Scope;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("cpath2")
-public class CPathSettings
+public class Settings
 {
-	private static final Logger LOG = LoggerFactory.getLogger(CPathSettings.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
 	//TODO: refactor to get rid of using this static global object.
-	private static CPathSettings instance;
-	public static CPathSettings getInstance() {return instance;}
-	public void init() {CPathSettings.instance = this;}
+	private static Settings instance;
+	public static Settings getInstance() {return instance;}
+	public void init() {Settings.instance = this;}
 
 	/**
 	 * Name for the system environment and/or JVM variable 
@@ -69,7 +69,6 @@ public class CPathSettings
 	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
 
 	private Boolean adminEnabled;
-	private Boolean debugEnabled;
 	private Boolean sbgnLayoutEnabled;
 	private String xmlBase;
 	private Integer maxSearchHitsPerPage;
@@ -83,7 +82,7 @@ public class CPathSettings
 	private String providerDownloadsUrl;
 	private String providerGA;//Google Analytics code
 
-	public CPathSettings() {
+	public Settings() {
 		LOG.info("Working ('home') directory: " + homeDir());
 		subDir(""); //creates if not exists
 		subDir(DATA_SUBDIR);
@@ -95,14 +94,6 @@ public class CPathSettings
 
 	public void setAdminEnabled(Boolean adminEnabled) {
 		this.adminEnabled = adminEnabled;
-	}
-
-	public Boolean getDebugEnabled() {
-		return debugEnabled;
-	}
-
-	public void setDebugEnabled(Boolean debugEnabled) {
-		this.debugEnabled = debugEnabled;
 	}
 
 	public String getXmlBase() {
@@ -203,7 +194,6 @@ public class CPathSettings
 
 	//backward compatibility methods
 	public boolean isAdminEnabled() {return (getAdminEnabled()==null)? false : getAdminEnabled().booleanValue();}
-	public boolean isDebugEnabled() {return (getDebugEnabled()==null)? false : getDebugEnabled().booleanValue();}
 	public boolean isSbgnLayoutEnabled() {
 		return (getSbgnLayoutEnabled()==null)? false : getSbgnLayoutEnabled().booleanValue();
 	}

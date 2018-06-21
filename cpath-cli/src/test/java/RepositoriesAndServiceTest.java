@@ -4,9 +4,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-import cpath.config.CPathSettings;
-import cpath.console.Application;
-import cpath.console.CPathApplicationConfig;
+import cpath.JpaConfig;
 import cpath.service.CPathUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -15,7 +13,6 @@ import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -33,15 +30,13 @@ import static org.junit.Assert.*;
  * @author rodche
  */
 @RunWith(SpringRunner.class)
-//@EnableConfigurationProperties(CPathSettings.class)
-@SpringBootTest(classes = {CPathApplicationConfig.class})
+@SpringBootTest(classes = {JpaConfig.class}) //BiopaxConfig.class (biopax-validator) is not needed here
 public class RepositoriesAndServiceTest {
 	
 	@Autowired
 	private CPathService service;
 
 
-	@DirtiesContext
 	@Test
 	public final void testLogGa() {
 		service.track("172.20.10.3","command","search");

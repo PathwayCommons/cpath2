@@ -1,6 +1,5 @@
-package cpath.console;
+package cpath;
 
-import cpath.config.CPathSettings;
 import cpath.service.Merger;
 import cpath.service.PreMerger;
 import cpath.jpa.Metadata;
@@ -43,12 +42,12 @@ import java.util.zip.GZIPOutputStream;
  * to build a new cPath2 instance (metadata, BioPAX model, full-text index, downloads)
  */
 @SpringBootApplication
-@EnableConfigurationProperties(CPathSettings.class)
+@EnableConfigurationProperties(Settings.class)
 public class Application implements CommandLineRunner {
 	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
 	@Autowired
-	private CPathSettings cpath;
+	private Settings cpath;
 
 	@Autowired
 	private CPathService service;
@@ -243,8 +242,7 @@ public class Application implements CommandLineRunner {
 
 	private void fail(String[] args, String details) {
         throw new IllegalArgumentException(
-        	"Invalid cpath2 command: " +  Arrays.toString(args)
-        	+ "; " + details);		
+        	"Invalid cpath2 command: " +  Arrays.toString(args) + "; " + details);
 	}
 	
     

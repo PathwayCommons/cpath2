@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import cpath.service.*;
@@ -18,8 +20,6 @@ import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.Score;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 
 
 /**

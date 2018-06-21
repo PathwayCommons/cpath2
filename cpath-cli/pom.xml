@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>8.0.0-SNAPSHOT</version>
+		<version>10.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>cpath-cli</artifactId>
@@ -28,7 +28,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<mainClass>cpath.console.Application</mainClass>
+					<mainClass>cpath.Application</mainClass>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -52,10 +52,10 @@
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 		</dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.hibernate.javax.persistence</groupId>-->
-            <!--<artifactId>hibernate-jpa-2.1-api</artifactId>-->
-        <!--</dependency>		-->
+        <dependency>
+            <groupId>org.hibernate.javax.persistence</groupId>
+            <artifactId>hibernate-jpa-2.1-api</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -78,12 +78,8 @@
 		</dependency>
 		<!--<dependency>-->
 			<!--<groupId>org.hibernate</groupId>-->
-			<!--<artifactId>hibernate-core</artifactId>-->
+			<!--<artifactId>hibernate-entitymanager</artifactId>-->
 		<!--</dependency>-->
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-entitymanager</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.biopax.validator</groupId>
 			<artifactId>biopax-validator</artifactId>
@@ -142,13 +138,10 @@
 		    <groupId>com.hp.hpl.jena</groupId>
 			<artifactId>jena</artifactId>
 		</dependency>
-		<!--<dependency>-->
-			<!--<groupId>org.springframework</groupId>-->
-			<!--<artifactId>spring-aop</artifactId>-->
-		<!--</dependency>-->
 		<dependency>
 			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator</artifactId>
+            <scope>runtime</scope>
 		</dependency>
 		<!-- Logging -->
 		<dependency>
@@ -183,11 +176,10 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter</artifactId>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>

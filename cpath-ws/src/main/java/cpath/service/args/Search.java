@@ -1,9 +1,9 @@
 package cpath.service.args;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
 
 import org.biopax.paxtools.model.BioPAXElement;
-import org.hibernate.validator.constraints.NotBlank;
 
 import java.util.Arrays;
 

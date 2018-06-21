@@ -5,8 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import cpath.config.CPathSettings;
+import cpath.Settings;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.jsonld.JsonldBiopaxConverter;
 import org.biopax.paxtools.io.jsonld.JsonldConverter;
@@ -79,7 +80,8 @@ public class BiopaxConverter {
 					convertToGSEA(m, os, options);
 					break;
 				case SBGN:
-					convertToSBGN(m, os, blacklist, CPathSettings.getInstance().isSbgnLayoutEnabled());
+					//will do SBGN layout IIF value is "true" (case-insensitive)
+					convertToSBGN(m, os, blacklist, Boolean.valueOf(options.get("layout")));
 					break;
 				case JSONLD:
 					convertToJsonLd(m, os);
@@ -155,7 +157,6 @@ public class BiopaxConverter {
      * @throws IOException when there is an output stream writing error
      */
     private void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout)
-		throws IOException
 	{
     	
     	L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
@@ -179,15 +180,21 @@ public class BiopaxConverter {
 	{
 		String idType;
 		if((idType = options.get("db"))==null)
-			idType = "uniprot"; //default; curr. one value is expected
+			idType = "hgnc symbol";
+
 
 		// It won't traverse into sub-pathways; will use only pre-defined organisms.
 		// GSEAConverter's 'skipSubPathways' option is a different beast from the PC web api's 'subpw':
 		// given sub-model (no matter how it was cut from the main model), there is still choice
 		// to include gene IDs from sub-pathways (if there're any) into parent pathway's record or not.
 		GSEAConverter gseaConverter = new GSEAConverter(idType, true, true);
-		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
-		gseaConverter.setAllowedOrganisms(allowedTaxIds);
+
+		if(options.containsKey("organisms")) {
+			Set<String> allowedTaxIds = Arrays.stream(options.get("organisms").split(","))
+				.collect(Collectors.toSet());
+			gseaConverter.setAllowedOrganisms(allowedTaxIds);
+		}
+
 		gseaConverter.setSkipOutsidePathways(false); //- because all Pathway objects were intentionally removed
 													// before a get/graph query result gets here to be converted.
 		gseaConverter.writeToGSEA(m, stream);
@@ -200,7 +207,7 @@ public class BiopaxConverter {
 	 * This is mainly for calling internally through the web service api.
 	 */
 	private void convertToSIF(Model m, OutputStream out,
-							  boolean extended, Map<String,String> options) throws IOException
+							  boolean extended, Map<String,String> options)
 	{
 		String db;
 		if ((db = options.get("db"))==null)

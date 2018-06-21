@@ -27,6 +27,8 @@ public enum CmdArgs {
 	user("client's name, email, or app (for the service access log and usage reporting)"),
 	subpw("'true' or 'false' (default); for the 'get' and 'graph' queries; " +
 			" whether to skip traversing into sub-pathways of pathways in the result sub-model"),
+	layout("when format is SBGN - 'true' or 'false' (default) -" +
+		" whether to apply the built-in COSE layout or not"),
 	;
 	
 	private final String info;

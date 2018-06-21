@@ -7,19 +7,17 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import cpath.config.CPathSettings;
 
 @Controller
+@RequestMapping(method = RequestMethod.GET)
 public class PagesController extends BasicController implements ErrorController
 {
-	private static final Logger LOG = LoggerFactory.getLogger(PagesController.class);
 
 	@RequestMapping("/")
 	public String wroot() {
@@ -44,7 +42,7 @@ public class PagesController extends BasicController implements ErrorController
 	@RequestMapping("/favicon.ico")
 	public  @ResponseBody byte[] icon() throws IOException {
 
-		String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
+		String cpathLogoUrl = service.settings().getProviderLogoUrl();
 
 		byte[] iconData = null;
 
@@ -65,23 +63,24 @@ public class PagesController extends BasicController implements ErrorController
 		// deny robots access to logs, web services and data files,
 		// but allow - to web page resources (css, js, images)
 		return "User-agent: *\n" +
-				"Disallow: /get\n" +
-				"Disallow: /search\n" +
-				"Disallow: /graph\n" +
-				"Disallow: /top_pathways\n" +
-				"Disallow: /traverse\n" +
-				"Disallow: /archives\n" +
-				"Disallow: /help\n" +
-				"Disallow: /metadata\n";
+			"Disallow: /get\n" +
+			"Disallow: /search\n" +
+			"Disallow: /graph\n" +
+			"Disallow: /top_pathways\n" +
+			"Disallow: /traverse\n" +
+			"Disallow: /archives\n" +
+			"Disallow: /help\n" +
+			"Disallow: /metadata\n";
 	}
 
+	@Override
 	public String getErrorPath() {
-	  return "/error";
-  }
+		return "/error";
+	}
 
-//	@RequestMapping("/error")
-//	public String error() {
-//		return "error";
-//	}
+	@RequestMapping("/error")
+	public String err() {
+		return "error";
+	}
 
 }

@@ -1,6 +1,6 @@
 package cpath.analysis;
 
-import cpath.config.CPathSettings;
+import cpath.Application;
 import cpath.service.Analysis;
 import cpath.service.CPathService;
 import cpath.service.CPathUtils;
@@ -10,7 +10,8 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -25,10 +26,10 @@ public class LandingAndLinkout implements Analysis<Model> {
 
     @Override
     public void execute(Model model) {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-                new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class);
         try {
             final CPathService service = context.getBean(CPathService.class);
+            service.init();
             //export the list of unique UniProt primary accession numbers
             LOG.info("creating the list of primary uniprot IDs...");
             Set<String> acs = new TreeSet<>();
@@ -53,7 +54,7 @@ public class LandingAndLinkout implements Analysis<Model> {
             }
 
             writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
-                CPathSettings.getInstance().getProviderVersion()));
+                service.settings().getProviderVersion()));
 
             for (String ac : acs)
                 writer.println(ac);

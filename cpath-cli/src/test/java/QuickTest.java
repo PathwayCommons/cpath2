@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -36,6 +37,10 @@ public class QuickTest {
         String symbolPattern = ".* (\\w+): .*";
         String symbol = ("...for TCF3: transcription factor (...)").replaceAll(symbolPattern, "$1");
         assertEquals("TCF3",symbol);
+
+        // "[one,two,three]" vs. "{one,two,three}"
+        String arr[] = new String[]{"one","two","three"};
+        assertNotEquals(Arrays.toString(arr), ArrayUtils.toString(arr));
     }
 
     //Having Evidence prevents otherwise equivalent proteins from merging

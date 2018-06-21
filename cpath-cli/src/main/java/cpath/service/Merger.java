@@ -1,6 +1,6 @@
 package cpath.service;
 
-import cpath.config.CPathSettings;
+import cpath.Settings;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 
@@ -50,8 +50,8 @@ public final class Merger {
 	public Merger(CPathService service)
 	{
 		this.service = service;
-		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.supportedTaxonomyIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
+		this.xmlBase = service.settings().getXmlBase();
+		this.supportedTaxonomyIds = service.settings().getOrganismTaxonomyIds();
 		
 		this.warehouseModel = service.loadWarehouseModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
@@ -190,7 +190,7 @@ public final class Merger {
 		}
 
 		//quick-fix BioSource : set name if not set
-		Map<String,String> orgMap = CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap();
+		Map<String,String> orgMap = service.settings().getOrganismsAsTaxonomyToNameMap();
 		for(BioSource org : providerModel.getObjects(BioSource.class)) {
 			for (String tax : orgMap.keySet()) {
 				// BioSource URIs are already normalized and contain identifiers.org/taxonomy
@@ -239,7 +239,7 @@ public final class Merger {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel, 
 				new GZIPOutputStream(new FileOutputStream(
-						CPathSettings.getInstance().mainModelFile())));
+						service.settings().mainModelFile())));
 		} catch (Exception e) {
 			throw new RuntimeException("Failed updating the main BioPAX archive.", e);
 		}
@@ -249,7 +249,7 @@ public final class Merger {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(datasourceModel, 
 				new GZIPOutputStream(new FileOutputStream(
-						CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()))));
+						service.settings().biopaxFileNameFull(datasource.getIdentifier()))));
 		} catch (Exception e) {
 			throw new RuntimeException("Failed updating the " + 
 					datasource.getIdentifier() + " BioPAX archive.", e);

@@ -1,8 +1,10 @@
 package cpath.service;
 
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
+import cpath.Settings;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
@@ -14,15 +16,16 @@ import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import cpath.config.CPathSettings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 /**
  * This is to access OBO Cvs:
- * 
- * @author rodche
- *
  */
+@Component
+@Scope("singleton")
 public class OntologyManagerCvRepository extends BiopaxOntologyManager 
 	implements CvRepository 
 {
@@ -31,26 +34,37 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 	private final String xmlBase;
 
-	/**
-	 * Constructor
-	 * 
-	 * @param ontologies ontology config XML resource (for OntologyManager)
-	 * @throws Exception
-	 */
-	public OntologyManagerCvRepository(Properties ontologies)
-	{
-		super(ontologies);
+    /**
+     * Constructor (this one is mainly for Tests)
+     * @param oboProperties
+     * @param settings
+     */
+	public OntologyManagerCvRepository(Properties oboProperties, Settings settings)
+    {
+	    super(oboProperties);
 
-		this.xmlBase = CPathSettings.getInstance().getXmlBase();//TODO: use parameter instead of the global static object
+		this.xmlBase = (settings==null)? "" : settings.getXmlBase();
 
-		//Normalize (for safety :)) ontology names using IDs
+		//Normalize ontology names
 		for(String id : getOntologyIDs()) {
 			String officialName = MiriamLink.getName(id);
-			OntologyAccess o = getOntology(id);
-			o.setName(officialName);
-			log.debug(id + " (" + officialName + ") from " + ontologies.get(id));
+			getOntology(id).setName(officialName);
+			log.debug(id + " (" + officialName + ")");
 		}
 	}
+
+    /**
+     * Constructor
+     * @param oboPropertiesFactoryBean
+     * @param settings
+     * @throws IOException
+     */
+    @Autowired
+    public OntologyManagerCvRepository(PropertiesFactoryBean oboPropertiesFactoryBean, Settings settings)
+        throws IOException
+    {
+        this(oboPropertiesFactoryBean.getObject(), settings);
+    }
 
 	
 	@Override
@@ -109,7 +123,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUri(urn);
 		T cv = getControlledVocabulary(term, cvClass);
 		if(cv != null)
-			cv.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
+			cv.addComment(Settings.CPATH2_GENERATED_COMMENT);
 		return cv;
 	}
 	

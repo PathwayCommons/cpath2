@@ -1,10 +1,10 @@
 package cpath.service.args;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.biopax.paxtools.pattern.miner.SIFType;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
 

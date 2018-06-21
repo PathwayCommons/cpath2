@@ -1,22 +1,22 @@
-package cpath.console;
+package cpath;
 
-import cpath.service.OntologyManagerCvRepository;
 import org.biopax.validator.impl.ExceptionsAspect;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.*;
 import org.springframework.context.annotation.aspectj.EnableSpringConfigured;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 
-import java.io.IOException;
-
-@Configuration
+@SpringBootConfiguration
+@EnableConfigurationProperties(Settings.class)
 @EnableSpringConfigured
 @ImportResource("classpath:META-INF/spring/appContext-validator.xml")
 @ComponentScan(basePackages = {"org.biopax.validator.rules"})
-public class BiopaxValidatorConfig {
+public class BiopaxConfig {
 
-    //Override some beans from the default biopax-validator xml config
+    //Override some beans in the biopax-validator's built-in Spring XML context configuration -
 
     @Bean
     ReloadableResourceBundleMessageSource rulesMessageSource () {
@@ -26,17 +26,12 @@ public class BiopaxValidatorConfig {
     }
 
     @Bean
-    public PropertiesFactoryBean oboPropFactory() {
+    //load bio ontology configuration from the XML resource
+    //(to be used by the customized OntologyManager - OntologyManagerCvRepository - auto-configured bean)
+    PropertiesFactoryBean oboPropertiesFactoryBean() {
         PropertiesFactoryBean bean = new PropertiesFactoryBean();
         bean.setLocation(new ClassPathResource("obo.properties"));
         bean.setLocalOverride(false);
-        return bean;
-    }
-
-    @Bean
-    @Scope("singleton")
-    OntologyManagerCvRepository ontologyManager() throws IOException {
-        OntologyManagerCvRepository bean = new OntologyManagerCvRepository(oboPropFactory().getObject());
         return bean;
     }
 

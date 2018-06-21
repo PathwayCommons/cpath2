@@ -2,7 +2,6 @@ package cpath.service;
 
 import java.util.*;
 
-import cpath.config.CPathSettings;
 import cpath.service.args.*;
 import cpath.service.jaxb.*;
 import cpath.service.args.binding.*;
@@ -12,8 +11,6 @@ import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -25,14 +22,10 @@ import javax.validation.Valid;
 
 /**
  * cPathSquared Model Access Web Service.
- *
- * @author rodche
  */
 @RestController
+@RequestMapping(method = RequestMethod.GET)
 public class BiopaxModelController extends BasicController {
-
-	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
-	private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
 
 	/**
 	 * This configures the web request parameters binding, i.e., 
@@ -57,7 +50,7 @@ public class BiopaxModelController extends BasicController {
 	// Get by ID (URI) command
 	@RequestMapping("/get")
 	public void elementById(@Valid Get args, BindingResult bindingResult,
-													HttpServletRequest request, HttpServletResponse response)
+							HttpServletRequest request, HttpServletResponse response)
 	{
 		if(bindingResult.hasErrors()) {
 			errorResponse(args, new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
@@ -76,7 +69,7 @@ public class BiopaxModelController extends BasicController {
 
 	@RequestMapping("/top_pathways")
 	public SearchResponse topPathways(@Valid TopPathways args, BindingResult bindingResult,
-																		HttpServletRequest request, HttpServletResponse response)
+									  HttpServletRequest request, HttpServletResponse response)
 	{
 
 		if(bindingResult.hasErrors()) {
@@ -92,7 +85,7 @@ public class BiopaxModelController extends BasicController {
 				SearchResponse hits = (SearchResponse) results;
 				// log/track data access events
 				track(request, args, hits.getProviders(), null);
-				hits.setVersion(CPathSettings.getInstance().getVersion());
+				hits.setVersion(service.settings().getProviderVersion());
 				return hits;
 			}
 		}
@@ -100,8 +93,8 @@ public class BiopaxModelController extends BasicController {
 
 
 	@RequestMapping("/traverse")
-	public TraverseResponse traverse(@Valid Traverse args,
-																	 BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
+	public TraverseResponse traverse(@Valid Traverse args, BindingResult bindingResult,
+									 HttpServletRequest request, HttpServletResponse response)
 	{
 		if(bindingResult.hasErrors()) {
 			errorResponse(args, new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
@@ -114,7 +107,7 @@ public class BiopaxModelController extends BasicController {
 				track(request, args, null, null);
 				//TODO: log/track data providers that occur is the traverse query result
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
-				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
+				traverseResponse.setVersion(service.settings().getProviderVersion());
 				return traverseResponse;
 			}
 		}
@@ -123,7 +116,7 @@ public class BiopaxModelController extends BasicController {
 
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph args, BindingResult bindingResult,
-												 HttpServletRequest request, HttpServletResponse response)
+						   HttpServletRequest request, HttpServletResponse response)
 	{
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
@@ -169,7 +162,7 @@ public class BiopaxModelController extends BasicController {
 
 	@RequestMapping(value="/search")
 	public SearchResponse search(@Valid Search args, BindingResult bindingResult,
-															 HttpServletRequest request, HttpServletResponse response)
+								 HttpServletRequest request, HttpServletResponse response)
 	{
 		if(bindingResult.hasErrors()) {
 			errorResponse(args, new ErrorResponse(Status.BAD_REQUEST,
@@ -187,7 +180,7 @@ public class BiopaxModelController extends BasicController {
 				// log/track one data access event for each data provider listed in the result
 				track(request, args, ((SearchResponse)results).getProviders(), null);
 				SearchResponse searchResponse = (SearchResponse) results;
-				searchResponse.setVersion(CPathSettings.getInstance().getVersion());
+				searchResponse.setVersion(service.settings().getProviderVersion());
 				return searchResponse;
 			}
 		}

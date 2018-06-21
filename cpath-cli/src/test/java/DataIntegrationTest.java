@@ -1,6 +1,6 @@
-import cpath.console.BiopaxValidatorConfig;
-import cpath.console.CPathApplicationConfig;
-import cpath.config.CPathSettings;
+import cpath.BiopaxConfig;
+import cpath.JpaConfig;
+import cpath.Settings;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
@@ -44,7 +44,7 @@ import java.util.zip.GZIPOutputStream;
  * @author rodche
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {CPathApplicationConfig.class, BiopaxValidatorConfig.class})
+@SpringBootTest(classes = {JpaConfig.class, BiopaxConfig.class})
 //@ActiveProfiles("default") //is our test/demo profile - is the default anyway
 public class DataIntegrationTest {
 	static final Logger log = LoggerFactory.getLogger(DataIntegrationTest.class);
@@ -57,7 +57,7 @@ public class DataIntegrationTest {
 	Validator validator;
 
 	@Autowired
-    CPathSettings cpath;
+	Settings cpath;
 
 	@Test
 	@DirtiesContext

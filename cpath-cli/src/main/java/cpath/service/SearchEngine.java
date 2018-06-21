@@ -50,7 +50,6 @@ import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cpath.config.CPathSettings;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 
@@ -62,7 +61,7 @@ import cpath.service.jaxb.SearchResponse;
  * @author rodche
  */
 public class SearchEngine implements Indexer, Searcher {
-	private static final Logger LOG = LoggerFactory.getLogger(SearchEngine.class);
+	static final Logger LOG = LoggerFactory.getLogger(SearchEngine.class);
 	
 	// search fields
 	public static final String FIELD_URI = "uri";
@@ -251,7 +250,7 @@ public class SearchEngine implements Indexer, Searcher {
 			BioPAXElement bpe = model.getByID(uri);
 			
 			// use a highlighter (get matching fragments)
-			if (CPathSettings.getInstance().isDebugEnabled()) {
+			if (LOG.isDebugEnabled()) {
 				// to use a Highlighter, store.YES must be enabled for 'keyword' field
 				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD);
 				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)

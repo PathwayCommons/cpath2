@@ -12,7 +12,6 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -39,7 +38,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import cpath.config.CPathSettings;
+import cpath.Settings;
 import cpath.jpa.*;
 import cpath.service.jaxb.*;
 
@@ -82,7 +81,7 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
 	@Autowired
-	private CPathSettings cpath;
+	private Settings cpath;
 
 	/**
 	 * Constructor
@@ -91,7 +90,6 @@ public class CPathServiceImpl implements CPathService {
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 	}
-
 
 	/**
 	 * Loads the main BioPAX model, etc.
@@ -114,8 +112,10 @@ public class CPathServiceImpl implements CPathService {
 		//won't wait (nothing else to do)
 		loadBlacklist();
 
-		cpath.init(); //set global static CPathSettings.getInstance()
+		cpath.init(); //set global static Settings.getInstance()
 	}
+
+	public Settings settings() {return cpath;}
 
 	public Model getModel() {
 		return paxtoolsModel;
@@ -174,12 +174,12 @@ public class CPathServiceImpl implements CPathService {
 					m.setUri(uri);
 					BioPAXElement b = m.getByID(uri);
 					if(b instanceof Named) {
-						m.setName(((Named) b).getDisplayName() + " " + ArrayUtils.toString(uris));
+						m.setName(((Named) b).getDisplayName() + " " + Arrays.toString(uris));
 					} else {
-						m.setName(ArrayUtils.toString(uris));
+						m.setName(Arrays.toString(uris));
 					}
 				} else {
-					String desc = ArrayUtils.toString(uris);
+					String desc = Arrays.toString(uris);
 					m.setUri("PC_get_" + desc.hashCode());
 					m.setName(desc);
 				}
@@ -252,7 +252,7 @@ public class CPathServiceImpl implements CPathService {
 					limit, direction, createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(nhood, subPathways);
 			if( m != null) {
-				String desc = ArrayUtils.toString(sources);
+				String desc = Arrays.toString(sources);
 				m.setUri("PC_graph_neighborhood_" + desc.hashCode());
 				m.setName(desc);
 			}
@@ -280,7 +280,7 @@ public class CPathServiceImpl implements CPathService {
 					createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(result,subPathways);
 			if(m != null) {
-				String desc = ArrayUtils.toString(sources);
+				String desc = Arrays.toString(sources);
 				m.setUri("PC_graph_pathsbetween_" + desc.hashCode());
 				m.setName(desc);
 			}
@@ -318,7 +318,7 @@ public class CPathServiceImpl implements CPathService {
 				m = autoCompleteAndClone(elements,subPathways);
 
 				if(m != null) {
-					String desc = ArrayUtils.toString(sources) + "-to-" + ArrayUtils.toString(targets);
+					String desc = Arrays.toString(sources) + "-to-" + Arrays.toString(targets);
 					m.setUri("PC_graph_pathsfromto_" + desc.hashCode());
 					m.setName(desc);
 				}
@@ -334,6 +334,9 @@ public class CPathServiceImpl implements CPathService {
 	private ServiceResponse convert(Model m, OutputFormat format, Map<String, String> options) {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 
+		if(options == null)
+			options = new HashMap<>();
+
 		if(format != OutputFormat.BIOPAX && m != null) {
 			// remove all Pathway objects from the result model (TODO: keep pathway name,uri somehow)
 			// (- pathways become incomplete after detaching from main PC model;
@@ -341,9 +344,19 @@ public class CPathServiceImpl implements CPathService {
 			for(Pathway p : new HashSet<>(m.getObjects(Pathway.class))) {
 				m.remove(p);
 			}
+
+			if(format == OutputFormat.SBGN && !options.containsKey("layout")) {
+				options.put("layout", Boolean.toString(settings().getSbgnLayoutEnabled()));
+			}
+
+			if(format == OutputFormat.GSEA && !options.containsKey("organisms")) {
+				//pre-configured supported species (global settings) -
+				//it's currently not about user query (filter) option for GSEA
+				options.put("organisms", String.join(",", cpath.getOrganismTaxonomyIds()));
+			}
 		}
 
-		return biopaxConverter.convert(m, format, (options!=null)?options:Collections.emptyMap());
+		return biopaxConverter.convert(m, format, options);
 	}
 
 
@@ -372,7 +385,7 @@ public class CPathServiceImpl implements CPathService {
 							createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(result, subPathways);
 			if(m != null) {
-				String desc = ArrayUtils.toString(sources);
+				String desc = Arrays.toString(sources);
 				m.setUri("PC_graph_commonstream_" + desc.hashCode());
 				m.setName(desc);
 			}
@@ -919,7 +932,7 @@ public class CPathServiceImpl implements CPathService {
     }
 
     public Model loadBiopaxModelByDatasource(Metadata datasource) {
-        Path in = Paths.get(CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()));
+        Path in = Paths.get(cpath.biopaxFileNameFull(datasource.getIdentifier()));
         if (Files.exists(in)) {
             return CPathUtils.importFromTheArchive(in.toString());
         } else {

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @RestController
+@RequestMapping(method = RequestMethod.GET)
 public class HelpController extends BasicController {  
 	
 	public HelpController() {
@@ -83,11 +84,6 @@ public class HelpController extends BasicController {
     @RequestMapping("/help/formats")
     public Help getFormats() {
     	Help help = new Help();
-    	for(OutputFormat f : OutputFormat.values()) {
-    		//skip obsolete ones
-    		if(!(f==OutputFormat.BINARY_SIF || f==OutputFormat.EXTENDED_BINARY_SIF))
-    			help.addMember(getFormat(f));
-    	}
     	help.setId("formats");
     	help.setTitle("Output Formats");
     	help.setInfo("cPath2 can convert BioPAX to several text formats");

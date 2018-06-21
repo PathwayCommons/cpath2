@@ -5,8 +5,8 @@ import java.io.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.GZIPOutputStream;
 
+import cpath.Settings;
 import cpath.jpa.Content;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -18,11 +18,7 @@ import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
 import cpath.service.jaxb.ServiceResponse;
-import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
-import org.springframework.core.io.DefaultResourceLoader;
-
-import javax.xml.transform.stream.StreamSource;
 
 
 /**
@@ -283,4 +279,6 @@ public interface CPathService {
     String cleanedFile(Content c);
 
     String originalFile(Content c);
+
+    Settings settings();
 }

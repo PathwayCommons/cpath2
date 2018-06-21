@@ -1,13 +1,18 @@
 package cpath.service;
 
-import cpath.config.CPathSettings;
+import cpath.Settings;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
 public class GlobalControllerAdvice {
+
+  @Autowired
+  private Settings cpath;
+
   @ModelAttribute("cpath")
-  public CPathSettings cpath() {
-    return CPathSettings.getInstance();
+  public Settings cpath() {
+    return cpath;
   }
 }

@@ -2,8 +2,10 @@ package cpath.service;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
@@ -12,16 +14,12 @@ import org.junit.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.config.CPathSettings;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 
 public class SearchEngineTest {
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();
-	
-	final String indexLocation = 
-		CPathSettings.getInstance().indexDir() + "_se";
 
 	@Test
 	public final void testSearch() throws IOException {
@@ -29,9 +27,15 @@ public class SearchEngineTest {
 		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
 
+		// we intentionally want indexLocation which does not exists yet (delete if it is present)
+//otherwise, we'd use as: String indexLocation = Files.createTempDirectory("cpath2index").toString();
+		Path tmp = Paths.get(System.getProperty("java.io.tmpdir"),"cpath2_test_index");
+		String indexLocation = tmp.toString();
+		CPathUtils.cleanupDirectory(indexLocation,false);
+		assertFalse(Files.exists(tmp));
 		SearchEngine searchEngine = new SearchEngine(model, indexLocation);
 		searchEngine.index();
-		assertTrue(new File(indexLocation).exists());
+		assertTrue(Files.exists(tmp) && Files.isDirectory(tmp) && Files.list(tmp).count()>3);
 		
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
@@ -39,15 +43,13 @@ public class SearchEngineTest {
 		assertEquals(5, response.getSearchHit().size()); //- only Entity and ER types are indexed
 		assertEquals(5, response.getNumHits().intValue());
 		
-		CPathSettings.getInstance().setDebugEnabled(false);
 		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
-		//if cPath2 debugging is disabled, - no excerpt field in hits
-		assertNull(response.getSearchHit().get(0).getExcerpt());
-		//enable cPath2 debugging...
-		CPathSettings.getInstance().setDebugEnabled(true);
+		//if debug mode (tests) - there will be 'excerpt' field
+		assertNotNull(response.getSearchHit().get(0).getExcerpt());
+
 		response = searchEngine.search("ATP", 0, Pathway.class, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
@@ -56,10 +58,7 @@ public class SearchEngineTest {
 		assertEquals(11, hit.getSize().intValue()); //member processes and participants, not counting the hit itself
 		assertEquals(4, hit.getNumProcesses().intValue());
 		assertEquals(7, hit.getNumParticipants().intValue());
-		assertNotNull(response.getSearchHit().get(0).getExcerpt());
-		assertTrue(hit.getExcerpt().contains("-SCORE-"));
-		CPathSettings.getInstance().setDebugEnabled(false);
-		
+
 		//test a special implementation for wildcard queries
 		response = searchEngine.search("*", 0, Pathway.class, null, null);
 		assertNotNull(response);

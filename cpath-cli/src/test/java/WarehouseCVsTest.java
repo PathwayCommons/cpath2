@@ -28,7 +28,7 @@ public class WarehouseCVsTest {
 		cfg.put("MI", "classpath:mi.obo");
 		cfg.put("MOD", "classpath:mod.obo");
 		cfg.put("GO", "classpath:go.obo");
-		cvRepository = new OntologyManagerCvRepository(cfg);
+		cvRepository = new OntologyManagerCvRepository(cfg, null);
 	}
 	
 	@Test

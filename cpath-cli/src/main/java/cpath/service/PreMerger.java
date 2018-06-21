@@ -1,7 +1,6 @@
 package cpath.service;
 
 
-import cpath.config.CPathSettings;
 import cpath.jpa.Content;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
@@ -51,7 +50,7 @@ public final class PreMerger {
 	public PreMerger(CPathService service, Validator validator, boolean overwrite) {
 		this.service = service;
 		this.validator = validator;
-		this.xmlBase = CPathSettings.getInstance().getXmlBase();
+		this.xmlBase = service.settings().getXmlBase();
 		this.overwrite = overwrite;
 	}
 
@@ -190,7 +189,7 @@ public final class PreMerger {
 		ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
 
 		// save to compressed file
-		String whFile = CPathSettings.getInstance().warehouseModelFile();
+		String whFile = service.settings().warehouseModelFile();
 		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);
 		try {
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse,
