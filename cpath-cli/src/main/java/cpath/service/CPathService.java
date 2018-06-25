@@ -6,17 +6,16 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import cpath.Settings;
-import cpath.jpa.Content;
+import cpath.service.jpa.Content;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
 
-import cpath.jpa.MappingsRepository;
-import cpath.jpa.Metadata;
-import cpath.jpa.MetadataRepository;
+import cpath.service.jpa.MappingsRepository;
+import cpath.service.jpa.Metadata;
+import cpath.service.jpa.MetadataRepository;
 import cpath.service.jaxb.ServiceResponse;
 import org.biopax.validator.api.beans.Validation;
 
@@ -258,7 +257,7 @@ public interface CPathService {
 
     /**
      * For the given Metadata, unpacks and reads the corresponding
-     * original zip data archive, creating new {@link cpath.jpa.Content} objects
+     * original zip data archive, creating new {@link cpath.service.jpa.Content} objects
      * in the metadata's dataFile collection.
      * Skips for system files/directory entries.
      *

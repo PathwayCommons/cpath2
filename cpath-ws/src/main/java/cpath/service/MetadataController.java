@@ -7,7 +7,7 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
-import cpath.jpa.Metadata;
+import cpath.service.jpa.Metadata;
 import cpath.service.args.binding.MetadataTypeEditor;
 
 import org.biopax.paxtools.normalizer.MiriamLink;
@@ -56,12 +56,12 @@ public class MetadataController extends BasicController {
 	public Map<String,Object> queryForMetadata() {
 		TreeMap<String,Object> props = new TreeMap();
 
-		props.put("version", service.settings().getProviderVersion());
-		props.put("name", service.settings().getProviderName());
-		props.put("description", service.settings().getProviderDescription());
-		props.put("logo", service.settings().getProviderLogoUrl());
+		props.put("version", service.settings().getVersion());
+		props.put("name", service.settings().getName());
+		props.put("description", service.settings().getDescription());
+		props.put("logo", service.settings().getLogo());
 		props.put("xmlBase", service.settings().getXmlBase());
-		props.put("url", service.settings().getProviderUrl());
+		props.put("url", service.settings().getUrl());
 		props.put("organisms", service.settings().getOrganismsAsTaxonomyToNameMap());
 
 		return props;

@@ -1,6 +1,6 @@
 package cpath.analysis;
 
-import cpath.Application;
+import cpath.DataIntegration;
 import cpath.service.Analysis;
 import cpath.service.CPathService;
 import cpath.service.CPathUtils;
@@ -26,7 +26,7 @@ public class LandingAndLinkout implements Analysis<Model> {
 
     @Override
     public void execute(Model model) {
-        ConfigurableApplicationContext context = SpringApplication.run(Application.class);
+        ConfigurableApplicationContext context = SpringApplication.run(DataIntegration.class);
         try {
             final CPathService service = context.getBean(CPathService.class);
             service.init();
@@ -54,7 +54,7 @@ public class LandingAndLinkout implements Analysis<Model> {
             }
 
             writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
-                service.settings().getProviderVersion()));
+                service.settings().getVersion()));
 
             for (String ac : acs)
                 writer.println(ac);

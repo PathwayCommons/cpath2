@@ -1,8 +1,7 @@
 package cpath.service;
 
-import cpath.Settings;
-import cpath.jpa.Content;
-import cpath.jpa.Metadata;
+import cpath.service.jpa.Content;
+import cpath.service.jpa.Metadata;
 
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;

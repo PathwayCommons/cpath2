@@ -1,4 +1,4 @@
-package cpath.jpa;
+package cpath.service.jpa;
 
 
 import java.util.List;
@@ -22,13 +22,5 @@ public interface MetadataRepository extends CrudRepository<Metadata, Long> {
 	 * @return
 	 */
 	Metadata findByIdentifier(String identifier);
-	
-	/**
-	 * Find Metadata entities by exact name/synonym - search in all names (case insensitive). 
-	 * (Metadata.name array contains: display name, standard name, synonyms)
-	 * 
-	 * @param name
-	 * @return
-	 */
-	List<Metadata> findByNameContainsIgnoreCase(String name);
+
 }

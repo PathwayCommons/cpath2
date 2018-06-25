@@ -1,4 +1,4 @@
-package cpath.jpa;
+package cpath.service.jpa;
 
 
 import java.util.List;

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import cpath.service.CPathUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.EntityFeature;
@@ -24,7 +25,6 @@ import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.Test;
 
 import cpath.service.Converter;
-import cpath.service.ImportFactory;
 
 /**
  * @author rodche
@@ -44,7 +44,7 @@ public class UniprotConverterImplTest {
 
 		Path outFilename = Paths.get(getClass().getClassLoader()
 				.getResource("").getPath(),"testConvertUniprot.out.owl");
-		Converter converter = ImportFactory.newConverter("cpath.converter.UniprotConverter");
+		Converter converter = CPathUtils.newConverter("cpath.converter.UniprotConverter");
 		converter.setXmlBase(null);
 
 		ZipFile zf = new ZipFile(getClass().getResource("/test_uniprot_data.dat.zip").getFile());

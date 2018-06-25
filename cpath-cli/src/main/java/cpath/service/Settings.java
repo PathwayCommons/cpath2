@@ -1,4 +1,4 @@
-package cpath;
+package cpath.service;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -11,18 +11,14 @@ import org.apache.commons.lang3.text.WordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cpath.service.Scope;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-@ConfigurationProperties("cpath2")
+@Component
+@ConfigurationProperties(prefix = "cpath2")
 public class Settings
 {
 	private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
-
-	//TODO: refactor to get rid of using this static global object.
-	private static Settings instance;
-	public static Settings getInstance() {return instance;}
-	public void init() {Settings.instance = this;}
 
 	/**
 	 * Name for the system environment and/or JVM variable 
@@ -68,32 +64,23 @@ public class Settings
 	 */
 	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
 
-	private Boolean adminEnabled;
 	private Boolean sbgnLayoutEnabled;
 	private String xmlBase;
-	private Integer maxSearchHitsPerPage;
+	private Integer maxHitsPerPage;
 	private String metadataLocation = Paths.get(homeDir(), METADATA_FILE).toString();
-	private String providerName;
-	private String providerDescription;
-	private String providerVersion;
-	private String providerUrl;
-	private String providerLogoUrl;
-	private String providerOrganisms;
-	private String providerDownloadsUrl;
-	private String providerGA;//Google Analytics code
+	private String name;
+	private String description;
+	private String version;
+	private String url;
+	private String logo;
+	private String species;
+	private String downloads;
+	private String ga;//Google Analytics code
 
 	public Settings() {
 		LOG.info("Working ('home') directory: " + homeDir());
 		subDir(""); //creates if not exists
 		subDir(DATA_SUBDIR);
-	}
-
-	public Boolean getAdminEnabled() {
-		return adminEnabled;
-	}
-
-	public void setAdminEnabled(Boolean adminEnabled) {
-		this.adminEnabled = adminEnabled;
 	}
 
 	public String getXmlBase() {
@@ -104,12 +91,12 @@ public class Settings
 		this.xmlBase = xmlBase;
 	}
 
-	public Integer getMaxSearchHitsPerPage() {
-		return maxSearchHitsPerPage;
+	public Integer getMaxHitsPerPage() {
+		return maxHitsPerPage;
 	}
 
-	public void setMaxSearchHitsPerPage(Integer maxSearchHitsPerPage) {
-		this.maxSearchHitsPerPage = maxSearchHitsPerPage;
+	public void setMaxHitsPerPage(Integer maxHitsPerPage) {
+		this.maxHitsPerPage = maxHitsPerPage;
 	}
 
 	public String getMetadataLocation() {
@@ -128,72 +115,71 @@ public class Settings
 		this.sbgnLayoutEnabled = sbgnLayoutEnabled;
 	}
 
-	public String getProviderName() {
-		return providerName;
+	public String getName() {
+		return name;
 	}
 
-	public void setProviderName(String providerName) {
-		this.providerName = providerName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public String getProviderDescription() {
-		return providerDescription;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setProviderDescription(String providerDescription) {
-		this.providerDescription = providerDescription;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
-	public String getProviderVersion() {
-		return providerVersion;
+	public String getVersion() {
+		return version;
 	}
 
-	public void setProviderVersion(String providerVersion) {
-		this.providerVersion = providerVersion;
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
-	public String getProviderUrl() {
-		return providerUrl;
+	public String getUrl() {
+		return url;
 	}
 
-	public void setProviderUrl(String providerUrl) {
-		this.providerUrl = providerUrl;
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
-	public String getProviderLogoUrl() {
-		return providerLogoUrl;
+	public String getLogo() {
+		return logo;
 	}
 
-	public void setProviderLogoUrl(String providerLogoUrl) {
-		this.providerLogoUrl = providerLogoUrl;
+	public void setLogo(String logo) {
+		this.logo = logo;
 	}
 
-	public String getProviderOrganisms() {
-		return providerOrganisms;
+	public String getSpecies() {
+		return species;
 	}
 
-	public void setProviderOrganisms(String providerOrganisms) {
-		this.providerOrganisms = providerOrganisms;
+	public void setSpecies(String species) {
+		this.species = species;
 	}
 
-	public String getProviderDownloadsUrl() {
-		return providerDownloadsUrl;
+	public String getDownloads() {
+		return downloads;
 	}
 
-	public void setProviderDownloadsUrl(String providerDownloadsUrl) {
-		this.providerDownloadsUrl = providerDownloadsUrl;
+	public void setDownloads(String downloads) {
+		this.downloads = downloads;
 	}
 
-	public String getProviderGA() {
-		return providerGA;
+	public String getGa() {
+		return ga;
 	}
 
-	public void setProviderGA(String providerGA) {
-		this.providerGA = providerGA;
+	public void setGa(String ga) {
+		this.ga = ga;
 	}
 
 	//backward compatibility methods
-	public boolean isAdminEnabled() {return (getAdminEnabled()==null)? false : getAdminEnabled().booleanValue();}
 	public boolean isSbgnLayoutEnabled() {
 		return (getSbgnLayoutEnabled()==null)? false : getSbgnLayoutEnabled().booleanValue();
 	}
@@ -215,12 +201,12 @@ public class Settings
 	 * @return the list of supported organisms (defined as 'name (taxID)')
 	 */
 	public String[] getOrganisms() {
-		String orgs = getProviderOrganisms();
+		String orgs = getSpecies();
 		return orgs.split("\\s*,\\s*");
 	}
 
 	public void setOrganisms(String[] organisms) {
-		setProviderOrganisms(StringUtils.join(organisms, ','));
+		setSpecies(StringUtils.join(organisms, ','));
 	}
 
 	/**
@@ -389,7 +375,7 @@ public class Settings
 	 * @return
 	 */
 	public String exportArchivePrefix() {
-		return WordUtils.capitalize(getProviderName() + getProviderVersion())
+		return WordUtils.capitalize(getName() + getVersion())
 				.replaceAll("\\W+","");
 	}
 	

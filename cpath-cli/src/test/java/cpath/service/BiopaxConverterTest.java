@@ -22,7 +22,6 @@ public class BiopaxConverterTest {
         ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD, null);
         assertTrue(sr instanceof DataResponse);
         assertFalse(sr.isEmpty());
-//        DataResponse dr = (DataResponse) sr;
     }
 
 }

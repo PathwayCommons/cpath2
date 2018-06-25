@@ -1,7 +1,7 @@
 
 import static org.junit.Assert.*;
 
-import cpath.service.Application;
+import cpath.Application;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,8 @@
-package cpath.service;
+package cpath.analysis;
 
 import java.util.Set;
 
+import cpath.service.Analysis;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -10,13 +11,8 @@ import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 
-/**
- * 
- * 
- * @author rodche
- *
- */
-final class TraverseAnalysis implements Analysis<Model> {
+
+public final class TraverseAnalysis implements Analysis<Model> {
 	
 	private final TraverseResponse callback;
 	private final String[] uris;

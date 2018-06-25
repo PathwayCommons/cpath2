@@ -3,7 +3,7 @@ package cpath.analysis;
 import java.util.HashSet;
 import java.util.Set;
 
-import cpath.Application;
+import cpath.DataIntegration;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BindingFeature;
 import org.biopax.paxtools.model.level3.EntityFeature;
@@ -20,7 +20,7 @@ import cpath.service.Analysis;
  * 
  * This class is not an essential part of this system; 
  * it's to be optionally called using the cpath-cli.sh script,
- * i.e., via {@link Application} '-run-analysis' console command.
+ * i.e., via {@link DataIntegration} '-run-analysis' console command.
  * 
  * This uses a Java option: cpath.analysis.filter.metadataids=id1,id2,.. 
  * (if not defined, all data are analyzed; IDs are cpath2 metadata/datasource identifiers,

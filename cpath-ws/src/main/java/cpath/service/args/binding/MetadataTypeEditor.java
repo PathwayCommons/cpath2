@@ -2,7 +2,7 @@ package cpath.service.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import cpath.jpa.Metadata;
+import cpath.service.jpa.Metadata;
 
 
 

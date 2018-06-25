@@ -1,8 +1,8 @@
 package cpath.converter;
 
-import cpath.Settings;
+import cpath.service.Settings;
+import cpath.service.CPathUtils;
 import cpath.service.Converter;
-import cpath.service.ImportFactory;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
@@ -43,7 +43,7 @@ public class ChebiConvertersTest {
 		// convert test data
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-		Converter converter = ImportFactory.newConverter("cpath.converter.ChebiOboConverter");
+		Converter converter = CPathUtils.newConverter("cpath.converter.ChebiOboConverter");
 		converter.setXmlBase(cpath.getXmlBase());
 
 		ZipFile zf = new ZipFile(getClass().getResource("/chebi.obo.zip").getFile());

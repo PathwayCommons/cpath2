@@ -20,8 +20,8 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.*;
 
-import cpath.jpa.Metadata;
-import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.jpa.Metadata;
+import cpath.service.jpa.Metadata.METADATA_TYPE;
 
 public class CPathUtilsTest {
 	

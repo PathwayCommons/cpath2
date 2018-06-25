@@ -42,7 +42,7 @@ public class PagesController extends BasicController implements ErrorController
 	@RequestMapping("/favicon.ico")
 	public  @ResponseBody byte[] icon() throws IOException {
 
-		String cpathLogoUrl = service.settings().getProviderLogoUrl();
+		String cpathLogoUrl = service.settings().getLogo();
 
 		byte[] iconData = null;
 

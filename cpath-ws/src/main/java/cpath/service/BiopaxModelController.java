@@ -85,7 +85,7 @@ public class BiopaxModelController extends BasicController {
 				SearchResponse hits = (SearchResponse) results;
 				// log/track data access events
 				track(request, args, hits.getProviders(), null);
-				hits.setVersion(service.settings().getProviderVersion());
+				hits.setVersion(service.settings().getVersion());
 				return hits;
 			}
 		}
@@ -107,7 +107,7 @@ public class BiopaxModelController extends BasicController {
 				track(request, args, null, null);
 				//TODO: log/track data providers that occur is the traverse query result
 				TraverseResponse traverseResponse = (TraverseResponse) sr;
-				traverseResponse.setVersion(service.settings().getProviderVersion());
+				traverseResponse.setVersion(service.settings().getVersion());
 				return traverseResponse;
 			}
 		}
@@ -180,7 +180,7 @@ public class BiopaxModelController extends BasicController {
 				// log/track one data access event for each data provider listed in the result
 				track(request, args, ((SearchResponse)results).getProviders(), null);
 				SearchResponse searchResponse = (SearchResponse) results;
-				searchResponse.setVersion(service.settings().getProviderVersion());
+				searchResponse.setVersion(service.settings().getVersion());
 				return searchResponse;
 			}
 		}

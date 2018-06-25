@@ -314,16 +314,8 @@
 		<bp:molecularWeight rdf:datatype="http://www.w3.org/2001/XMLSchema#float">
 			507.18</bp:molecularWeight>
 		<bp:structure rdf:resource="#ChemicalStructure_9" />
-		<bp:xref>
-			<bp:UnificationXref rdf:ID="KEGG_C00002">
-				<bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
-					PMID: 9847135 </bp:comment>
-				<bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
-					kegg compound</bp:db>
-				<bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
-					C00002</bp:id>
-			</bp:UnificationXref>
-		</bp:xref>
+		<bp:xref rdf:resource="KEGG_C00002"/>
+		<bp:xref rdf:resource="KEGG_c00002"/><!--this (bad id) is for tests only -->
 		<bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
 			adenosine triphosphate</bp:name>
 		<bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
@@ -333,6 +325,16 @@
 		<bp:standardName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
 			ATP</bp:standardName>
 	</bp:SmallMoleculeReference>
+	<bp:UnificationXref rdf:ID="KEGG_C00002">
+		<bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
+			PMID: 9847135 </bp:comment>
+		<bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">kegg compound</bp:db>
+		<bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">C00002</bp:id>
+	</bp:UnificationXref>
+	<bp:UnificationXref rdf:ID="KEGG_c00002">
+		<bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">kegg compound</bp:db>
+		<bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">c00002</bp:id>
+	</bp:UnificationXref>
 	<bp:SmallMolecule rdf:ID="ADP">
 		<bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
 			Adenosine 5'-diphosphate</bp:displayName>
@@ -604,7 +606,6 @@
 		<bp:sequencePosition rdf:datatype = "xsd:int">220</bp:sequencePosition>
 		<bp:positionStatus rdf:datatype = "xsd:string">EQUAL</bp:positionStatus>
 	</bp:SequenceSite>
-	
 	
 </rdf:RDF>
 

@@ -7,7 +7,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import cpath.Settings;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.jsonld.JsonldBiopaxConverter;
 import org.biopax.paxtools.io.jsonld.JsonldConverter;

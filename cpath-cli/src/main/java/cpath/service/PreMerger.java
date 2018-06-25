@@ -1,10 +1,10 @@
 package cpath.service;
 
 
-import cpath.jpa.Content;
-import cpath.jpa.Mapping;
-import cpath.jpa.Metadata;
-import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.jpa.Content;
+import cpath.service.jpa.Mapping;
+import cpath.service.jpa.Metadata;
+import cpath.service.jpa.Metadata.METADATA_TYPE;
 
 import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -86,7 +86,7 @@ public final class PreMerger {
 				Cleaner cleaner = null; //reset to null!
 				String cl = metadata.getCleanerClassname();
 				if (cl != null && cl.length() > 0) {
-					cleaner = ImportFactory.newCleaner(cl);
+					cleaner = CPathUtils.newCleaner(cl);
 					if (cleaner == null) {
 						log.error("premerge(), failed to create the Cleaner: " + cl
 								+ "; skipping for this data source...");
@@ -99,7 +99,7 @@ public final class PreMerger {
 				Converter converter = null;
 				cl = metadata.getConverterClassname();
 				if (cl != null && cl.length() > 0) {
-					converter = ImportFactory.newConverter(cl);
+					converter = CPathUtils.newConverter(cl);
 					if (converter == null) {
 						log.error("premerge(), failed to create the Converter: " + cl
 								+ "; skipping for this data source...");

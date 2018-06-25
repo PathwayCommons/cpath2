@@ -14,7 +14,7 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 
-public class CPath2ServiceBeansTest {
+public class JaxbTest {
 
 	@Test
 	public final void testGetAllStatusCodes() {

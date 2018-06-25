@@ -12,6 +12,7 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import cpath.analysis.TraverseAnalysis;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -38,8 +39,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import cpath.Settings;
-import cpath.jpa.*;
+import cpath.service.jpa.*;
 import cpath.service.jaxb.*;
 
 import javax.xml.transform.stream.StreamSource;
@@ -67,6 +67,10 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Autowired
 	MappingsRepository mappingsRepository;
+
+	@Autowired
+	private Settings settings;
+
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -79,9 +83,6 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
 	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
 	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
-
-	@Autowired
-	private Settings cpath;
 
 	/**
 	 * Constructor
@@ -102,20 +103,18 @@ public class CPathServiceImpl implements CPathService {
 		executor.execute(() -> {
 			paxtoolsModel = loadMainModel();
 			if(paxtoolsModel != null) {
-				paxtoolsModel.setXmlBase(cpath.getXmlBase());
+				paxtoolsModel.setXmlBase(settings.getXmlBase());
 				log.info("Main BioPAX model (in-memory) is now ready for queries.");
-				searcher = new SearchEngine(paxtoolsModel, cpath.indexDir());
-				((SearchEngine) searcher).setMaxHitsPerPage(cpath.getMaxSearchHitsPerPage());
+				searcher = new SearchEngine(paxtoolsModel, settings.indexDir());
+				((SearchEngine) searcher).setMaxHitsPerPage(settings.getMaxHitsPerPage());
 			}
 		});
 		executor.shutdown();
 		//won't wait (nothing else to do)
 		loadBlacklist();
-
-		cpath.init(); //set global static Settings.getInstance()
 	}
 
-	public Settings settings() {return cpath;}
+	public Settings settings() {return settings;}
 
 	public Model getModel() {
 		return paxtoolsModel;
@@ -352,7 +351,7 @@ public class CPathServiceImpl implements CPathService {
 			if(format == OutputFormat.GSEA && !options.containsKey("organisms")) {
 				//pre-configured supported species (global settings) -
 				//it's currently not about user query (filter) option for GSEA
-				options.put("organisms", String.join(",", cpath.getOrganismTaxonomyIds()));
+				options.put("organisms", String.join(",", settings.getOrganismTaxonomyIds()));
 			}
 		}
 
@@ -676,7 +675,7 @@ public class CPathServiceImpl implements CPathService {
 	private synchronized void loadBlacklist() 
 	{	
 		Resource blacklistResource = new DefaultResourceLoader()
-			.getResource("file:" + cpath.blacklistFile());
+			.getResource("file:" + settings.blacklistFile());
 		
 		if(blacklistResource.exists()) {			
 			try {
@@ -688,7 +687,7 @@ public class CPathServiceImpl implements CPathService {
 					+ blacklistResource.getDescription(), e);
 			}
 		} else {
-			log.warn("loadBlacklist, " + cpath.blacklistFile() + " is not found");
+			log.warn("loadBlacklist, " + settings.blacklistFile() + " is not found");
 		}
 	}
 
@@ -818,13 +817,10 @@ public class CPathServiceImpl implements CPathService {
 	 * to load the model and init the indexer/searcher.
 	*/
 	public void index() {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Admin mode is not enabled");
-
 		if(paxtoolsModel == null) {
 			paxtoolsModel = loadMainModel();
 			if(paxtoolsModel != null) {
-				paxtoolsModel.setXmlBase(cpath.getXmlBase());
+				paxtoolsModel.setXmlBase(settings.getXmlBase());
 				log.info("Main BioPAX model (in-memory) is now ready for queries.");
 			}
 		}
@@ -833,8 +829,8 @@ public class CPathServiceImpl implements CPathService {
 		addIdsAsBiopaxAnnotations();
 
 		if(searcher == null) {
-			SearchEngine searchEngine = new SearchEngine(paxtoolsModel, cpath.indexDir());
-			searchEngine.setMaxHitsPerPage(cpath.getMaxSearchHitsPerPage());
+			SearchEngine searchEngine = new SearchEngine(paxtoolsModel, settings.indexDir());
+			searchEngine.setMaxHitsPerPage(settings.getMaxHitsPerPage());
 			setSearcher(searchEngine);
 		}
 
@@ -924,15 +920,15 @@ public class CPathServiceImpl implements CPathService {
 	}
 
     public Model loadMainModel() {
-        return CPathUtils.importFromTheArchive(cpath.mainModelFile());
+        return CPathUtils.importFromTheArchive(settings.mainModelFile());
     }
 
     public Model loadWarehouseModel() {
-        return CPathUtils.importFromTheArchive(cpath.warehouseModelFile());
+        return CPathUtils.importFromTheArchive(settings.warehouseModelFile());
     }
 
     public Model loadBiopaxModelByDatasource(Metadata datasource) {
-        Path in = Paths.get(cpath.biopaxFileNameFull(datasource.getIdentifier()));
+        Path in = Paths.get(settings.biopaxFileNameFull(datasource.getIdentifier()));
         if (Files.exists(in)) {
             return CPathUtils.importFromTheArchive(in.toString());
         } else {
@@ -943,12 +939,12 @@ public class CPathServiceImpl implements CPathService {
     }
 
     public String getDataArchiveName(Metadata metadata) {
-        return Paths.get(cpath.dataDir(),metadata.getIdentifier() + ".zip").toString();
+        return Paths.get(settings.dataDir(),metadata.getIdentifier() + ".zip").toString();
     }
 
 
     public String outputDir(Metadata metadata) {
-        return Paths.get(cpath.dataDir(), metadata.getIdentifier()).toString();
+        return Paths.get(settings.dataDir(), metadata.getIdentifier()).toString();
     }
 
 	public void analyzeAndOrganizeContent(Metadata metadata)
@@ -1026,7 +1022,7 @@ public class CPathServiceImpl implements CPathService {
     }
 
     public String normalizedFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".normalized.owl.gz";
@@ -1034,7 +1030,7 @@ public class CPathServiceImpl implements CPathService {
 
 
     private String validationXmlFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".validation.xml.gz";
@@ -1042,7 +1038,7 @@ public class CPathServiceImpl implements CPathService {
 
 
     private String validationHtmlFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".validation.html.gz";
@@ -1050,21 +1046,21 @@ public class CPathServiceImpl implements CPathService {
 
 
     public String convertedFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".converted.owl.gz";
     }
 
     public String cleanedFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".cleaned.gz";
     }
 
     public String originalFile(Content c) {
-        return cpath.dataDir() +
+        return settings.dataDir() +
             File.separator + c.getProvider()
             + File.separator + c.getFilename()
             + ".original.gz";
