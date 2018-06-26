@@ -1,495 +1,652 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-	<modelVersion>4.0.0</modelVersion>
-	<packaging>pom</packaging>
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>war</packaging>
 
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.0.3.RELEASE</version>
-	</parent>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.0.3.RELEASE</version>
+    </parent>
 
-	<name>Pathway Commons builder and server</name>
-	<groupId>pathwaycommons</groupId>
-	<artifactId>cpath2</artifactId>
-	<version>10.0.0-SNAPSHOT</version>
-	<description>Biological pathways/interactions data integration and services</description>
-	<url>https://pathwaycommons.github.io/cpath2</url>
-	<inceptionYear>2009</inceptionYear>
+    <name>Pathway Commons builder and server</name>
+    <groupId>pathwaycommons</groupId>
+    <artifactId>cpath2</artifactId>
+    <version>10.0.0-SNAPSHOT</version>
+    <description>Biological pathways/interactions data integration and services</description>
+    <url>https://pathwaycommons.github.io/cpath2</url>
+    <inceptionYear>2009</inceptionYear>
 
-	<modules>
-		<module>cpath-cli</module>
-		<module>cpath-ws</module>
-	</modules>
+    <properties>
+        <java.version>1.8</java.version>
+        <start-class>cpath.Application</start-class>
+        <maven.version.range>[3.0,4)</maven.version.range>
+        <license.licenseName>MIT License</license.licenseName>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <lucene.version>6.5.0</lucene.version>
+        <h2.version>1.4.197</h2.version>
+        <paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
+        <apache-jena-libs.version>3.0.1</apache-jena-libs.version>
+        <validator.version>4.0.0-SNAPSHOT</validator.version>
+        <junit.version>4.12</junit.version>
+        <commons-lang.version>3.4</commons-lang.version>
+        <collections-generic.version>4.01</collections-generic.version>
+        <commons-collections.version>3.2.2</commons-collections.version>
+        <httpclient.version>4.5.5</httpclient.version>
+        <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+        <doxia-integration-tools.version>1.7.4</doxia-integration-tools.version>
+        <wagon-ssh.version>2.8</wagon-ssh.version>
+        <wagon-scm.version>2.8</wagon-scm.version>
+        <github.global.server>github</github.global.server>
+    </properties>
 
-	<issueManagement>
-		<system>GitHub Issues</system>
-		<url>https://github.com/PathwayCommons/cpath2/issues</url>
-	</issueManagement>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/PathwayCommons/cpath2/issues</url>
+    </issueManagement>
 
-	<ciManagement>
-		<system>Travis CI</system>
+    <ciManagement>
+        <system>Travis CI</system>
         <url>https://travis-ci.org/PathwayCommons/cpath2</url>
-	</ciManagement>
+    </ciManagement>
 
-	<organization>
-		<name>Pathway Commons</name>
-		<url>http://www.pathwaycommons.org</url>
-	</organization>
+    <organization>
+        <name>Pathway Commons</name>
+        <url>http://www.pathwaycommons.org</url>
+    </organization>
 
-	<scm>
-		<connection>scm:git:git://github.com/PathwayCommons/cpath2.git</connection>
-		<developerConnection>scm:git:git@github.com:PathwayCommons/cpath2.git</developerConnection>
-		<url>https://github.com/PathwayCommons/cpath2/tree/master/</url>
-	</scm>
+    <scm>
+        <connection>scm:git:git://github.com/PathwayCommons/cpath2.git</connection>
+        <developerConnection>scm:git:git@github.com:PathwayCommons/cpath2.git</developerConnection>
+        <url>https://github.com/PathwayCommons/cpath2/tree/master/</url>
+    </scm>
 
-	<developers>
-		<developer>
-			<id>rodche</id>
-			<name>Igor Rodchenkov</name>
-			<organization>The Donnelly Centre, University of Toronto</organization>
-			<roles>
-				<role>Senior Developer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>grossb</id>
-			<name>Benjamin Gross</name>
-			<organization>CBIO MSKCC</organization>
-		</developer>
-		<developer>
-			<id>emekdemir</id>
-			<name>Emek Demir</name>
-			<organization>CBIO MSKCC</organization>
-			<roles>
-				<role>Senior Developer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>ozgunbabur</id>
-			<name>Ozgun Babur</name>
-			<organization>CBIO MSKCC</organization>
-		</developer>
-		<developer>
-			<id>armanaksoy</id>
-			<name>B. Arman Aksoy</name>
-			<organization>CBIO MSKCC</organization>
-		</developer>
-	</developers>
+    <developers>
+        <developer>
+            <id>rodche</id>
+            <name>Igor Rodchenkov</name>
+            <organization>The Donnelly Centre, University of Toronto</organization>
+            <roles>
+                <role>Senior Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>grossb</id>
+            <name>Benjamin Gross</name>
+            <organization>DFCI</organization>
+        </developer>
+        <developer>
+            <id>emekdemir</id>
+            <name>Emek Demir</name>
+            <organization>OHSU</organization>
+        </developer>
+        <developer>
+            <id>ozgunbabur</id>
+            <name>Ozgun Babur</name>
+            <organization>OHSU</organization>
+        </developer>
+        <developer>
+            <id>armanaksoy</id>
+            <name>B. Arman Aksoy</name>
+        </developer>
+    </developers>
 
-	<contributors>
-		<contributor>
-			<name>Ethan Cerami</name>
-			<organization>CBIO MSKCC</organization>
-			<roles>
-				<role>manager</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Nadia Anwar</name>
-			<organization>CBIO MSKCC</organization>
-			<roles>
-				<role>outreach</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Onur Sumer</name>
-			<organization>CBIO MSKCC</organization>
-		</contributor>
-		<contributor>
-			<name>Joanne Edington</name>
-			<organization>CBIO MSKCC</organization>
-			<roles>
-				<role>sysadmin</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Harold Rodriguez</name>
-			<organization>The Donnelly Centre, University of Toronto</organization>
-			<roles>
-				<role>sysadmin</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Gary Bader</name>
-			<organization>The Donnelly Centre, University of Toronto</organization>
-			<roles>
-				<role>PI</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Chris Sander</name>
-			<organization>CBIO MSKCC</organization>
-			<roles>
-				<role>PI</role>
-			</roles>
-		</contributor>
-		<contributor>
-			<name>Augustin Luna</name>
-			<organization>CBIO MSKCC</organization>
-		</contributor>		
-	</contributors>
+    <contributors>
+        <contributor>
+            <name>Ethan Cerami</name>
+            <organization>DFCI</organization>
+            <roles>
+                <role>manager</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Nadia Anwar</name>
+            <roles>
+                <role>outreach</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Onur Sumer</name>
+            <organization>MSKCC</organization>
+        </contributor>
+        <contributor>
+            <name>Harold Rodriguez</name>
+            <organization>The Donnelly Centre, UofT</organization>
+        </contributor>
+        <contributor>
+            <name>Gary Bader</name>
+            <organization>The Donnelly Centre, UofT</organization>
+            <roles>
+                <role>PI</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Chris Sander</name>
+            <organization>DFCI,HMS</organization>
+            <roles>
+                <role>PI</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Augustin Luna</name>
+            <organization>DFCI</organization>
+        </contributor>
+    </contributors>
 
-	<mailingLists>
-		<mailingList>
-			<name>Pathway Commons Development Group</name>
-			<post>pathway-commons-dev@googlegroups.com</post>
-		</mailingList>
-	</mailingLists>
+    <mailingLists>
+        <mailingList>
+            <name>Pathway Commons Development Group</name>
+            <post>pathway-commons-dev@googlegroups.com</post>
+        </mailingList>
+    </mailingLists>
 
-	<licenses>
-		<license>
-			<name>MIT license</name>
-			<url>https://raw.githubusercontent.com/PathwayCommons/cpath2/master/LICENSE</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>MIT license</name>
+            <url>https://raw.githubusercontent.com/PathwayCommons/cpath2/master/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-	<properties>
-		<java.version>1.8</java.version>
-		<maven.version.range>[3.0,4)</maven.version.range>
-		<license.licenseName>lgpl_v3</license.licenseName>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<lucene.version>6.5.0</lucene.version>
-		<h2.version>1.4.197</h2.version>
-		<paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
-		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
-		<validator.version>4.0.0-SNAPSHOT</validator.version>
-		<junit.version>4.12</junit.version>
-		<commons-lang.version>3.4</commons-lang.version>
-		<collections-generic.version>4.01</collections-generic.version>
-		<commons-collections.version>3.2.2</commons-collections.version>
-		<httpclient.version>4.5.5</httpclient.version>
-		<nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-		<doxia-integration-tools.version>1.7.4</doxia-integration-tools.version>
-		<wagon-ssh.version>2.8</wagon-ssh.version>
-		<wagon-scm.version>2.8</wagon-scm.version>
-		<github.global.server>github</github.global.server>
-	</properties>
+    <repositories>
+        <repository>
+            <id>ossrh</id>
+            <name>OSSRH Repository</name>
+            <url>https://oss.sonatype.org/content/groups/public/</url>
+        </repository>
+    </repositories>
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<configuration>
-						<source>${java.version}</source>
-						<target>${java.version}</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<configuration>
-						<forkMode>once</forkMode>
-						<argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-release-plugin</artifactId>
+    <build>
+        <finalName>cpath2</finalName>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <forkMode>once</forkMode>
+                        <argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
                     <configuration>
                         <goals>deploy</goals>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                         <useReleaseProfile>false</useReleaseProfile>
                         <releaseProfiles>sonatype-release-profile</releaseProfiles>
                     </configuration>
-				</plugin>
-			</plugins>			
-		</pluginManagement>
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-ssh</artifactId>
-				<version>${wagon-ssh.version}</version>
-			</extension>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-scm</artifactId>
-				<version>${wagon-scm.version}</version>
-			</extension>
-        	<extension>
-            	<groupId>org.apache.maven.doxia</groupId>
-            	<artifactId>doxia-integration-tools</artifactId>
-           		<version>${doxia-integration-tools.version}</version>
-        	</extension>
-		</extensions>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<!--<version>${maven-enforcer-plugin}</version>-->
-				<executions>
-					<execution>
-						<id>enforce-banned-dependencies</id>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-						<configuration>
-							<rules>
-								<bannedDependencies>
-									<searchTransitive>true</searchTransitive>
-									<excludes>
-										<exclude>javassist:javassist</exclude><!-- org.javassist is the 
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>${start-class}</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                    <skipDeploy>true</skipDeploy>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>javassist:javassist</exclude><!-- org.javassist is the
 											new one -->
-										<exclude>commons-logging</exclude>
-										<exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
-										<exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
-										<exclude>log4j:log4j</exclude>
-										<exclude>org.springframework:2.*</exclude>
-										<exclude>org.springframework:3.*</exclude>
-										<exclude>javax.xml.bind:*</exclude>
-										<exclude>net.sf.saxon:*</exclude>
-										<exclude>com.sun.xml.bind:*</exclude>
-										<exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
-										<exclude>commons-collections:3.2.1</exclude>
-										<exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
-									</excludes>
-								</bannedDependencies>
-								<requireMavenVersion>
-									<version>${maven.version.range}</version>
-								</requireMavenVersion>
-								<requireJavaVersion>
-									<version>${java.version}</version>
-								</requireJavaVersion>
-							</rules>
-							<fail>true</fail>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<goals>
-							<goal>jar-no-fork</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-site-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>attach-descriptor</id>
-						<goals>
-							<goal>attach-descriptor</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<skipDeploy>true</skipDeploy>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+                                        <exclude>commons-logging</exclude>
+                                        <exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
+                                        <exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
+                                        <exclude>log4j:log4j</exclude>
+                                        <exclude>org.springframework:2.*</exclude>
+                                        <exclude>org.springframework:3.*</exclude>
+                                        <exclude>javax.xml.bind:*</exclude>
+                                        <exclude>net.sf.saxon:*</exclude>
+                                        <exclude>com.sun.xml.bind:*</exclude>
+                                        <exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
+                                        <exclude>commons-collections:3.2.1</exclude>
+                                        <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                                <requireMavenVersion>
+                                    <version>${maven.version.range}</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                </requireJavaVersion>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>${wagon-ssh.version}</version>
+            </extension>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-scm</artifactId>
+                <version>${wagon-scm.version}</version>
+            </extension>
+            <extension>
+                <groupId>org.apache.maven.doxia</groupId>
+                <artifactId>doxia-integration-tools</artifactId>
+                <version>${doxia-integration-tools.version}</version>
+            </extension>
+        </extensions>
+    </build>
 
-	<repositories>
-        <repository>
-            <id>ossrh</id>
-            <name>OSSRH Repository</name>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
-        </repository>
-	</repositories>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>paxtools-core</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>paxtools-trove</artifactId>
-				<version>${paxtools.version}</version>
-				<scope>runtime</scope>
-			</dependency>			
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>sif-converter</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>psimi-converter</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>sbgn-converter</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>gsea-converter</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>paxtools-query</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-        	<dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>paxtools-core</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>paxtools-trove</artifactId>
+                <version>${paxtools.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>sif-converter</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>psimi-converter</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>sbgn-converter</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>gsea-converter</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>paxtools-query</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.biopax.paxtools</groupId>
                 <artifactId>pattern</artifactId>
                 <version>${paxtools.version}</version>
-        	</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>normalizer</artifactId>
-				<version>${paxtools.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>biopax-validator</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>obo-fetcher</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>log4j</groupId>
-						<artifactId>log4j</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>json-converter</artifactId>
-				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.jena</groupId>
-				<artifactId>apache-jena-libs</artifactId>
-				<type>pom</type>
-				<version>3.2.0</version>
-				<exclusions>
-					<exclusion>
-						<groupId>log4j</groupId>
-						<artifactId>log4j</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-log4j12</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>com.hp.hpl.jena</groupId>
-				<artifactId>jena</artifactId>
-				<version>2.6.4</version>
-				<exclusions>
-					<exclusion>
-						<groupId>log4j</groupId>
-						<artifactId>log4j</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-log4j12</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>commons-collections</groupId>
-				<artifactId>commons-collections</artifactId>
-				<version>${commons-collections.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.httpcomponents</groupId>
-				<artifactId>httpclient</artifactId>
-				<version>${httpclient.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.commons</groupId>
-				<artifactId>commons-lang3</artifactId>
-				<version>${commons-lang.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.h2database</groupId>
-				<artifactId>h2</artifactId>
-				<version>${h2.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-core</artifactId>
-				<version>${lucene.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-highlighter</artifactId>
-				<version>${lucene.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-analyzers-common</artifactId>
-				<version>${lucene.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-queryparser</artifactId>
-				<version>${lucene.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>normalizer</artifactId>
+                <version>${paxtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.validator</groupId>
+                <artifactId>biopax-validator</artifactId>
+                <version>${validator.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.validator</groupId>
+                <artifactId>obo-fetcher</artifactId>
+                <version>${validator.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.biopax.paxtools</groupId>
+                <artifactId>json-converter</artifactId>
+                <version>${paxtools.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>apache-jena-libs</artifactId>
+                <type>pom</type>
+                <version>3.2.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.hp.hpl.jena</groupId>
+                <artifactId>jena</artifactId>
+                <version>2.6.4</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons-collections.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-highlighter</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analyzers-common</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<scope>test</scope>
-		</dependency>
+    <dependencies>
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
         </dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-highlighter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.validator</groupId>
+            <artifactId>biopax-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.validator</groupId>
+            <artifactId>obo-fetcher</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>normalizer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>paxtools-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>paxtools-trove</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>sbgn-converter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>gsea-converter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>paxtools-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>psimi-converter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>pattern</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.biopax.paxtools</groupId>
+            <artifactId>json-converter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>apache-jena-libs</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hp.hpl.jena</groupId>
+            <artifactId>jena</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pathwaycommons</groupId>
+            <artifactId>reconx-to-biopax</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
-	<distributionManagement>
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <!-- mainly due to org.obo in biopax-validator directly uses log4j api -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--Spring Boot, JPA, Validation API, Jackson, etc.-->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!--jackson-databind allows to use JAXB annotations for converting beans to JSON -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <distributionManagement>
         <repository>
             <id>ossrh</id>
             <name>Nexus Release Repository</name>
@@ -500,9 +657,9 @@
             <name>Sonatype Nexus Snapshots</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
-	</distributionManagement>
+    </distributionManagement>
 
-	<profiles>
+    <profiles>
         <profile>
             <id>sonatype-release-profile</id>
             <build>
@@ -514,7 +671,7 @@
                         <configuration>
                             <serverId>ossrh</serverId>
                             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-<!--                             <autoReleaseAfterClose>true</autoReleaseAfterClose> -->
+                            <!--                             <autoReleaseAfterClose>true</autoReleaseAfterClose> -->
                         </configuration>
                     </plugin>
                     <plugin>
@@ -553,7 +710,7 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>		
-	</profiles>
+        </profile>
+    </profiles>
 
 </project>
