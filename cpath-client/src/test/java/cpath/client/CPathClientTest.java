@@ -58,14 +58,9 @@ public class CPathClientTest {
 		String endPointURL = client.getEndPointURL();
 		System.out.println("cpath2 instance: " + endPointURL
 			+ " (actual location: " + client.getActualEndPointURL() + ")");
-		
-		//GET usually works ok with different kind of redirects...
-    	String res = client.get("help", null, String.class);
-//    	assertTrue(res.startsWith("<?xml version=")); //not valid assertion, since beta pc9
-		assertNull(res);
 
     	//POST
-    	res = client.post("help/types", null, String.class);
+    	String res = client.post("help/types", null, String.class);
 //    	System.out.println(res);
     	assertTrue(res.contains("BioSource"));
 	}
@@ -74,21 +69,17 @@ public class CPathClientTest {
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"reactome"}).result();
+		result = client.createTopPathwaysQuery()
+			.queryString("*").datasourceFilter(new String[]{"reactome"}).result();
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
-
-		//not a valid assertion after client has been modified -
-		//to always throw an exception if response code is not OK
-//		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
-//		assertNull(result);
 
 		result = null;
 		try {
 			result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
 		} catch (CPathException e) {}
-//		assertNull(result); //it does not error anymore, since pc9 beta; it sends "empty" data result...
-		assertTrue(result.isEmpty());
+// since pc9 beta; it sends "empty" data result...
+		assertTrue(result==null || result.isEmpty());
 	}
 
 	
