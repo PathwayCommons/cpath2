@@ -73,12 +73,12 @@ public class Search extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return "search";
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return "xml"; //default
 	}
 }

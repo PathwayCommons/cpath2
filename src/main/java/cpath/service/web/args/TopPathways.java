@@ -48,12 +48,12 @@ public class TopPathways extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return "top_pathways";
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return "xml"; //default
 	}
 }

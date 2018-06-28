@@ -85,12 +85,12 @@ public class Get extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return "get";
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return format.name().toLowerCase();
 	}
 }

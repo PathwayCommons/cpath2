@@ -168,12 +168,12 @@ public class Graph extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return kind.toString();
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return format.name().toLowerCase();
 	}
 }

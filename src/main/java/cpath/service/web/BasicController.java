@@ -265,7 +265,7 @@ public abstract class BasicController
     }
 
     if(command!=null)
-      service.track(ip, "command", command.getCommand());
+      service.track(ip, "command", command.cmd());
 
     service.track(ip, "client", client);
 
@@ -282,7 +282,7 @@ public abstract class BasicController
     if(command!=null) {
       //a hack to properly detect resulting data format in some cases
       //(note: using URI extension for the content negotiation takes over 'accept' request header)
-      String f = command.getFormatName().toLowerCase();
+      String f = command.outputFormat().toLowerCase();
       if (command instanceof Search || command instanceof TopPathways || command instanceof Traverse) {
         if ((String.valueOf(request.getHeader("accept")).contains("application/json")
           && !request.getRequestURI().endsWith(".xml")) || request.getRequestURI().endsWith(".json")) {

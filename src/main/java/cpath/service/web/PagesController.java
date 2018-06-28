@@ -69,4 +69,9 @@ public class PagesController extends BasicController
 			"Disallow: /metadata\n";
 	}
 
+	@RequestMapping("/swagger")
+	public String swagger() {
+		return "redirect:swagger-ui.html";
+	}
+
 }

@@ -48,12 +48,12 @@ public class Traverse extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return "traverse";
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return "xml"; //default
 	}
 }
