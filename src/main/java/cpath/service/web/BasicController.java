@@ -5,9 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -27,7 +24,6 @@ import cpath.service.web.args.TopPathways;
 import cpath.service.web.args.Traverse;
 import cpath.service.jaxb.*;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -35,7 +31,6 @@ import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -47,13 +42,14 @@ import org.springframework.validation.FieldError;
 public abstract class BasicController
 {
   private static final Logger log = LoggerFactory.getLogger(BasicController.class);
+
   protected CPathService service;
 
   @Autowired
-  public void setLogRepository(CPathService service) {
-    Assert.notNull(service, "'service' was null");
+  public void setService(CPathService service) {
     this.service = service;
   }
+
 
   /**
    * Http error response with more details and specific access log events.
@@ -68,14 +64,14 @@ public abstract class BasicController
                                      HttpServletRequest request,
                                      HttpServletResponse response)
   {
-    //TODO: switch to using @RestControllerAdvice class and @ExceptionHandler annotated methods
+    //TODO: eventually switch to using @RestControllerAdvice and @ExceptionHandler
     try {
       //log/track using a shorter message
       track(request, args, null, error);
       //return a long detailed message
       response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
     } catch (IOException e) {
-      log.error("Problem sending back an error response; " + e);
+      log.error("FAILED sending an error response; " + e);
     }
   }
 
@@ -112,23 +108,23 @@ public abstract class BasicController
    * Writes the query results to the HTTP response
    * output stream.
    *
-   * @param args     query args
+   * @param command     query command
    * @param result
    * @param request
    * @param response
    */
-  protected final void stringResponse(ServiceQuery args,
+  protected final void stringResponse(ServiceQuery command,
                                       ServiceResponse result,
                                       HttpServletRequest request,
                                       HttpServletResponse response)
   {
     if (result instanceof ErrorResponse) {
-      errorResponse(args, (ErrorResponse) result, request, response);
+      errorResponse(command, (ErrorResponse) result, request, response);
     } else if (result instanceof DataResponse) {
       final DataResponse dataResponse = (DataResponse) result;
 
       // log/track one data access event for each data provider listed in the result
-      track(request, args, dataResponse.getProviders(), null);
+      track(request, command, dataResponse.getProviders(), null);
 
       if (dataResponse.getData() instanceof Path) {
         //get the temp file
@@ -138,19 +134,12 @@ public abstract class BasicController
             .format("%s; %s", dataResponse.getFormat().getMediaType(), "charset=UTF-8"));
           long size = Files.size(resultFile);
           if (size > 13) { // a hack to skip for trivial/empty results
-            Writer writer = response.getWriter();
-            Reader reader = Files.newBufferedReader(resultFile, Charset.forName("UTF-8"));
-            try {
-              IOUtils.copyLarge(reader, writer);
-//							IOUtils.copy(reader, os, Charset.forName("UTF-8"));
-            } finally {
-              IOUtils.closeQuietly(reader);
-            }
+            Files.copy(resultFile, response.getOutputStream());
           }
         } catch (IOException e) {
           String msg = String.format("Failed to process the (temporary) result file %s; %s.",
             resultFile, e.toString());
-          errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
+          errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
         } finally {
           try {
             Files.delete(resultFile);
@@ -174,17 +163,17 @@ public abstract class BasicController
           }
         } catch (IOException e) {
           String msg = String.format("Failed writing a trivial response: %s.", e.toString());
-          errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
+          errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
         }
       } else { //it's probably a bug -
         String msg = String.format("BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
           dataResponse.getData().getClass().getSimpleName(), dataResponse.toString());
-        errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
+        errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
       }
     } else { //it's a bug -
       String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ",
         result.getClass().getSimpleName(), result.toString());
-      errorResponse(args, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
+      errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
     }
   }
 
@@ -254,11 +243,13 @@ public abstract class BasicController
 
 
   // data access logging and tracking
-  void track(HttpServletRequest request, ServiceQuery args, Set<String> providers, ErrorResponse err)
+  void track(HttpServletRequest request, ServiceQuery command, Set<String> providers, ErrorResponse err)
   {
     final String ip = clientIpAddress(request);
 
-    String client = args.getUser();
+    String client = null;
+    if(command!=null)
+      client = command.getUser();
     if (client == null || client.isEmpty()) {
       //extract http client tool name/version part:
       client = request.getHeader("User-Agent");
@@ -273,11 +264,14 @@ public abstract class BasicController
       service.track(ip, "error", err.getErrorMsg());
     }
 
-    service.track(ip, "command", args.getCommand());
+    if(command!=null)
+      service.track(ip, "command", command.getCommand());
 
     service.track(ip, "client", client);
 
-    String msg = status + ": " + args.toString();
+    String msg = status.toString();
+    if(command!=null)
+      msg += ": " + command.toString();
     if (providers != null) {
       for (String provider : providers) service.track(ip, "provider", provider);
       if (!providers.isEmpty()) msg += "; pro:" + String.join(",", providers);
@@ -285,15 +279,17 @@ public abstract class BasicController
 
     service.track(ip, "all", msg);
 
-    //a hack to properly detect resulting data format in some cases
-    //(note: using URI extension for the content negotiation takes over 'accept' request header)
-    String f = args.getFormatName().toLowerCase();
-    if (args instanceof Search || args instanceof TopPathways || args instanceof Traverse) {
-      if ((String.valueOf(request.getHeader("accept")).contains("application/json")
-        && !request.getRequestURI().endsWith(".xml")) || request.getRequestURI().endsWith(".json")) {
-        f = "json";
+    if(command!=null) {
+      //a hack to properly detect resulting data format in some cases
+      //(note: using URI extension for the content negotiation takes over 'accept' request header)
+      String f = command.getFormatName().toLowerCase();
+      if (command instanceof Search || command instanceof TopPathways || command instanceof Traverse) {
+        if ((String.valueOf(request.getHeader("accept")).contains("application/json")
+          && !request.getRequestURI().endsWith(".xml")) || request.getRequestURI().endsWith(".json")) {
+          f = "json";
+        }
       }
+      service.track(ip, "format", f);
     }
-    service.track(ip, "format", f);
   }
 }

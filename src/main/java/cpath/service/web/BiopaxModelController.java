@@ -16,6 +16,7 @@ import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ import javax.validation.Valid;
 /**
  * cPathSquared Model Access Web Service.
  */
+@Profile("web")
 @RestController
 @RequestMapping(method = RequestMethod.GET)
 public class BiopaxModelController extends BasicController {

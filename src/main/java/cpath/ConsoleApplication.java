@@ -1,5 +1,9 @@
-package cpath.service;
+package cpath;
 
+import cpath.service.CPathUtils;
+import cpath.service.Merger;
+import cpath.service.PreMerger;
+import cpath.service.SearchEngine;
 import cpath.service.api.Analysis;
 import cpath.service.api.CPathService;
 import cpath.service.api.Searcher;
@@ -22,9 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 
@@ -38,22 +40,28 @@ import java.util.zip.GZIPOutputStream;
  * The cPath2 console application for a pathway data manager
  * to build a new cPath2 instance (metadata, BioPAX model, full-text index, downloads)
  */
-@Configuration
+@SpringBootApplication
 @Profile({"admin"})
-public class ConsoleConfiguration implements CommandLineRunner {
-  private static final Logger LOG = LoggerFactory.getLogger(ConsoleConfiguration.class);
+public class ConsoleApplication implements CommandLineRunner {
+  private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
 
   @Autowired
   private CPathService service;
 
-  @Autowired
-  private ApplicationContext applicationContext;
+  /**
+   * Validator bean is available when "premerge" profile is activated;
+   * Used in {@link #runPremerge(boolean, boolean)}
+   */
+  @Autowired(required = false)
+  private Validator validator;
 
   @Autowired
   private Environment environment;
 
   public enum Cmd {
     // command types
+    HELP("-help"),
+    SERVER("-server"),
     METADATA("-metadata"),
     PREMERGE("-premerge"),
     MERGE("-merge"),
@@ -76,18 +84,6 @@ public class ConsoleConfiguration implements CommandLineRunner {
   final static String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
 
 
-  public static void main(String[] args) {
-    SpringApplication consoleApp = new SpringApplication(ConsoleConfiguration.class);
-
-    if (args[0].equals(Cmd.PREMERGE.toString())) {
-      consoleApp.setAdditionalProfiles("premerge"); //enables biopax-validator configuration
-    }
-
-//ConfigurableApplicationContext context =
-    consoleApp.run(args);
-//context.getBean(CPathService.class).init();//do not (that's for the web app)
-  }
-
   @Override
   public void run(String... params) throws Exception
   {
@@ -96,11 +92,8 @@ public class ConsoleConfiguration implements CommandLineRunner {
           " (is NOT 'UTF-8'); problems with input data are possible...");
 
     final String[] activeProfiles = environment.getActiveProfiles();
-    final boolean isAdminProfile = Arrays.stream(activeProfiles).anyMatch("admin"::equals);
-    final boolean isProductionProfile = Arrays.stream(activeProfiles).anyMatch("prod"::equals);
-    LOG.info(String.format("Active profiles: %s\nAdmin mode: %s",
-          Arrays.toString(activeProfiles), (isAdminProfile)?"enabled":"disabled")
-    );
+//    final boolean isAdminProfile = Arrays.stream(activeProfiles).anyMatch("admin"::equals);
+    LOG.info(String.format("Active profiles: %s", Arrays.toString(activeProfiles)));
 
     // Cleanup arguments - remove empty/null strings from the end, which were
     // possibly the result of calling this method from a shell script
@@ -110,14 +103,11 @@ public class ConsoleConfiguration implements CommandLineRunner {
         filteredArguments.add(a);
     final String[] args = filteredArguments.toArray(new String[]{});
 
-    if (args.length == 0 || args[0].isEmpty()) {
-      LOG.warn("No command line arguments.");
-      if(isProductionProfile) System.err.println(usage());
-      return;
-    } else LOG.debug("Command-line arguments were: " + Arrays.toString(args));
-
     // process command line args and do smth.
-    if (args[0].equals(Cmd.INDEX.toString())) {
+    if (args.length == 0) {
+      System.out.println("Use -help to see command line options");
+      return;
+    } else if (args[0].equals(Cmd.INDEX.toString())) {
 
       index();
 
@@ -175,14 +165,13 @@ public class ConsoleConfiguration implements CommandLineRunner {
         executeAnalysis(args[1], true);
       else if (args.length > 2 && "--update".equalsIgnoreCase(args[2]))
         executeAnalysis(args[1], false);
-
+    } else if(args[0].equals(Cmd.HELP.toString()))  {
+      System.out.println(usage());
     } else {
       System.err.println(usage());
     }
 
-    // required because MySQL Statement
-    // Cancellation Timer thread is still running
-    System.exit(0);
+//    System.exit(0); //important
   }
 
   /**
@@ -300,7 +289,6 @@ public class ConsoleConfiguration implements CommandLineRunner {
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     System.setProperty("net.sf.ehcache.disabled", "true");
 
-    Validator validator = applicationContext.getBean(Validator.class);
     PreMerger premerger = new PreMerger(service, validator, force);
     premerger.premerge();
 
@@ -426,6 +414,8 @@ public class ConsoleConfiguration implements CommandLineRunner {
         "will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE);
     toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
         "if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
+    toReturn.append(Cmd.SERVER.toString() + " (start the web service; in production, set system variable CPATH2_HOME=path/to/work directory)" + NEWLINE);
+    toReturn.append(Cmd.HELP.toString() + " (print these information)" + NEWLINE);
     return toReturn.toString();
   }
 

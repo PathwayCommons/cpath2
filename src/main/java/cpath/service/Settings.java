@@ -76,7 +76,6 @@ public class Settings
 	private String logo;
 	private String species;
 	private String downloads;
-	private String ga;//Google Analytics code
 
 	public Settings() {
 		LOG.info("Working ('home') directory: " + homeDir());
@@ -170,14 +169,6 @@ public class Settings
 
 	public void setDownloads(String downloads) {
 		this.downloads = downloads;
-	}
-
-	public String getGa() {
-		return ga;
-	}
-
-	public void setGa(String ga) {
-		this.ga = ga;
 	}
 
 	//backward compatibility methods

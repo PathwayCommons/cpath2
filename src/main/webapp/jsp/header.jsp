@@ -13,9 +13,8 @@
 				  <span class="icon-bar"></span>
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
-				 <img alt="Project Team Logo" src="${cpath.logoUrl}" id="team-logo"/>&nbsp;
+				 <img alt="Project Team Logo" src="${cpath.logo}" id="team-logo"/>&nbsp;
 				 <c:out value="${cpath.name} Web Service v${cpath.version}"/>&nbsp;
-				 <c:if test="${cpath.adminEnabled}"><strong>(Maintenance mode)</strong></c:if>
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">

@@ -5,8 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -46,6 +44,7 @@ import org.springframework.util.Assert;
 import cpath.service.jpa.*;
 import cpath.service.jaxb.*;
 
+import javax.annotation.PostConstruct;
 import javax.xml.transform.stream.StreamSource;
 
 import static cpath.service.api.Status.*;
@@ -98,23 +97,21 @@ public class CPathServiceImpl implements CPathService {
 
 	/**
 	 * Loads the main BioPAX model, etc.
-	 * This is not required (is useless) during the data import (in premerge, merge, index, etc.);
-	 * it is to be called only after the web service is up.
+	 * This is not required (is useless) during the data import
+	 * (in premerge, merge, index, etc.);
+	 * call this only after the web service is up and running.
 	 */
+	@PostConstruct
 	synchronized public void init() {
-		//fork the model loading (which takes quite a while)
-		ExecutorService executor = Executors.newSingleThreadExecutor();
-		executor.execute(() -> {
+		if(paxtoolsModel == null) {
 			paxtoolsModel = loadMainModel();
-			if(paxtoolsModel != null) {
+			if (paxtoolsModel != null) {
 				paxtoolsModel.setXmlBase(settings.getXmlBase());
 				log.info("Main BioPAX model (in-memory) is now ready for queries.");
 				searcher = new SearchEngine(paxtoolsModel, settings.indexDir());
 				((SearchEngine) searcher).setMaxHitsPerPage(settings.getMaxHitsPerPage());
 			}
-		});
-		executor.shutdown();
-		//won't wait (nothing else to do)
+		}
 		loadBlacklist();
 	}
 
@@ -816,27 +813,12 @@ public class CPathServiceImpl implements CPathService {
 		return metadataRepository;
 	}
 
-	/**
-	 * Make sure you called {@link #init()} first
-	 * to load the model and init the indexer/searcher.
-	*/
-	public void index() {
-		if(paxtoolsModel == null) {
-			paxtoolsModel = loadMainModel();
-			if(paxtoolsModel != null) {
-				paxtoolsModel.setXmlBase(settings.getXmlBase());
-				log.info("Main BioPAX model (in-memory) is now ready for queries.");
-			}
-		}
+	public void index()
+	{
+		init(); //very important - loads the model
 
 		log.info("Associating bio IDs with BioPAX objects using nested Xrefs and id-mapping...");
 		addIdsAsBiopaxAnnotations();
-
-		if(searcher == null) {
-			SearchEngine searchEngine = new SearchEngine(paxtoolsModel, settings.indexDir());
-			searchEngine.setMaxHitsPerPage(settings.getMaxHitsPerPage());
-			setSearcher(searchEngine);
-		}
 
 		((Indexer)searcher).index();
 

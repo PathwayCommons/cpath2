@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-import cpath.Application;
+import cpath.ConsoleApplication;
 import cpath.service.api.CPathService;
 import cpath.service.jpa.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("admin")
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = ConsoleApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class ServiceAndJpaTest {
 
   @Autowired
@@ -42,7 +42,6 @@ public class ServiceAndJpaTest {
     assertEquals("Pathway Commons Demo",s.getName());
     assertEquals(1, s.getOrganismTaxonomyIds().size());
     assertEquals(Integer.valueOf(100),s.getMaxHitsPerPage());
-    assertEquals("10",s.getVersion());
   }
 
   @Test

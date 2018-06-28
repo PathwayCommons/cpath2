@@ -22,9 +22,6 @@ public final class TraverseAnalysis implements Analysis<Model> {
 		this.uris = uris;
 	}
 
-	/* (non-Javadoc)
-	 * @see cpath.dao.Analysis#execute(org.biopax.paxtools.model.Model)
-	 */
 	@Override
 	public void execute(Model model) {
 		

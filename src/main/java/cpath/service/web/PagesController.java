@@ -7,7 +7,7 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
-import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -15,22 +15,18 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 
 @Controller
+@Profile("web")
 @RequestMapping(method = RequestMethod.GET)
-public class PagesController extends BasicController implements ErrorController
+public class PagesController extends BasicController
 {
 
-	@RequestMapping("/")
-	public String wroot() {
-		return "home";
-	}
-
-	@RequestMapping("/home")
-	public String whome() {
-		return "home";
+	@RequestMapping({"/","/home","/index"})
+	public String home() {
+		return "index";
 	}
 
 	@RequestMapping("/formats")
-	public String getOutputFormatsDescr() {
+	public String formats() {
 		return "formats";
 	}
 
@@ -40,7 +36,7 @@ public class PagesController extends BasicController implements ErrorController
 	}
 
 	@RequestMapping("/favicon.ico")
-	public  @ResponseBody byte[] icon() throws IOException {
+	public  @ResponseBody byte[] favicon() throws IOException {
 
 		String cpathLogoUrl = service.settings().getLogo();
 
@@ -71,16 +67,6 @@ public class PagesController extends BasicController implements ErrorController
 			"Disallow: /archives\n" +
 			"Disallow: /help\n" +
 			"Disallow: /metadata\n";
-	}
-
-	@Override
-	public String getErrorPath() {
-		return "/error";
-	}
-
-	@RequestMapping("/error")
-	public String err() {
-		return "error";
 	}
 
 }

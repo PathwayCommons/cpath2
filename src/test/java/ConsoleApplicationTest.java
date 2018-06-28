@@ -1,4 +1,4 @@
-import cpath.Application;
+import cpath.ConsoleApplication;
 import cpath.service.api.CPathService;
 import cpath.service.api.OutputFormat;
 import cpath.service.jpa.Mapping;
@@ -44,10 +44,10 @@ import java.util.zip.GZIPOutputStream;
  */
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"admin", "premerge"})
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class ConsoleConfigurationTest
+@SpringBootTest(classes = ConsoleApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+public class ConsoleApplicationTest
 {
-  static final Logger log = LoggerFactory.getLogger(ConsoleConfigurationTest.class);
+  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationTest.class);
   static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
@@ -60,7 +60,7 @@ public class ConsoleConfigurationTest
   @DirtiesContext
   public void testPremergeAndMerge() throws IOException {
     //test env. sanity quick-test
-    assertEquals("PathwayCommonsDemo10", service.settings().exportArchivePrefix());
+    assertEquals("PathwayCommonsDemo11", service.settings().exportArchivePrefix());
 
     //should not fail:
     service.settings().getOrganismTaxonomyIds();

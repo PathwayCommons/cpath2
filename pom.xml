@@ -15,18 +15,18 @@
     <name>Pathway Commons builder and server</name>
     <groupId>pathwaycommons</groupId>
     <artifactId>cpath2</artifactId>
-    <version>10.0.0-SNAPSHOT</version>
+    <version>11.0.0-SNAPSHOT</version>
     <description>Biological pathways/interactions data integration and services</description>
     <url>https://pathwaycommons.github.io/cpath2</url>
     <inceptionYear>2009</inceptionYear>
 
     <properties>
         <java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <start-class>cpath.Application</start-class>
         <maven.version.range>[3.0,4)</maven.version.range>
         <license.licenseName>MIT License</license.licenseName>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <lucene.version>6.5.0</lucene.version>
         <h2.version>1.4.197</h2.version>
         <paxtools.version>5.1.0-SNAPSHOT</paxtools.version>
@@ -36,11 +36,6 @@
         <commons-lang.version>3.4</commons-lang.version>
         <collections-generic.version>4.01</collections-generic.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <httpclient.version>4.5.5</httpclient.version>
-        <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-        <doxia-integration-tools.version>1.7.4</doxia-integration-tools.version>
-        <wagon-ssh.version>2.8</wagon-ssh.version>
-        <wagon-scm.version>2.8</wagon-scm.version>
         <github.global.server>github</github.global.server>
     </properties>
 
@@ -255,8 +250,7 @@
                                 <bannedDependencies>
                                     <searchTransitive>true</searchTransitive>
                                     <excludes>
-                                        <exclude>javassist:javassist</exclude><!-- org.javassist is the
-											new one -->
+                                        <exclude>javassist:javassist</exclude><!-- org.javassist is the new one -->
                                         <exclude>commons-logging</exclude>
                                         <exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
                                         <exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
@@ -269,6 +263,7 @@
                                         <exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
                                         <exclude>commons-collections:3.2.1</exclude>
                                         <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+                                        <exclude>javax.servlet:servlet-api</exclude>
                                     </excludes>
                                 </bannedDependencies>
                                 <requireMavenVersion>
@@ -284,23 +279,6 @@
                 </executions>
             </plugin>
         </plugins>
-        <extensions>
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ssh</artifactId>
-                <version>${wagon-ssh.version}</version>
-            </extension>
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-scm</artifactId>
-                <version>${wagon-scm.version}</version>
-            </extension>
-            <extension>
-                <groupId>org.apache.maven.doxia</groupId>
-                <artifactId>doxia-integration-tools</artifactId>
-                <version>${doxia-integration-tools.version}</version>
-            </extension>
-        </extensions>
     </build>
 
     <dependencyManagement>
@@ -375,6 +353,11 @@
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
+                    <!--old servlet-api prevents newer embedded tomcat from starting (in spring boot 2.x app)-->
+                    <exclusion>
+                        <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -423,17 +406,6 @@
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${commons-collections.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -597,15 +569,6 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>jstl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-jasper</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <scope>runtime</scope>
@@ -634,6 +597,14 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -644,73 +615,12 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <repository>
-            <id>ossrh</id>
-            <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-    <profiles>
-        <profile>
-            <id>sonatype-release-profile</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <!--                             <autoReleaseAfterClose>true</autoReleaseAfterClose> -->
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>

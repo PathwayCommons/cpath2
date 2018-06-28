@@ -1,21 +1,43 @@
 package cpath;
 
-import cpath.service.ConsoleConfiguration;
+import cpath.service.api.CPathService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Arrays;
 
 @SpringBootApplication
 public class Application {
 
+  @Autowired
+  CPathService service;
+
   public static void main(String[] args) {
 
-    SpringApplication application = new SpringApplication(Application.class);
+    SpringApplication application;
 
-    if (args[0].equals(ConsoleConfiguration.Cmd.PREMERGE.toString())) {
-      application.setAdditionalProfiles("premerge"); //enables biopax-validator configuration
+    if (args.length==0 || Arrays.stream(args)
+      .anyMatch(ConsoleApplication.Cmd.SERVER.toString()::equalsIgnoreCase))
+    {
+      application = new SpringApplication(Application.class);
+      application.setAdditionalProfiles("web");
+    }
+    else
+    {
+      application = new SpringApplication(ConsoleApplication.class);
+      if (args[0].equals(ConsoleApplication.Cmd.PREMERGE.toString())) {
+        //enable biopax-validator configuration
+        application.setAdditionalProfiles("admin", "premerge");
+      } else {
+        application.setAdditionalProfiles("admin");
+      }
     }
 
-    application.run(args);
+    ConfigurableApplicationContext applicationContext = application.run(args);
+    CPathService service = applicationContext.getBean(CPathService.class);
+    service.init();
   }
+
 }
