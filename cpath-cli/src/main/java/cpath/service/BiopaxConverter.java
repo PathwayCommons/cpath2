@@ -7,6 +7,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import cpath.config.CPathSettings;
+import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.jsonld.JsonldBiopaxConverter;
 import org.biopax.paxtools.io.jsonld.JsonldConverter;
@@ -87,11 +88,7 @@ public class BiopaxConverter {
             "convert, yet unsupported format: " + format);
       }
     } finally { //makes sure OS is closed
-      try {
-        os.close();
-      } catch (Exception ex) {
-        log.error(ex.toString());
-      }
+      IOUtils.closeQuietly(os);
     }
   }
 
