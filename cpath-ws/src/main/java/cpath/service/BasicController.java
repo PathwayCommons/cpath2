@@ -261,14 +261,18 @@ public abstract class BasicController {
 
     service.track(ip, "all", msg);
 
-    //a hack to properly detect resulting data format in some cases
-    //(note: using URI extension for the content negotiation takes over 'accept' request header)
     String f = args.outputFormat().toLowerCase();
-    if (args instanceof Search || args instanceof TopPathways || args instanceof Traverse) {
-      if ((String.valueOf(request.getHeader("accept")).contains("application/json")
-        && !request.getRequestURI().endsWith(".xml")) || request.getRequestURI().endsWith(".json")) {
+    if (args instanceof Search || args instanceof TopPathways || args instanceof Traverse)
+    { //it's json or xml (URI extension based content negotiation is favored over the request header based)
+      String h = String.valueOf(request.getHeader("accept"));
+      if(request.getRequestURI().endsWith(".xml"))
+        f = "xml";
+      else if(request.getRequestURI().endsWith(".json"))
         f = "json";
-      }
+      else if(h.equals("null") || h.isEmpty() || h.contains("application/json"))
+        f = "json"; //default
+      else if(h.contains("application/xml"))
+        f = "xml";
     }
     service.track(ip, "format", f);
   }

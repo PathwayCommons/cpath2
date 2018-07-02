@@ -54,6 +54,6 @@ public class TopPathways extends ServiceQuery {
 
 	@Override
 	public String outputFormat() {
-		return "xml"; //default
+		return "json"; //default
 	}
 }
