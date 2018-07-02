@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @RestController
+@RequestMapping(method = RequestMethod.GET)
 //@CrossOrigin //enabled, allowed *, get/post/head by default for a spring-boot app
 public class MetadataController extends BasicController {
     

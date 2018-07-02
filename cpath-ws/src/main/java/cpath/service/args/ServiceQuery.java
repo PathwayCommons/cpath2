@@ -16,10 +16,10 @@ public abstract class ServiceQuery {
 
     @Override
     public String toString() {
-        return getCommand() + ((user!=null) ? " cli:" + user + ";" : "");
+        return cmd() + ((user!=null) ? " cli:" + user + ";" : "");
     }
 
-    public abstract String getCommand();
+    public abstract String cmd();
 
-    public abstract String getFormatName();
+    public abstract String outputFormat();
 }

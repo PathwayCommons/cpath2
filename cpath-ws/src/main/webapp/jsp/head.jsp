@@ -53,15 +53,4 @@ biologicaal networks, ontology, knowledge, analysis, cancer research, systems bi
     ga('send', 'pageview');
 </script>
 
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<%--<script async src="https://www.googletagmanager.com/gtag/js?id=${cpath.ga}"></script>--%>
-<%--<script>--%>
-    <%--window.dataLayer = window.dataLayer || [];--%>
-    <%--function gtag(){dataLayer.push(arguments);}--%>
-    <%--gtag('js', new Date());--%>
-    <%--gtag('config', '${cpath.ga}', {--%>
-        <%--'custom_map': {'dimension1':'day'}--%>
-    <%--});--%>
-    <%--gtag('event', 'view', {'day': ${cpath.today}});--%>
-<%--</script>--%>
 

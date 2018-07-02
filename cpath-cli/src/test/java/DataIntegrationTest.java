@@ -241,7 +241,7 @@ public class DataIntegrationTest {
 		assertTrue(((DataResponse)res).getData().toString().length()>0);		
 		
 		// fetch as SIF; apply only one SIF rule
-		res = service.fetch(OutputFormat.BINARY_SIF,
+		res = service.fetch(OutputFormat.SIF,
 				Collections.singletonMap("pattern","controls-production-of"),
 				false,
 				"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");

@@ -1,10 +1,9 @@
 package cpath.service.args;
 
-import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.biopax.paxtools.pattern.miner.SIFType;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
 
@@ -13,9 +12,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Get extends ServiceQuery {
-	@NotNull(message="Illegal Output Format") 
-	@Valid
+	@NotNull(message="Illegal Output Format")
 	private OutputFormat format;
+
 	// required at least one value
 	@NotEmpty(message="Provide at least one URI.")
 	private String[] uri;
@@ -64,7 +63,7 @@ public class Get extends ServiceQuery {
 		this.pattern = pattern;
 	}
 
-	public boolean getSubpw() {
+	public boolean isSubpw() {
 		return subpw;
 	}
 
@@ -85,12 +84,12 @@ public class Get extends ServiceQuery {
 	}
 
 	@Override
-	public String getCommand() {
+	public String cmd() {
 		return "get";
 	}
 
 	@Override
-	public String getFormatName() {
+	public String outputFormat() {
 		return format.name().toLowerCase();
 	}
 }

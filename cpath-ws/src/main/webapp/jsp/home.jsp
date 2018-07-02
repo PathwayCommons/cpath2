@@ -3,8 +3,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat
-or the fat JAR with embedded application server was started) -->
 
 <!DOCTYPE html>
 <html>
@@ -24,11 +22,11 @@ or the fat JAR with embedded application server was started) -->
 	</blockquote>
   </div>
 
-  <h2>The Web API</h2>
+  <h2>RESTful Web Service API</h2>
 
   <div class="row">	
 	<div class="jumbotron">
-	<h3>Web service commands</h3>
+	<h3>Core Commands</h3>
 	<blockquote><p>To query the integrated biological pathway database,
 	application developers can use the following commands:</p></blockquote>
 	<ul id="commands" title="Main commands">
@@ -38,26 +36,13 @@ or the fat JAR with embedded application server was started) -->
 		<li><a href="#traverse">TRAVERSE</a></li>
 		<li><a href="#top_pathways">TOP_PATHWAYS</a></li>
 	</ul>
-	<blockquote><p>Please check the availability terms of 
-		<a href="datasources">contributing databases</a>.</p>
+	<blockquote>
+		<p>Please check the availability terms of <a href="datasources">contributing databases</a>.
+		</p>
 	</blockquote>
 	</div>
   </div>
-	
-  <div class="row">	
-	<h4>Metadata, etc.</h4>
-	<p>There are a number of "undocumented" URLs (subject to change without notice)  
-		providing metadata, files, scripts and images for creating and maintaining 
-		this website. Nevertheless, advanced users may find the following examples useful:
-	</p>
-	<ul>
-		<li>XML schema, BioPAX types and properties, e.g., /help/schema, /help/types;</li>
-		<li><em>/metadata/datasources</em> - gets the metadata in JSON format;</li>
-		<li><em>/metadata/datasources/reactome</em> - gets the data source (e.g., reactome) metadata;</li>
-	</ul>
-	<p>Fore more information, please contact us.</p>
-  </div>
-  
+
 	<div class="row" id="notes">
 	<h3>Notes</h3>
 		<h4><a id="about_uris"></a>About URIs and IDs</h4>
@@ -79,19 +64,7 @@ or the fat JAR with embedded application server was started) -->
 		As a rule of thumb, using full URIs makes a precise query, whereas using the identifiers makes a
 		more exploratory one, which depends on full-text search (index) and id-mapping.
 		</p>
-
-		<h4><a id="enco"></a>About example URLs</h4>
-	 	<p>Normally, instead of submitting a typically complex URL query via a browser address line, 
-	 	one should find or develop a convenient bioinformatic application, such as Cytoscape, PCViz, ChIBE,  
-	 	or script that uses the web API and a standard client-side software library. Nevertheless, 
-	 	this page includes web links one can simply click to submit an example query and view results.
-		This works because examples are simple queries, and parameters, 
-		such as a long URI or Lucene query string, were properly (manually) URL-encoded. 
-		<strong>We also recommend using HTTP POST method instead of GET</strong> 
-		(to avoid errors at the browser or web server layers with e.g. caching, encoding, too long URL). 
-		Finally, URIs are case-sensitive and contain no spaces.</p>
 	</div>
-	<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="search">
 	<h3>SEARCH:</h3>
@@ -110,11 +83,11 @@ or the fat JAR with embedded application server was started) -->
 		(with '/graph', '/traverse', '/get' commands). Search strings are case insensitive unless put inside quotes.
 	</p></blockquote>
 	<h4>Returns:</h4> 	
-	<p>The specified or first page of the ordered list of BioPAX individuals that match the search criteria
-	(the results page size is configured on the server and returned with every result, as an attribute). 
-	The results (hits) are returned as <a href="help/schema">Search Response XML Schema</a> instance (XML document). 
-	JSON format can be requested by ending the query with ‘.json’ (e.g. '/search.json') or 
-	setting HTTP request header 'Accept: application/json' (how - depends on one's client-side API).
+	<p>ordered list of BioPAX individuals that match the search criteria
+	(the page size, 'maxHitsPerpage' is configured on the server).
+	The results (hits) are returned either as JSON or XML (<a href="help/schema">Search Response XML Schema</a>) document,
+	which can be requested by using '.json' (e.g. '/search.json') or '.xml' extension/suffix or via
+	HTTP request header 'Accept: application/json' (or application/json).
 	</p>
 	<h4 id="search_parameters">Parameters:</h4>
 	<ul>
@@ -141,39 +114,18 @@ or the fat JAR with embedded application server was started) -->
 	</ul>
 	<h4>Examples:</h4> <br/>
 	<ol>
-		<li><a rel="nofollow" href="search.xml?q=Q06609">A basic text search. This query returns all entities
-			that contain the "Q06609" keyword in XML</a></li>
-		<li><a rel="nofollow" href="search.json?q=Q06609"> Same query returned in JSON format</a></li>
-		<li><a rel="nofollow" href="search?q=xrefid:Q06609">This query returns entities
-			"Q06609" only in the 'xrefid' index field in XML </a></li>
-		<li><a rel="nofollow" href="search.json?q=Q06609&type=pathway">Search for
-			Pathways containing "Q06609" (search all fields), return JSON</a></li>
-		<li><a rel="nofollow" href='search?q=xrefid:"BMP2"&type=pathway&datasource=reactome'>Search for
-			Reactome pathways containing a participant with xref.id="BMP2" (search 'xrefid' index field only)</a></li>
-		<li><a rel="nofollow" href="search?q=xrefid:CHEBI?16236&type=pathway">Search for
-			Pathways associated with "CHEBI:16236" participant (search specifically in 'xrefid' index)</a></li>
+		<li><a rel="nofollow" href="search.xml?q=FGFR2">Find things that contain "FGFR2" keyword; request XML format</a></li>
 		<li><a rel="nofollow"
-		       href='search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid'>Search
-			for ProteinReference entries that contain "brca2" keyword in any indexed field, return only human
-			proteins from NCI Pathway Interaction Database</a></li>
+		       href='search?q=FGFR2&type=pathway'>Find pathways by FGFR2 keyword in any index field</a></li>
 		<li><a rel="nofollow"
-		       href="search.xml?q=name:'col5a1'&type=proteinreference&organism=9606">Similar to search above,
-			but searches specifically in the "name" field</a></li>
+		       href="search?q=xrefid:FGFR2&type=proteinreference">Search in 'xrefid' index, filter by protein reference type</a></li>
+		<li><a rel="nofollow" href="search?q=*&page=2">Pagination example: get the third page of all indexed elements</a></li>
 		<li><a rel="nofollow"
-		       href="search?q=brc*&type=control&organism=9606&datasource=reactome">This query
-			uses wildcard notation to match any Control interactions that has a word that starts with "brc" in any of
-			its indexed fields. The results are restricted to human interactions from the Reactome database.</a></li>
-		<li><a rel="nofollow" href="search?q=a*&page=3">An example use of pagination. This query returns the
-			the fourth page (page=3) for all elements that have an indexed word that starts with "a"</a></li>
-		<li><a rel="nofollow"
-		       href="search?q=+binding%20NOT%20transcription*&type=control&page=0">This query finds Control
-			interactions that contain the word "binding" but not "transcription" in their indexed fields, explicitly
-			request the first page.</a></li>
-		<li><a rel="nofollow" href="search?q=pathway:immune*&type=conversion">This query finds all
-			interactions that directly or indirectly participate in a pathway that has a keyword match for "immune"
-			. </a></li>
-		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
-			all Reactome pathways</a></li>
+		       href="search?q=+binding%20NOT%20transcription*&type=control">Finds Control
+			interactions that contain the word "binding" but not "transcription" in their indexed fields</a></li>
+		<li><a rel="nofollow" href="search?q=pathway:immune*&type=conversion">Find all
+			interactions that directly or indirectly participate in a pathway that has a keyword match for "immune"</a></li>
+		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">All Reactome pathways</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -208,46 +160,39 @@ or the fat JAR with embedded application server was started) -->
 	</ul>
 	<h4>Output:</h4> BioPAX (default) representation for the record(s) pointed to by the given URI(s) is returned. 
 	Other output formats are produced on demand by converting from the BioPAX and can be specified using the optional format parameter. 
-	Please be advised that with some output formats it might return a "no result found" error if the conversion is not applicable 
-	to the particular BioPAX result. For example, BINARY_SIF output is only possible if there are some interactions, complexes, or pathways 
+	With some output formats, it might return no data (empty result) if the conversion is not applicable
+	to the BioPAX model. For example, SIF output is only possible if there are some interactions, complexes, or pathways
 	in the retrieved set.
 	<h4>Examples:</h4>
 	<ol>
-		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609">
-			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong>'s sub-model).
-		</li>
 		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609&format=JSONLD">
-			Gets the JSON-LD representation of Q06609</a> of the ProteinReference.
+			Gets the JSON-LD representation of Q06609</a> ProteinReference.
 		</li>
-		<li><a rel="nofollow" href="get?uri=COL5A1">Find/get by HUGO gene symbol COL5A1</a> - returns BioPAX entities.
-			<strong>Note:</strong> unlike the first example, it first performs a full-text search for physical entities
-			and genes by using 'xrefid:COL5A1' query, and then gets the COL5A1 (P20908) related BioPAX entities.
+		<li><a rel="nofollow" href="get?uri=FGFR2&format=gsea">This /get query</a>,
+			unlike previous one, first performs full-text search by 'xrefid:FGFR2',
+			and then converts result physical entities and genes (BioPAX sub-model) to GSEA GMT format.
 		</li>
 		<li><a rel="nofollow" href="get?uri=http://identifiers.org/reactome/R-HSA-201451">
-			Get the Signaling by BMP <strong>Pathway</strong></a> 
+			Get the 'Signaling by BMP' Pathway </a>
 			(<a rel="nofollow" href="http://identifiers.org/reactome/R-HSA-201451">R-HSA-201451</a>,
-			format: BioPAX, source: Reactome).
+			format: BioPAX, source: Reactome, human).
 		</li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="graph">
-	<h3>GRAPH:</h3> 
+	<h3>GRAPH:</h3>
 	<blockquote><p>
 	Graph searches are useful for finding connections and neighborhoods of elements, such as the
 	shortest path between two proteins or the neighborhood for a particular protein state or all states. Graph
 	searches consider detailed BioPAX semantics, such as generics or nested complexes, and traverse the graph
-	accordingly. The starting points can be either physical entites, entity references, or xrefs. In the latter two cases,
-	the graph search starts from ALL the physical entities that belong to that particular canonical reference, 
-	i.e. from all the molecular states.
-	Note that we integrate BioPAX data from multiple databases based on our protein and small molecule data warehouse
-	and consistently normalize UnificationXref, EntityReference, Provenance, BioSource, and ControlledVocabulary
-	objects when we are absolutely sure that two objects of the same type are equivalent. We, however, do not merge
-	physical entities and reactions from different sources, as accurately matching and aligning pathways at that level is still an
+	accordingly. Note that we integrate data from multiple databases and consistently normalize UnificationXref,
+	EntityReference, Provenance, BioSource, and ControlledVocabulary objects when we are absolutely sure that
+	two objects of the same type are equivalent. We, however, do not merge physical entities and processes
+	from different sources, as accurately matching and aligning pathways at that level is still an
 	open research problem. As a result, graph searches can return several similar but disconnected sub-networks that 
-	correspond to the pathway data from different providers (though some physical entities often refer to the 
-	same small molecule or protein reference or controlled vocabulary).</p></blockquote>
+	correspond to the pathway data from different providers.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
 		<li><em>kind=</em> [Required] graph query (<a
@@ -285,28 +230,27 @@ or the fat JAR with embedded application server was started) -->
 		</li>
 	</ul>
 	<h4>Output:</h4> 
-	By default, graph queries return a complete BioPAX representation of the
-	subnetwork matched by the algorithm. Other output formats are available as specified
-	by the optional format parameter. Please be advised that some output
-	format choices might cause a "no result found" error if the conversion is not applicable for the BioPAX result 
+	By default, it returns a BioPAX representation of the sub-network matched by the algorithm.
+	Other output formats are available as specified by the optional format parameter.
+	Some output format choices result in no data if the conversion is not applicable to the result BioPAX model
 	(e.g., BINARY_SIF output fails if there are no interactions, complexes, nor pathways in the retrieved set).
 	<h4>Examples:</h4> 
-	Neighborhood of COL5A1 (P20908, CO5A1_HUMAN):
+	Neighborhood of COL5A1 (P20908):
 	<ol>
 		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=SIF">
-			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
-			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
+			BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e.,
+			all reactions where the corresponding protein forms participate; returned as SIF</li>
 		<li><a rel="nofollow" href="graph?source=P20908&kind=neighborhood">
-			This query finds the 1 distance neighborhood of P20908</a> - starting from the corresponding Xref, 
+			Nearest neighborhood of P20908</a> - starting from the corresponding Xref,
 			finds all reactions that its owners (e.g., a protein reference) and their states (protein forms) 
-			participate in, and returns the BioPAX model.</li>		
+			participate in, and returns the BioPAX model.</li>
 		<li><a rel="nofollow" href="graph?source=COL5A1&kind=neighborhood">
 			A similar query using the gene symbol COL5A1 instead of URI or UniProt ID</a> 
-			(this performs internal full-text search / id-mapping). Compared with above examples,
-			particularly the first one, a query like this potentially returns a larger sub-network, as
+			(performs full-text search and id-mapping internally). Compared with other examples,
+			a query like this potentially returns a larger sub-network, as
 			it possibly starts graph traversing from multiple matching entities (seeds)
-			rather than from a single ProteinReference (http://identifiers.org/uniprot/P20908).
-			One can mix: e.g., submit URIs along with UniProt, NCBI Gene, ChEBI IDs in a single /graph or /get query;
+			rather than from a single ProteinReference.
+			One can mix URIs along with UniProt, NCBI Gene, ChEBI IDs in a single /graph or /get query;
 			other identifier types may also work. See: <a href="#about_uris">about URIs and IDs</a>.
 		</li>
 	</ol>
@@ -316,11 +260,12 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="traverse">
 	<h3>TRAVERSE:</h3>
 	<blockquote><p>
-	Provides XPath-like access to this BioPAX database. With '/traverse', users can
+	XPath-like access to our BioPAX db. With '/traverse', users can
 	explicitly state the paths they would like to access. The format of the path parameter value:
 	<em>[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...</em>
 	A "*" sign after the property instructs the path accessor to transitively traverse that property.
-	For example, the following path accessor will traverse through all physical entity components within a complex:
+	For example, the following path accessor will traverse through all physical entity components a complex,
+	including components of nested complexes, if any:
 	<em>Complex/component*/entityReference/xref:UnificationXref</em>. 
 	The following will list the display names of all participants of interactions, 
 	which are pathway components of a pathway: <em>Pathway/pathwayComponent:Interaction/participant*/displayName</em>.
@@ -328,7 +273,7 @@ or the fat JAR with embedded application server was started) -->
 	In the first example above, this is used to get only the unification xrefs. 
 	<a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
 	Path accessors</a> can use all the official BioPAX properties as well as additional derived classes 
-	and parameters, such as inverse parameters and interfaces that represent anonymous union classes in OWL. 
+	and parameters, such as inverse parameters and interfaces that represent anonymous union classes in BioPAX OWL.
 	(See <a href="http://www.biopax.org/paxtools/">Paxtools documentation</a> for more details).
 	</p></blockquote>
 	<h4>Parameters:</h4>
@@ -349,7 +294,7 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Output:</h4>
 	XML result according to the <a href="help/schema">Search Response XML
 	Schema</a>&nbsp;(TraverseResponse type; pagination is disabled to return all values at once)<br/>
-	<h4>Examples:</h4>
+	<h4>Examples (using human data):</h4>
 	<ol>
 		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
@@ -366,9 +311,7 @@ or the fat JAR with embedded application server was started) -->
 			This query returns the URIs of states of BRCA1_HUMAN</a></li>
 		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
-			This query returns the names of several different objects (using abstract type 'Named' from Paxtools
-			API)</a></li>
-	
+			This query returns the names of several different objects (using abstract type 'Named' from Paxtools API)</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -376,9 +319,8 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="top_pathways">
 	<h3>TOP_PATHWAYS:</h3>
 	<blockquote><p>
-	Returns all "top" pathways - pathways that are neither
-	'controlled' nor a 'pathwayComponent' of another biological process, excluding "pathways" having
-	less than three components, none of which being a non-empty sub-pathway.</p></blockquote>
+	Returns all root pathways - pathways that are neither
+	'controlled' nor a 'pathwayComponent' of another biological process, excluding trivial ones.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
 		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string,
@@ -404,7 +346,7 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="parameter_values">
 	<h2>Parameter Values</h2>
 	<div class="parameters row" id="organisms">
-		<h3>Officially supported organisms</h3>
+		<h3>Organisms</h3>
 		<p>We intend to integrate pathway data only for the following species:</p>
 		<ul>
 			<c:forEach var="org" items="${cpath.organisms}">

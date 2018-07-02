@@ -29,6 +29,7 @@ import javax.validation.Valid;
  * @author rodche
  */
 @RestController
+@RequestMapping(method = RequestMethod.GET)
 public class BiopaxModelController extends BasicController {
 
 	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
@@ -50,7 +51,7 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-		binder.registerCustomEditor(SIFType.class, new SIFTypeEditor());
+				binder.registerCustomEditor(SIFType.class, new SIFTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
@@ -68,7 +69,7 @@ public class BiopaxModelController extends BasicController {
 			if(args.getPattern()!=null && args.getPattern().length>0) {
 				options.put("pattern", StringUtils.join(args.getPattern(), ","));
 			}
-			ServiceResponse result = service.fetch(args.getFormat(), options, args.getSubpw(), uris);
+			ServiceResponse result = service.fetch(args.getFormat(), options, args.isSubpw(), uris);
 			stringResponse(args, result, request, response);
 		}
     }  
@@ -141,19 +142,19 @@ public class BiopaxModelController extends BasicController {
 		switch (args.getKind()) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(args.getFormat(), formatOptions, args.getSource(),
-				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
+				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.isSubpw());
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(args.getFormat(), formatOptions, args.getSource(),
-				args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
+				args.getLimit(), args.getOrganism(), args.getDatasource(), args.isSubpw());
 			break;
 		case PATHSFROMTO:
 			result = service.getPathsFromTo(args.getFormat(), formatOptions, args.getSource(),
-				args.getTarget(), args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
+				args.getTarget(), args.getLimit(), args.getOrganism(), args.getDatasource(), args.isSubpw());
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(args.getFormat(), formatOptions, args.getSource(),
-				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
+				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.isSubpw());
 			break;
 		default:
 			// impossible (should have failed earlier)

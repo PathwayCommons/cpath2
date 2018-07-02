@@ -28,6 +28,7 @@
   <logger name="psidev.psi.mi" level="error" />
   <logger name="org.biopax.paxtools.impl" level="error" />
   <logger name="org.biopax.paxtools.util.BPCollections" level="info" />
+  <logger name="org.apache.tomcat.util.scan" level="error"/>
  
   <root level="info">
     <appender-ref ref="file" />
