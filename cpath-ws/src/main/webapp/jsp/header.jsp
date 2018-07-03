@@ -14,15 +14,14 @@
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
 				 <img alt="Project Team Logo" src="${cpath.logoUrl}" id="team-logo"/>&nbsp;
-				 <c:out value="${cpath.name} Web Service v${cpath.version}"/>&nbsp;
-				 <c:if test="${cpath.adminEnabled}"><strong>(Maintenance mode)</strong></c:if>
+				 <c:out value="${cpath.name} Web Service v${cpath.version}"/>
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
 					<li><a href="<spring:url value='/home'/>">About</a></li>
 					<li><a href="<spring:url value='/datasources'/>">Providers</a></li>
-					<li><a href="<spring:url value='/downloads'/>">Downloads</a></li>
+					<li><a href="${cpath.url}/archives">Downloads</a></li>
                   </ul>
           	  </div> <!-- collapse -->
       </div> <!-- container -->

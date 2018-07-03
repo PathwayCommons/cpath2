@@ -37,7 +37,8 @@
 		<li><a href="#top_pathways">TOP_PATHWAYS</a></li>
 	</ul>
 	<blockquote>
-		<p>Please check the availability terms of <a href="datasources">contributing databases</a>.
+		<p>Please check the availability terms of <a href="datasources">contributing databases</a>.<br/>
+			<strong>Please see also the <a href="swagger">Swagger</a> auto-generated documentation.</strong>
 		</p>
 	</blockquote>
 	</div>
@@ -72,7 +73,7 @@
 		A full-text search in this BioPAX database using the <a
 		href="http://lucene.apache.org/core/4_10_4/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#package_description">
 		Lucene query syntax</a>.
-		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefid, datasource, organism</em>
+		Index fields (case-sensitive): <em>uri, keyword, name, pathway, xrefid, datasource, organism</em>
 		(some of these are BioPAX properties, while others are composite relationships), can be optionally used in a query string.
 		For example, the <em>pathway</em> index field helps find pathway participants by keywords that match their parent pathway  
 		names or identifiers; <em>xrefid</em> finds objects by matching its direct or 'attached to a child element' Xrefs;
@@ -191,8 +192,7 @@
 	EntityReference, Provenance, BioSource, and ControlledVocabulary objects when we are absolutely sure that
 	two objects of the same type are equivalent. We, however, do not merge physical entities and processes
 	from different sources, as accurately matching and aligning pathways at that level is still an
-	open research problem. As a result, graph searches can return several similar but disconnected sub-networks that 
-	correspond to the pathway data from different providers.</p></blockquote>
+	open research problem.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
 		<li><em>kind=</em> [Required] graph query (<a
@@ -319,8 +319,8 @@
 <div class="row nav-target" id="top_pathways">
 	<h3>TOP_PATHWAYS:</h3>
 	<blockquote><p>
-	Returns all root pathways - pathways that are neither
-	'controlled' nor a 'pathwayComponent' of another biological process, excluding trivial ones.</p></blockquote>
+	Finds root pathways - that are neither 'controlled' nor a 'pathwayComponent' of another biological process,
+		excluding trivial ones.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
 		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string,

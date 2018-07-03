@@ -2,21 +2,15 @@ package cpath.service;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Map;
-import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.web.ErrorController;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -47,6 +41,11 @@ public class PagesController extends BasicController
     return "home";
   }
 
+  @RequestMapping("/swagger")
+  public String swagger() {
+    return "redirect:swagger-ui.html";
+  }
+
   @RequestMapping("/formats")
   public String getOutputFormatsDescr() {
     return "formats";
@@ -66,33 +65,6 @@ public class PagesController extends BasicController
   @Override
   public String getErrorPath() {
     return "/error";
-  }
-
-  @RequestMapping("/downloads")
-  public String downloads(Model model, HttpServletRequest request) {
-
-    // get the sorted list of files to be shared on the web
-    String path = CPathSettings.getInstance().downloadsDir();
-    File[] list = new File(path).listFiles();
-
-    Map<String, String> files = new TreeMap<String, String>();
-
-    for (int i = 0; i < list.length; i++) {
-      File f = list[i];
-      String name = f.getName();
-      long size = f.length();
-
-      if (!name.startsWith(".")) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
-        files.put(name, sb.toString());
-      }
-    }
-
-    model.addAttribute("files", files.entrySet());
-    model.addAttribute("prefix", cpath.exportArchivePrefix());
-
-    return "downloads";
   }
 
   // OTHER resources
@@ -115,11 +87,6 @@ public class PagesController extends BasicController
     }
 
     return iconData;
-  }
-
-  @RequestMapping("/tests")
-  public String tests() {
-    return "tests";
   }
 
 

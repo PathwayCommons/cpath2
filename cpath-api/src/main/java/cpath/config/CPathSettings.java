@@ -121,6 +121,7 @@ public final class CPathSettings
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://pathwaycommons.org/test/");
+		defaults.put(PROVIDER_URL, "http://www.pathwaycommons.org");
 		defaults.put(PROVIDER_NAME, "Pathway Commons demo");
 		defaults.put(PROVIDER_VERSION, "0");
 		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
@@ -131,6 +132,7 @@ public final class CPathSettings
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
 		defaults.put(PROVIDER_GA,"UA-43341809-10"); //beta PC2 service tracking
+    defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "100");
 		//default settings
 		settings = new Properties(defaults);
 	}

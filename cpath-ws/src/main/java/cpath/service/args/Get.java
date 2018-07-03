@@ -1,9 +1,9 @@
 package cpath.service.args;
 
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 
-import org.biopax.paxtools.pattern.miner.SIFType;
+import io.swagger.annotations.ApiParam;
+import org.biopax.paxtools.pattern.miner.SIFEnum;
 
 import cpath.service.OutputFormat;
 
@@ -12,15 +12,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Get extends ServiceQuery {
-	@NotNull(message="Illegal Output Format")
+//  @NotNull(message="Provide at least one URI.")
+  @ApiParam(value = "Output format name.",required = false,
+    example = "JSONLD",defaultValue = "BIOPAX")
 	private OutputFormat format;
 
 	// required at least one value
 	@NotEmpty(message="Provide at least one URI.")
+	@ApiParam(value = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
+    required = true, example = "FGFR2")
 	private String[] uri;
 
-	private SIFType[] pattern;
+  @ApiParam(value="If format is SIF or TXT, one can specify interaction types to apply " +
+    "(by default it uses all the build-in patterns but 'neighbor-of')",
+  required = false, example = "interacts-with")
+	private SIFEnum[] pattern;
 
+  @ApiParam(value = "For the 'get' and 'graph' queries, whether to skip or not traversing into sub-pathways " +
+    "in the result BioPAX sub-model.", defaultValue = "false")
 	private boolean subpw;
 	
 	public Get() {
@@ -55,11 +64,11 @@ public class Get extends ServiceQuery {
 	}
 
 	//SIF Types
-	public SIFType[] getPattern() {
+	public SIFEnum[] getPattern() {
 		return pattern;
 	}
 
-	public void setPattern(SIFType[] pattern) {
+	public void setPattern(SIFEnum[] pattern) {
 		this.pattern = pattern;
 	}
 

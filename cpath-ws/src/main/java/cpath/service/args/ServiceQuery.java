@@ -1,25 +1,29 @@
 package cpath.service.args;
 
+import io.swagger.annotations.ApiParam;
+
 /**
  * Created by igor on 23/06/16.
  */
 public abstract class ServiceQuery {
-    private String user;
 
-    public String getUser() {
-        return user;
-    }
+  @ApiParam(value = "User or app name (for service analytics)", required = false)
+  private String user;
 
-    public void setUser(String user) {
-        this.user = user;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    @Override
-    public String toString() {
-        return cmd() + ((user!=null) ? " cli:" + user + ";" : "");
-    }
+  public void setUser(String user) {
+    this.user = user;
+  }
 
-    public abstract String cmd();
+  @Override
+  public String toString() {
+    return cmd() + ((user != null) ? " cli:" + user + ";" : "");
+  }
 
-    public abstract String outputFormat();
+  public abstract String cmd();
+
+  public abstract String outputFormat();
 }
