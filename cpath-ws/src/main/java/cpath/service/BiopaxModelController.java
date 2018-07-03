@@ -28,6 +28,7 @@ import javax.validation.Valid;
  * cPathSquared Model Access Web Service.
  */
 @RestController
+@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
 public class BiopaxModelController extends BasicController {
 
   private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
