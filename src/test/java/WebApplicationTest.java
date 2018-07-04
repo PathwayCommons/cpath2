@@ -54,8 +54,9 @@ public class WebApplicationTest {
 		assertFalse(m.getObjects().isEmpty());
 	}
 
-	//HTTP POST requests are now disabled
-	@Test
+
+	@Ignore
+	@Test //when HTTP POST requests are disabled
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		map.add("uri", "http://identifiers.org/uniprot/P27797");

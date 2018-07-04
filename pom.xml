@@ -37,7 +37,7 @@
     <collections-generic.version>4.01</collections-generic.version>
     <commons-collections.version>3.2.2</commons-collections.version>
     <github.global.server>github</github.global.server>
-    <swagger2.version>2.9.2</swagger2.version>
+    <swagger2.version>2.7.0</swagger2.version>
   </properties>
 
   <issueManagement>

@@ -4,7 +4,8 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.biopax.paxtools.pattern.miner.SIFType;
+import io.swagger.annotations.ApiParam;
+import org.biopax.paxtools.pattern.miner.SIFEnum;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.service.api.GraphType;
@@ -15,165 +16,212 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Graph extends ServiceQuery {
-	@NotNull(message="Parameter 'kind' is required.")
-	private GraphType kind; //required!
-	
-	@NotEmpty(message="Provide at least one source URI.")
-	private String[] source;
-	
-	private String[] target;
-	
-	@Min(1) //note: this allows for null
-	private Integer limit;
-	
-	private Direction direction;
-	
-	@NotNull(message="Illegal Output Format")
-	private OutputFormat format;
-	
-	private String[] organism;
-	
-	private String[] datasource;
+  @NotNull(message = "Parameter 'kind' is required.")
+  @ApiParam(
+    value = "BioPAX graph traversal type.",
+    required = true,
+    example = "PATHSBETWEEN"
+  )
+  private GraphType kind; //required!
 
-	private SIFType[] pattern;
+  @NotEmpty(message = "Provide at least one source URI.")
+  @ApiParam(
+    value = "Source BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
+    required = true,
+    example = "TP53"
+  )
+  private String[] source;
 
-	private boolean subpw;
+  @ApiParam(
+    value = "Target BioPAX entity URIs or standard identifiers (e.g., gene symbols);this parameter works only with kind=PATHSFROMTO graph queries.",
+    required = false,
+    example = "TP53"
+  )
+  private String[] target;
 
-	public Graph() {
-		format = OutputFormat.BIOPAX; // default
-		limit = 1;
-		subpw = false;
-	}
+  @Min(1) //note: this allows for null
+  @ApiParam(
+    value = "Graph search distance limit",
+    required = false,
+    defaultValue = "1"
+  )
+  private Integer limit;
 
-	public OutputFormat getFormat() {
-		return format;
-	}
+  @ApiParam(
+    value = "Graph search direction.",
+    required = false,
+    defaultValue = "UNDIRECTED",
+    example = "BOTHSTREAM"
+  )
+  private Direction direction;
 
-	public void setFormat(OutputFormat format) {
-		this.format = format;
-	}
+  @NotNull(message = "Illegal Output Format")
+  @ApiParam(
+    value = "Output format name.",
+    required = false,
+    defaultValue = "BIOPAX"
+  )
+  private OutputFormat format;
 
-	public GraphType getKind() {
-		return kind;
-	}
+  @ApiParam(
+    value = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+    example = "9606"
+  )
+  private String[] organism;
 
-	public void setKind(GraphType kind) {
-		this.kind = kind;
-	}
+  @ApiParam(
+    value = "Filter by data source name, id or uri.",
+    example = "reactome"
+  )
+  private String[] datasource;
 
-	public String[] getSource() {
-		return source;
-	}
+  @ApiParam(
+    value = "If format is SIF or TXT, one can specify interaction types to apply",
+    example = "interacts-with"
+  )
+  private SIFEnum[] pattern;
 
-	public void setSource(String[] source) {
-		Set<String> uris = new HashSet<>(source.length);
-		for(String item : source) {
-			if(item.contains(",")) {
-				//split by ',' ignoring spaces and empty values (between ,,)
-				for(String id : item.split("\\s*,\\s*", -1))
-					uris.add(id);
-			} else {
-				uris.add(item);
-			}
-		}
-		this.source = uris.toArray(new String[uris.size()]);
-	}
+  @ApiParam(
+    value = "For the 'get' and 'graph' queries, whether to skip or not traversing into sub-pathways in the result BioPAX sub-model.",
+    defaultValue = "false"
+  )
+  private boolean subpw;
 
-	public String[] getTarget() {
-		return target;
-	}
+  public Graph() {
+    format = OutputFormat.BIOPAX; // default
+    limit = 1;
+    subpw = false;
+  }
 
-	public void setTarget(String[] target) {
-		Set<String> uris = new HashSet<>(target.length);
-		for(String item : target) {
-			if(item.contains(",")) {
-				//split by ',' ignoring spaces and empty values (between ,,)
-				for(String id : item.split("\\s*,\\s*", -1))
-					uris.add(id);
-			} else {
-				uris.add(item.trim());
-			}
-		}
-		this.target = uris.toArray(new String[uris.size()]);
-	}
+  public OutputFormat getFormat() {
+    return format;
+  }
 
-	public Integer getLimit() {
-		return limit;
-	}
+  public void setFormat(OutputFormat format) {
+    this.format = format;
+  }
 
-	public void setLimit(Integer limit) {
-		this.limit = limit;
-	}
+  public GraphType getKind() {
+    return kind;
+  }
 
-	public Direction getDirection() {
-		return direction;
-	}
+  public void setKind(GraphType kind) {
+    this.kind = kind;
+  }
 
-	public void setDirection(Direction direction) {
-		this.direction = direction;
-	}
+  public String[] getSource() {
+    return source;
+  }
 
-	public String[] getOrganism() {
-		return organism;
-	}
+  public void setSource(String[] source) {
+    Set<String> uris = new HashSet<>(source.length);
+    for (String item : source) {
+      if (item.contains(",")) {
+        //split by ',' ignoring spaces and empty values (between ,,)
+        for (String id : item.split("\\s*,\\s*", -1))
+          uris.add(id);
+      } else {
+        uris.add(item);
+      }
+    }
+    this.source = uris.toArray(new String[uris.size()]);
+  }
 
-	public void setOrganism(String[] organism) {
-		this.organism = organism;
-	}
+  public String[] getTarget() {
+    return target;
+  }
 
-	public String[] getDatasource() {
-		return datasource;
-	}
+  public void setTarget(String[] target) {
+    Set<String> uris = new HashSet<>(target.length);
+    for (String item : target) {
+      if (item.contains(",")) {
+        //split by ',' ignoring spaces and empty values (between ,,)
+        for (String id : item.split("\\s*,\\s*", -1))
+          uris.add(id);
+      } else {
+        uris.add(item.trim());
+      }
+    }
+    this.target = uris.toArray(new String[uris.size()]);
+  }
 
-	public void setDatasource(String[] datasource) {
-		this.datasource = datasource;
-	}
+  public Integer getLimit() {
+    return limit;
+  }
 
-	//SIF Types
-	public SIFType[] getPattern() {
-		return pattern;
-	}
+  public void setLimit(Integer limit) {
+    this.limit = limit;
+  }
 
-	public void setPattern(SIFType[] pattern) {
-		this.pattern = pattern;
-	}
+  public Direction getDirection() {
+    return direction;
+  }
 
-	public boolean getSubpw() {
-		return subpw;
-	}
+  public void setDirection(Direction direction) {
+    this.direction = direction;
+  }
 
-	public void setSubpw(boolean subpw) {
-		this.subpw = subpw;
-	}
+  public String[] getOrganism() {
+    return organism;
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(super.toString())
-			.append(" for:").append(format)
-			.append("; spw:").append(subpw)
-			.append("; src:").append(Arrays.toString(source));
-		if(target!=null && target.length>0)
-		 sb.append("; tgt:").append(Arrays.toString(target));
-		if(limit!=null)
-			sb.append("; lim:").append(limit);
-		if(organism!=null && organism.length>0)
-			sb.append("; org:").append(Arrays.toString(organism));
-		if(datasource!=null && datasource.length>0)
-			sb.append("; dts:").append(Arrays.toString(datasource));
-		if(direction!=null)
-			sb.append("; dir:").append(direction);
-		if(pattern!=null && pattern.length>0)
-			sb.append("; pat:").append(Arrays.toString(pattern));
-		return sb.toString();
-	}
+  public void setOrganism(String[] organism) {
+    this.organism = organism;
+  }
 
-	@Override
-	public String cmd() {
-		return kind.toString();
-	}
+  public String[] getDatasource() {
+    return datasource;
+  }
 
-	@Override
-	public String outputFormat() {
-		return format.name().toLowerCase();
-	}
+  public void setDatasource(String[] datasource) {
+    this.datasource = datasource;
+  }
+
+  //SIF Types
+  public SIFEnum[] getPattern() {
+    return pattern;
+  }
+
+  public void setPattern(SIFEnum[] pattern) {
+    this.pattern = pattern;
+  }
+
+  public boolean getSubpw() {
+    return subpw;
+  }
+
+  public void setSubpw(boolean subpw) {
+    this.subpw = subpw;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder(super.toString())
+      .append(" for:").append(format)
+      .append("; spw:").append(subpw)
+      .append("; src:").append(Arrays.toString(source));
+    if (target != null && target.length > 0)
+      sb.append("; tgt:").append(Arrays.toString(target));
+    if (limit != null)
+      sb.append("; lim:").append(limit);
+    if (organism != null && organism.length > 0)
+      sb.append("; org:").append(Arrays.toString(organism));
+    if (datasource != null && datasource.length > 0)
+      sb.append("; dts:").append(Arrays.toString(datasource));
+    if (direction != null)
+      sb.append("; dir:").append(direction);
+    if (pattern != null && pattern.length > 0)
+      sb.append("; pat:").append(Arrays.toString(pattern));
+    return sb.toString();
+  }
+
+  @Override
+  public String cmd() {
+    return kind.toString();
+  }
+
+  @Override
+  public String outputFormat() {
+    return format.name().toLowerCase();
+  }
 }

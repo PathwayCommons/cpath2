@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class PagesController extends BasicController
 {
 
-	@RequestMapping({"/","/home","/index"})
+	@RequestMapping({"/","/home","/index", "/swagger"})
 	public String home() {
-		return "index";
+		return "redirect:swagger-ui.html";
 	}
 
 	@RequestMapping("/formats")
@@ -67,11 +67,6 @@ public class PagesController extends BasicController
 			"Disallow: /archives\n" +
 			"Disallow: /help\n" +
 			"Disallow: /metadata\n";
-	}
-
-	@RequestMapping("/swagger")
-	public String swagger() {
-		return "redirect:swagger-ui.html";
 	}
 
 }

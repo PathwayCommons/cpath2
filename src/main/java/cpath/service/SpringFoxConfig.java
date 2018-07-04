@@ -35,6 +35,7 @@ public class SpringFoxConfig {
       .apis(RequestHandlerSelectors.withClassAnnotation(RestController.class))
             .paths(PathSelectors.any())
       .build()
+      .useDefaultResponseMessages(false)
       .apiInfo(getApiInfo());
   }
 
@@ -43,7 +44,7 @@ public class SpringFoxConfig {
       settings.getName() + " " + settings.getVersion(),
       "cPath2 RESTful web services",
       "11",
-      null, //"https://PathwayCommons.github.com/cpath2/",
+      null,
       new Contact("Pathway Commons",
         "http://www.pathwaycommons.org",
         "pathway-commons-help@googlegroups.com"

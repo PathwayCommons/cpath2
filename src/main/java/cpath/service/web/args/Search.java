@@ -3,82 +3,109 @@ package cpath.service.web.args;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 
+import io.swagger.annotations.ApiParam;
 import org.biopax.paxtools.model.BioPAXElement;
 
 import java.util.Arrays;
 
 public class Search extends ServiceQuery {
-	@NotBlank(message="Parameter 'q' (a Lucene query string) is blank (not specified).")
-	private String q;
-	private Class<? extends BioPAXElement> type;
-	private String[] organism;
-	private String[] datasource;
-	@Min(0)
-	private Integer page;
+  @NotBlank(message = "Parameter 'q' (a Lucene query string) is blank (not specified).")
+  @ApiParam(
+    value = "Query string (full-text search supports Lucene query syntax).",
+    required = true,
+    example = "xrefid:FGF*"
+  )
+  private String q;
 
-	public Search() {
-		page = 0;
-	}
+  @ApiParam(
+    value = "Filter by BioPAX L3 class name (case-insensitive).",
+    example = "pathway"
+  )
+  private Class<? extends BioPAXElement> type;
 
-	public String getQ() {
-		return q;
-	}
+  @ApiParam(
+    value = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+    example = "9606"
+  )
+  private String[] organism;
 
-	public void setQ(String q) {
-		this.q = q;
-	}
+  @ApiParam(
+    value = "Filter by data source name, id or uri.",
+    example = "reactome"
+  )
+  private String[] datasource;
 
-	public Class<? extends BioPAXElement> getType() {
-		return type;
-	}
+  @Min(0)
+  @ApiParam(
+    value = "Pagination: page number (>=0) of the full-text search results.",
+    example = "0",
+    required = false
+  )
+  private Integer page;
 
-	public void setType(Class<? extends BioPAXElement> type) {
-		this.type = type;
-	}
+  public Search() {
+    page = 0;
+  }
 
-	public String[] getOrganism() {
-		return organism;
-	}
+  public String getQ() {
+    return q;
+  }
 
-	public void setOrganism(String[] organism) {
-		this.organism = organism;
-	}
+  public void setQ(String q) {
+    this.q = q;
+  }
 
-	public String[] getDatasource() {
-		return datasource;
-	}
+  public Class<? extends BioPAXElement> getType() {
+    return type;
+  }
 
-	public void setDatasource(String[] datasource) {
-		this.datasource = datasource;
-	}
+  public void setType(Class<? extends BioPAXElement> type) {
+    this.type = type;
+  }
 
-	public Integer getPage() {
-		return page;
-	}
+  public String[] getOrganism() {
+    return organism;
+  }
 
-	public void setPage(Integer page) {
-		this.page = page;
-	}
+  public void setOrganism(String[] organism) {
+    this.organism = organism;
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(super.toString()).append(" q:").append(q).append("; p:").append(page);
-		if(type!=null)
-			sb.append("; t:").append(type.getSimpleName());
-		if(organism!=null && organism.length>0)
-			sb.append("; org:").append(Arrays.toString(organism));
-		if(datasource!=null && datasource.length>0)
-			sb.append("; dts:").append(Arrays.toString(datasource));
-		return sb.toString();
-	}
+  public String[] getDatasource() {
+    return datasource;
+  }
 
-	@Override
-	public String cmd() {
-		return "search";
-	}
+  public void setDatasource(String[] datasource) {
+    this.datasource = datasource;
+  }
 
-	@Override
-	public String outputFormat() {
-		return "xml"; //default
-	}
+  public Integer getPage() {
+    return page;
+  }
+
+  public void setPage(Integer page) {
+    this.page = page;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder(super.toString()).append(" q:").append(q).append("; p:").append(page);
+    if (type != null)
+      sb.append("; t:").append(type.getSimpleName());
+    if (organism != null && organism.length > 0)
+      sb.append("; org:").append(Arrays.toString(organism));
+    if (datasource != null && datasource.length > 0)
+      sb.append("; dts:").append(Arrays.toString(datasource));
+    return sb.toString();
+  }
+
+  @Override
+  public String cmd() {
+    return "search";
+  }
+
+  @Override
+  public String outputFormat() {
+    return "xml"; //default
+  }
 }
