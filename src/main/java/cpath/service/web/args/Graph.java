@@ -217,7 +217,7 @@ public class Graph extends ServiceQuery {
 
   @Override
   public String cmd() {
-    return kind.toString();
+    return (kind != null) ? kind.toString() : "graph";
   }
 
   @Override
