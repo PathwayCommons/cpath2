@@ -14,7 +14,7 @@
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
 				 <img alt="Project Team Logo" src="${cpath.logo}" id="team-logo"/>&nbsp;
-				 <c:out value="${cpath.name} Web Service v${cpath.version}"/>&nbsp;
+				 <c:out value="${cpath.name} Web Service ${cpath.version}"/>&nbsp;
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
