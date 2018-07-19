@@ -29,11 +29,12 @@ public class WebApplication implements WebMvcConfigurer
     ;
   }
 
-  // Enable CORS globally; by default - all origins, GET, HEAD, POST
-  @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**");
-  }
+// if needed, CORS header will be set via the (Nginx) proxy config.
+//  // Enable CORS globally; by default - all origins, GET, HEAD, POST
+//  @Override
+//  public void addCorsMappings(CorsRegistry registry) {
+//    registry.addMapping("/**");
+//  }
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
