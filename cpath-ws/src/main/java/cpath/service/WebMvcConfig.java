@@ -24,11 +24,12 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
       mediaType("json", MediaType.APPLICATION_JSON);
   }
 
-  // Enable CORS globally; by default - all origins, GET, HEAD, POST
-  @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**");
-  }
+// CORS can be enabled via NGINX config., add_header directive!
+//  // Enable CORS globally; by default - all origins, GET, HEAD, POST
+//  @Override
+//  public void addCorsMappings(CorsRegistry registry) {
+//    registry.addMapping("/**");
+//  }
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
