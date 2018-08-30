@@ -7,14 +7,14 @@ public enum OutputFormat {
 
   BIOPAX("BioPAX Level 3 RDF/XML Format", ".owl", "application/vnd.biopax.rdf+xml"),
 
-  SIF("Simple Binary Interaction Format", ".sif", "text/plain"),
+  SIF("Simple Binary Interaction Format (was BINARY_SIF)", ".sif", "text/plain"),
 
   /**
    * Depending on extra properties/parameters this can be anything,
    * such as a CSV/TSV data;
    * by default, it will be the Pathway Commons Extended Binary SIF using default parameters.
    */
-  TXT("Extended SIF", ".txt", "text/plain"),
+  TXT("Extended SIF (was EXTENDED_BINARY_SIF)", ".txt", "text/plain"),
 
   GSEA("Gene Set Expression Analysis Format", ".gmt", "text/plain"),
 

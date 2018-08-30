@@ -88,7 +88,7 @@
 	(the page size, 'maxHitsPerpage' is configured on the server).
 	The results (hits) are returned either as JSON or XML (<a href="help/schema">Search Response XML Schema</a>) document,
 	which can be requested by using '.json' (e.g. '/search.json') or '.xml' extension/suffix or via
-	HTTP request header 'Accept: application/json' (or application/json).
+	HTTP request header 'Accept: application/json' (or application/xml).
 	</p>
 	<h4 id="search_parameters">Parameters:</h4>
 	<ul>
@@ -213,7 +213,7 @@
 		<li><em>limit=</em> [Optional] graph query search distance limit (default = 1).
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
-				href="#graph_formats">values</a>)
+				href="#output_formats">values</a>)
 		</li>
 		<li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
 			see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
@@ -233,7 +233,7 @@
 	By default, it returns a BioPAX representation of the sub-network matched by the algorithm.
 	Other output formats are available as specified by the optional format parameter.
 	Some output format choices result in no data if the conversion is not applicable to the result BioPAX model
-	(e.g., BINARY_SIF output fails if there are no interactions, complexes, nor pathways in the retrieved set).
+	(e.g., SIF output fails if there are no interactions, complexes, nor pathways in the retrieved set).
 	<h4>Examples:</h4> 
 	Neighborhood of COL5A1 (P20908):
 	<ol>
