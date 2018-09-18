@@ -1,8 +1,6 @@
 package cpath.service.jpa;
 
 
-import java.util.List;
-
 import org.springframework.data.repository.CrudRepository;
 
 
