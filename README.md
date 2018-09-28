@@ -53,7 +53,7 @@ The directory may contain:
 
 In order to create a new cpath2 instance, run 
 
-    cpath2.sh console
+    cpath2.sh
 
 
 to execute one of the data integration stages: import metadata, 
@@ -62,7 +62,7 @@ clean, convert, normalize data, build the warehouse, the main BioPAX model, Luce
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
 
-    nohup sh cpath2.sh server 2>&1 &
+    nohup sh cpath2.sh -server 2>&1 &
 
 (watch the `nohup.out` and `cpath2.log`)
 
@@ -136,7 +136,7 @@ Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder 
 Set `spring.profiles.active=admin` in the properties configuration file (or java `-Dspring.profiles.active=admin` option).
 To see available data import/export commands and options, run: 
 
-    cpath2.sh console
+    cpath2.sh
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
  - -metadata (sh cpath2.sh -metadata)

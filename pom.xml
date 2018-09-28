@@ -38,6 +38,8 @@
     <commons-collections.version>3.2.2</commons-collections.version>
     <github.global.server>github</github.global.server>
     <swagger2.version>2.7.0</swagger2.version>
+    <docker.image.prefix>pathwaycommons</docker.image.prefix>
+    <dockerfile-maven-plugin.version>1.4.4</dockerfile-maven-plugin.version>
   </properties>
 
   <issueManagement>
@@ -161,6 +163,11 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <groupId>com.spotify</groupId>
+          <artifactId>dockerfile-maven-plugin</artifactId>
+          <version>${dockerfile-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <source>${java.version}</source>
@@ -188,6 +195,16 @@
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <configuration>
+          <repository>${docker.image.prefix}/pc2</repository>
+          <buildArgs>
+            <JAR_FILE>target/${project.build.finalName}.war</JAR_FILE>
+          </buildArgs>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
