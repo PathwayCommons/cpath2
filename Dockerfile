@@ -5,7 +5,7 @@ FROM openjdk:8-jdk-alpine
 #VOLUME /tmp
 
 # for this to work, export CPATH2_HOME=tmp before runnig 'mvn install dockerfile:build' (test data, index get generated)
-COPY tmp/* /work
+COPY tmp/* /work/
 
 # but in production, work dir. contains actual application.properties, data, index, db.
 #COPY work /
