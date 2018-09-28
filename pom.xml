@@ -180,6 +180,9 @@
           <configuration>
             <forkMode>once</forkMode>
             <argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
+            <systemPropertyVariables>
+              <CPATH2_HOME>tmp</CPATH2_HOME>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
         <plugin>
@@ -199,11 +202,34 @@
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
         <configuration>
-          <repository>${docker.image.prefix}/pc2</repository>
+          <repository>${docker.image.prefix}/cpath2</repository>
           <buildArgs>
             <JAR_FILE>target/${project.build.finalName}.war</JAR_FILE>
           </buildArgs>
         </configuration>
+        <!--<executions>-->
+          <!--<execution>-->
+            <!--<id>build-tag-image</id>-->
+            <!--<phase>package</phase>-->
+            <!--<goals>-->
+              <!--<goal>build</goal>-->
+              <!--<goal>tag</goal>-->
+            <!--</goals>-->
+            <!--<configuration>-->
+              <!--<tag>${project.version}</tag>-->
+            <!--</configuration>-->
+          <!--</execution>-->
+          <!--<execution>-->
+            <!--<id>push-image</id>-->
+            <!--<phase>deploy</phase>-->
+            <!--<goals>-->
+              <!--<goal>push</goal>-->
+            <!--</goals>-->
+            <!--<configuration>-->
+              <!--<tag>${project.version}</tag>-->
+            <!--</configuration>-->
+          <!--</execution>-->
+        <!--</executions>-->
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
