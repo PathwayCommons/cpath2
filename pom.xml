@@ -6,10 +6,14 @@
   <modelVersion>4.0.0</modelVersion>
   <packaging>war</packaging>
 
+  <prerequisites>
+    <maven>3.3</maven>
+  </prerequisites>
+
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.0.3.RELEASE</version>
+    <version>2.0.5.RELEASE</version>
   </parent>
 
   <name>Pathway Commons builder and server</name>
@@ -21,17 +25,15 @@
   <inceptionYear>2009</inceptionYear>
 
   <properties>
-    <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <start-class>cpath.Application</start-class>
-    <maven.version.range>[3.0,4)</maven.version.range>
     <license.licenseName>MIT License</license.licenseName>
     <lucene.version>6.5.0</lucene.version>
     <h2.version>1.4.197</h2.version>
-    <paxtools.version>5.2.0-SNAPSHOT</paxtools.version>
-    <apache-jena-libs.version>3.0.1</apache-jena-libs.version>
-    <validator.version>4.0.0</validator.version>
+    <paxtools.version>5.1.0</paxtools.version>
+    <apache-jena-libs.version>3.2.0</apache-jena-libs.version>
+    <jena.version>2.6.4</jena.version>
+    <validator.version>4.0.1-SNAPSHOT</validator.version>
     <junit.version>4.12</junit.version>
     <commons-lang.version>3.4</commons-lang.version>
     <collections-generic.version>4.01</collections-generic.version>
@@ -40,6 +42,15 @@
     <swagger2.version>2.7.0</swagger2.version>
     <docker.image.prefix>pathwaycommons</docker.image.prefix>
     <dockerfile-maven-plugin.version>1.4.4</dockerfile-maven-plugin.version>
+    <javax.transaction-api.version>1.3</javax.transaction-api.version>
+    <javax.activation.version>1.2.0</javax.activation.version>
+    <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+    <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+    <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
+    <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
+    <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
+    <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
   </properties>
 
   <issueManagement>
@@ -69,43 +80,33 @@
       <name>Igor Rodchenkov</name>
       <organization>The Donnelly Centre, University of Toronto</organization>
       <roles>
-        <role>Senior Developer</role>
+        <role>Architect</role>
       </roles>
-    </developer>
-    <developer>
-      <id>grossb</id>
-      <name>Benjamin Gross</name>
-      <organization>DFCI</organization>
-    </developer>
-    <developer>
-      <id>emekdemir</id>
-      <name>Emek Demir</name>
-      <organization>OHSU</organization>
     </developer>
     <developer>
       <id>ozgunbabur</id>
       <name>Ozgun Babur</name>
       <organization>OHSU</organization>
     </developer>
-    <developer>
-      <id>armanaksoy</id>
-      <name>B. Arman Aksoy</name>
-    </developer>
   </developers>
-
   <contributors>
+    <contributor>
+      <name>Benjamin Gross</name>
+      <organization>DFCI</organization>
+    </contributor>
+    <contributor>
+      <name>Emek Demir</name>
+      <organization>OHSU</organization>
+    </contributor>
+    <contributor>
+      <name>B. Arman Aksoy</name>
+    </contributor>
     <contributor>
       <name>Ethan Cerami</name>
       <organization>DFCI</organization>
-      <roles>
-        <role>manager</role>
-      </roles>
     </contributor>
     <contributor>
       <name>Nadia Anwar</name>
-      <roles>
-        <role>outreach</role>
-      </roles>
     </contributor>
     <contributor>
       <name>Onur Sumer</name>
@@ -125,13 +126,14 @@
     <contributor>
       <name>Chris Sander</name>
       <organization>DFCI,HMS</organization>
-      <roles>
-        <role>PI</role>
-      </roles>
     </contributor>
     <contributor>
       <name>Augustin Luna</name>
       <organization>DFCI</organization>
+    </contributor>
+    <contributor>
+      <name>Jeffrey Wong</name>
+      <organization>UofT</organization>
     </contributor>
   </contributors>
 
@@ -160,47 +162,46 @@
 
   <build>
     <finalName>cpath2</finalName>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>com.spotify</groupId>
-          <artifactId>dockerfile-maven-plugin</artifactId>
-          <version>${dockerfile-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <source>${java.version}</source>
-            <target>${java.version}</target>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <forkMode>once</forkMode>
-            <argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea</argLine>
-            <systemPropertyVariables>
-              <CPATH2_HOME>tmp</CPATH2_HOME>
-            </systemPropertyVariables>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <configuration>
-            <goals>deploy</goals>
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-            <useReleaseProfile>false</useReleaseProfile>
-            <releaseProfiles>sonatype-release-profile</releaseProfiles>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>10</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <reuseForks>false</reuseForks>
+          <forkCount>1</forkCount>
+          <argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea --illegal-access=permit</argLine>
+          <systemPropertyVariables>
+            <CPATH2_HOME>tmp</CPATH2_HOME>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
+        <configuration>
+          <argLine>--illegal-access=permit</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>${versions-maven-plugin.version}</version>
+        <configuration>
+          <generateBackupPoms>false</generateBackupPoms>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>${dockerfile-maven-plugin.version}</version>
         <configuration>
           <repository>${docker.image.prefix}/cpath2</repository>
           <buildArgs>
@@ -209,20 +210,11 @@
         </configuration>
         <!--<executions>-->
           <!--<execution>-->
-            <!--<id>build-tag-image</id>-->
-            <!--<phase>package</phase>-->
-            <!--<goals>-->
-              <!--<goal>build</goal>-->
-              <!--<goal>tag</goal>-->
-            <!--</goals>-->
-            <!--<configuration>-->
-              <!--<tag>${project.version}</tag>-->
-            <!--</configuration>-->
-          <!--</execution>-->
-          <!--<execution>-->
             <!--<id>push-image</id>-->
             <!--<phase>deploy</phase>-->
             <!--<goals>-->
+              <!--<goal>build</goal>-->
+              <!--<goal>tag</goal>-->
               <!--<goal>push</goal>-->
             <!--</goals>-->
             <!--<configuration>-->
@@ -251,77 +243,6 @@
           <failOnMissingWebXml>false</failOnMissingWebXml>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-site-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-          <skipDeploy>true</skipDeploy>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>enforce-banned-dependencies</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <bannedDependencies>
-                  <searchTransitive>true</searchTransitive>
-                  <excludes>
-                    <exclude>javassist:javassist</exclude><!-- org.javassist is the new one -->
-                    <exclude>commons-logging</exclude>
-                    <exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
-                    <exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
-                    <exclude>log4j:log4j</exclude>
-                    <exclude>org.springframework:2.*</exclude>
-                    <exclude>org.springframework:3.*</exclude>
-                    <exclude>javax.xml.bind:*</exclude>
-                    <exclude>net.sf.saxon:*</exclude>
-                    <exclude>com.sun.xml.bind:*</exclude>
-                    <exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
-                    <exclude>commons-collections:3.2.1</exclude>
-                    <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
-                    <exclude>javax.servlet:servlet-api</exclude>
-                  </excludes>
-                </bannedDependencies>
-                <requireMavenVersion>
-                  <version>${maven.version.range}</version>
-                </requireMavenVersion>
-                <requireJavaVersion>
-                  <version>${java.version}</version>
-                </requireJavaVersion>
-              </rules>
-              <fail>true</fail>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
@@ -331,6 +252,32 @@
         <groupId>org.biopax.paxtools</groupId>
         <artifactId>paxtools-core</artifactId>
         <version>${paxtools.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>${javax.annotation-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.activation</groupId>
+        <artifactId>javax.activation</artifactId>
+        <version>${javax.activation.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.transaction</groupId>
+        <artifactId>javax.transaction-api</artifactId>
+        <version>${javax.transaction-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>${jaxb-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jaxb</groupId>
+        <artifactId>jaxb-runtime</artifactId>
+        <version>${jaxb-runtime.version}</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>org.biopax.paxtools</groupId>
@@ -419,7 +366,7 @@
         <groupId>org.apache.jena</groupId>
         <artifactId>apache-jena-libs</artifactId>
         <type>pom</type>
-        <version>3.2.0</version>
+        <version>${apache-jena-libs.version}</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
@@ -428,13 +375,17 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.staxmate</groupId>
+            <artifactId>staxmate</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
       <dependency>
         <groupId>com.hp.hpl.jena</groupId>
         <artifactId>jena</artifactId>
-        <version>2.6.4</version>
+        <version>${jena.version}</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
@@ -443,6 +394,14 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>stax</groupId>
+            <artifactId>stax-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.staxmate</groupId>
+            <artifactId>staxmate</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -480,6 +439,17 @@
         <groupId>org.apache.lucene</groupId>
         <artifactId>lucene-queryparser</artifactId>
         <version>${lucene.version}</version>
+      </dependency>
+      <!--<dependency>-->
+        <!--&lt;!&ndash;for java11&ndash;&gt;-->
+        <!--<groupId>org.javassist</groupId>-->
+        <!--<artifactId>javassist</artifactId>-->
+        <!--<version>3.23.1-GA</version>-->
+      <!--</dependency>-->
+      <dependency>
+        <groupId>org.codehaus.woodstox</groupId>
+        <artifactId>woodstox-core-lgpl</artifactId>
+        <version>4.4.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -525,6 +495,30 @@
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>paxtools-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>javax.activation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.transaction</groupId>
+      <artifactId>javax.transaction-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.codehaus.woodstox</groupId>-->
+      <!--<artifactId>woodstox-core-lgpl</artifactId>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>paxtools-trove</artifactId>
@@ -630,6 +624,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.transaction</groupId>
+          <artifactId>javax.transaction-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

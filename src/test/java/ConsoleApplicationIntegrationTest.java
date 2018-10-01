@@ -45,9 +45,9 @@ import java.util.zip.GZIPOutputStream;
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"admin", "premerge"})
 @SpringBootTest(classes = ConsoleApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class ConsoleApplicationTest
+public class ConsoleApplicationIntegrationTest
 {
-  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationTest.class);
+  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIntegrationTest.class);
   static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
