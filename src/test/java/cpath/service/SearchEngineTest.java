@@ -55,7 +55,6 @@ public class SearchEngineTest {
 		assertFalse(response.isEmpty());
 		assertEquals(1, response.getSearchHit().size());
 		SearchHit hit = response.getSearchHit().get(0);
-		assertEquals(11, hit.getSize().intValue()); //member processes and participants, not counting the hit itself
 		assertEquals(4, hit.getNumProcesses().intValue());
 		assertEquals(7, hit.getNumParticipants().intValue());
 

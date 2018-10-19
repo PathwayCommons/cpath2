@@ -2,8 +2,6 @@
 import static org.junit.Assert.*;
 
 import cpath.Application;
-import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.paxtools.model.Model;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 
 //@Ignore
@@ -36,7 +33,7 @@ public class WebApplicationTest {
 
 	@Test
 	public void testSearchPathway() {
-		String result = null;
+		String result;
 		result = template.getForObject("/search?type={t}&q={q}", String.class, "Pathway", "Gly*");
 		//note: pathway and Pathway both works (both converted to L3 Pathway class)
 		assertNotNull(result);
@@ -48,10 +45,8 @@ public class WebApplicationTest {
 	public void testGetQueryById() throws UnsupportedEncodingException {
 		String result = template.getForObject("/get?uri={uri}",
 				String.class, "http://identifiers.org/uniprot/P27797");
+		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
 		assertNotNull(result);
-		Model m = (new SimpleIOHandler()).convertFromOWL(new ByteArrayInputStream(result.getBytes("UTF-8")));
-		assertNotNull(m);
-		assertFalse(m.getObjects().isEmpty());
 	}
 
 

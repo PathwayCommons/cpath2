@@ -27,20 +27,9 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.SearcherFactory;
-import org.apache.lucene.search.SearcherManager;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.highlight.Highlighter;
-import org.apache.lucene.search.highlight.QueryScorer;
-import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
-import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
+import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.biopax.paxtools.controller.*;
@@ -71,7 +60,6 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
-	public static final String FIELD_SIZE = "size"; //since cPath2 v7.., size == numparticipants + numprocesses TODO: remove 'size' from index and hit bean
 	public static final String FIELD_N_PARTICIPANTS = "participants"; // num. of PEs or Genes in a process or Complex
 	public static final String FIELD_N_PROCESSES = "processes"; // is same as 'size' used to be before cPath2 v7
 
@@ -148,7 +136,7 @@ public class SearchEngine implements Indexer, Searcher {
 			Class<? extends BioPAXElement> filterByType, String[] datasources,
 			String[] organisms) 
 	{
-		SearchResponse response = null;
+		SearchResponse response;
 		
 		LOG.debug("search: '" + query + "', page: " + page
 			+ ", filterBy: " + ((filterByType!=null)?filterByType.getSimpleName():"N/A")
@@ -241,7 +229,7 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		SearchResponse response = new SearchResponse();
 		response.setMaxHitsPerPage(maxHitsPerPage);
-		response.setNumHits(topDocs.totalHits);	
+		response.setNumHits(topDocs.totalHits);
 		List<SearchHit> hits = response.getSearchHit();//empty list
 		assert hits!=null && hits.isEmpty();
 		LOG.debug("transform, no. TopDocs to process:" + topDocs.scoreDocs.length);
@@ -340,8 +328,6 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 			
 			//no. processes, participants in the sub-network
-			if(doc.get(FIELD_SIZE)!=null)
-				hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE)));
 			if(doc.get(FIELD_N_PROCESSES)!=null)
 				hit.setNumProcesses(Integer.valueOf(doc.get(FIELD_N_PROCESSES))); //TODO: try w/o Integer.valueOf
 			if(doc.get(FIELD_N_PARTICIPANTS)!=null)
@@ -441,12 +427,10 @@ public class SearchEngine implements Indexer, Searcher {
 						int numProc = fetcher.fetch(bpe, Process.class).size(); //except itself
 						int numPeAndG = fetcher.fetch(bpe, PhysicalEntity.class).size()
 								+ fetcher.fetch(bpe, Gene.class).size();
-						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(numProc + numPeAndG));
 						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPeAndG));
 						bpe.getAnnotations().put(FIELD_N_PROCESSES, Integer.toString(numProc));
 					} else if(bpe instanceof Complex) {
 						int numPEs = fetcher.fetch(bpe, PhysicalEntity.class).size();
-						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(numPEs));
 						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPEs));
 					}
 
@@ -503,7 +487,7 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  'datasource', 'organism' and 'pathway' - infer from this bpe and its child objects 
 	 *  									  	up to given depth/level, analyze=no, store=yes;
 	 *  
-	 *  'size', 'numprocesses', 'numparticipants' - number of child processes,
+	 *  'numprocesses', 'numparticipants' - number of child processes,
 	 *  											participants; integer values as string; analyze=no, store=yes.
 	*/
 	void index(BioPAXElement bpe, IndexWriter indexWriter)
@@ -549,10 +533,6 @@ public class SearchEngine implements Indexer, Searcher {
 				}
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
-				doc.add(new StoredField(FIELD_SIZE, Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE))));
-			}
-
 			if(bpe.getAnnotations().containsKey(FIELD_N_PARTICIPANTS)) {
 				doc.add(new StoredField(FIELD_N_PARTICIPANTS,
                     Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS))));
@@ -578,7 +558,6 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_DATASOURCE);
 		bpe.getAnnotations().remove(FIELD_ORGANISM);
 		bpe.getAnnotations().remove(FIELD_PATHWAY);
-		bpe.getAnnotations().remove(FIELD_SIZE);
 		bpe.getAnnotations().remove(FIELD_N_PARTICIPANTS);
 		bpe.getAnnotations().remove(FIELD_N_PROCESSES);
 		bpe.getAnnotations().remove(FIELD_XREFID);

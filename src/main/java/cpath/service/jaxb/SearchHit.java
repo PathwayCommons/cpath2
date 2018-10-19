@@ -127,22 +127,6 @@ public class SearchHit implements Serializable {
     }
 
     /**
-     * For a BioPAX Interaction, Complex or Pathway,
-     * this is a number of associated sub-processes and participants;
-     * in other words - estimated size of the sub-network.
-     * 
-     * @return
-     * @deprecated use getNumParticipants, getNumProcesses instead (and the corresponding setters)
-     */
-    public Integer getSize() {
-        return size;
-    }
-    /** @deprecated use setNumParticipants, setNumProcesses instead (and the corresponding getters) */
-    public void setSize(Integer value) {
-        this.size = value;
-    }
-
-    /**
      * For a BioPAX Interaction, Pathway, or Complex,
      * this is a number of physical entity or gene participants or components.
      *

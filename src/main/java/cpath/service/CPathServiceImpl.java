@@ -571,7 +571,7 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		//go over all hits, all pages
-		final int numPathways = r.getNumHits();
+		final long numPathways = r.getNumHits();
 		int processed = 0;
 		while(!r.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
@@ -613,7 +613,7 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		// final touches...
-		topPathways.setNumHits(hits.size());
+		topPathways.setNumHits((long)hits.size());
 		topPathways.setComment("Top Pathways (technically, each has empty index " +
 				"field 'pathway'; that also means, they are neither components of " +
 				"other pathways nor controlled of any process)");

@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.*;
 @XmlType(name = "SearchResponse")
 public class SearchResponse extends ServiceResponse {
     @XmlAttribute
-    private Integer numHits;
+    private Long numHits;
     
     @XmlAttribute
     private Integer maxHitsPerPage;
@@ -66,11 +66,11 @@ public class SearchResponse extends ServiceResponse {
      * The total number of hits
      * @return
      */
-	public Integer getNumHits() {
+	public Long getNumHits() {
 		return numHits;
 	}
 
-	public void setNumHits(Integer numHits) {
+	public void setNumHits(Long numHits) {
 		this.numHits = numHits;
 	}
 
@@ -112,7 +112,7 @@ public class SearchResponse extends ServiceResponse {
 	 */
 	public int numPages() {
 		if(numHits > 0 && maxHitsPerPage > 0)
-			return (numHits-1)/maxHitsPerPage + 1;
+			return (int)((numHits-1)/maxHitsPerPage) + 1;
 		else 
 			return 0;
 	}

@@ -13,7 +13,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.0.5.RELEASE</version>
+    <version>2.0.6.RELEASE</version>
   </parent>
 
   <name>Pathway Commons builder and server</name>
@@ -28,7 +28,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <start-class>cpath.Application</start-class>
     <license.licenseName>MIT License</license.licenseName>
-    <lucene.version>6.5.0</lucene.version>
+    <lucene.version>7.5.0</lucene.version>
     <h2.version>1.4.197</h2.version>
     <paxtools.version>5.1.0</paxtools.version>
     <apache-jena-libs.version>3.2.0</apache-jena-libs.version>

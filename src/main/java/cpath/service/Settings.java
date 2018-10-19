@@ -255,7 +255,7 @@ public class Settings
 		if(homedir == null || homedir.isEmpty()) {
 			homedir = System.getenv(HOME_DIR);
 			if (homedir == null || homedir.isEmpty()) {
-				homedir = Paths.get(System.getProperty("java.io.tmpdir"), "cpath2").toString();
+				homedir = Paths.get("tmp").toString();
 			}
 			System.setProperty(HOME_DIR, homedir);
 		}

@@ -17,56 +17,62 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @Profile("web")
 @RequestMapping(method = RequestMethod.GET)
-public class PagesController extends BasicController
-{
+public class PagesController extends BasicController {
 
-	@RequestMapping({"/","/home","/index", "/swagger"})
-	public String home() {
-		return "redirect:swagger-ui.html";
-	}
+  @RequestMapping({"/api", "/swagger"})
+  public String swagger() {
+    return "redirect:swagger-ui.html";
+  }
 
-	@RequestMapping("/formats")
-	public String formats() {
-		return "formats";
-	}
+  @RequestMapping({"/", "/home"})
+  public String home() {
+    return "home";
+  }
 
-	@RequestMapping("/datasources")
-	public String datasources() {
-		return "datasources";
-	}
+  @RequestMapping("/formats")
+  public String formats() {
+    return "formats";
+  }
 
-	@RequestMapping("/favicon.ico")
-	public  @ResponseBody byte[] favicon() throws IOException {
+  @RequestMapping("/datasources")
+  public String datasources() {
+    return "datasources";
+  }
 
-		String cpathLogoUrl = service.settings().getLogo();
+  @RequestMapping("/favicon.ico")
+  public @ResponseBody
+  byte[] favicon() throws IOException {
 
-		byte[] iconData = null;
+    String cpathLogoUrl = service.settings().getLogo();
 
-		BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
-		if(image != null) {
-			image = scaleImage(image, 16, 16, null);
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ImageIO.write(image, "gif", baos);
-			baos.flush();
-			iconData = baos.toByteArray();
-		}
+    byte[] iconData = null;
 
-		return iconData;
-	}
+    BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
+    if (image != null) {
+      image = scaleImage(image, 16, 16, null);
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ImageIO.write(image, "gif", baos);
+      baos.flush();
+      iconData = baos.toByteArray();
+    }
 
-	@RequestMapping("/robots.txt")
-	public @ResponseBody String robots() {
-		// deny robots access to logs, web services and data files,
-		// but allow - to web page resources (css, js, images)
-		return "User-agent: *\n" +
-			"Disallow: /get\n" +
-			"Disallow: /search\n" +
-			"Disallow: /graph\n" +
-			"Disallow: /top_pathways\n" +
-			"Disallow: /traverse\n" +
-			"Disallow: /archives\n" +
-			"Disallow: /help\n" +
-			"Disallow: /metadata\n";
-	}
+    return iconData;
+  }
+
+  @RequestMapping("/robots.txt")
+  public @ResponseBody
+  String robots() {
+    // deny robots access to logs, web services and data files,
+    // but allow - to web page resources (css, js, images)
+    return "User-agent: *\n" +
+      "Disallow: /get\n" +
+      "Disallow: /search\n" +
+      "Disallow: /graph\n" +
+      "Disallow: /top_pathways\n" +
+      "Disallow: /traverse\n" +
+      "Disallow: /archives\n" +
+      "Disallow: /help\n" +
+      "Disallow: /metadata\n";
+  }
 
 }
