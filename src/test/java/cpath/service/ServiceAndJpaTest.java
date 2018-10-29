@@ -3,10 +3,11 @@ package cpath.service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-import cpath.ConsoleApplication;
 import cpath.service.api.CPathService;
 import cpath.service.jpa.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -16,7 +17,9 @@ import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
 
 import cpath.service.jpa.Metadata.METADATA_TYPE;
@@ -28,7 +31,8 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("admin")
-@SpringBootTest(classes = ConsoleApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@DataJpaTest(includeFilters = @ComponentScan.Filter(Component.class))
+//@Import({Settings.class, CPathService.class}) //currently, it'd do the same as the above line
 public class ServiceAndJpaTest {
 
   @Autowired
@@ -104,22 +108,19 @@ public class ServiceAndJpaTest {
 
   @Test
   @DirtiesContext
-  public void testImportContent() throws IOException {
+  public void testImportContent() {
     // mock metadata and pathway data
     Metadata md = new Metadata("TEST", "test", "test", "", "",
         "", METADATA_TYPE.BIOPAX, null, null, null, "free");
 
     //cleanup previous tests data if any
-    md = service.clear(md);
-
+    service.clear(md);
     Content content = new Content(md, "test 0"); //space will be replaced
     md.getContent().add(content);
     //add the second pd (for the tests at the end of this method)
-    final Content pd = new Content(md, "test1");
-    md.getContent().add(pd);
-
+    md.getContent().add(new Content(md, "test1"));
     // persist
-    service.save(md);
+    service.metadata().save(md);
 
     // test pathwaydata content is not accidentally erased
     Iterator<Content> it = md.getContent().iterator();
@@ -141,22 +142,14 @@ public class ServiceAndJpaTest {
       content = it.next();
     assertEquals("test_0", content.getFilename());
 
-    // add validation result());
-    for (Content o : md.getContent())
+    // write validation result to files
+    for (Content o : md.getContent()) {
       service.saveValidationReport(o, new Validation(null));
-    // update
-    service.save(md);
-
-    //read the latest state
-    md = service.metadata().findByIdentifier("TEST");
-    assertNotNull(md);
-    Set<Content> lpd = md.getContent();
-    assertFalse(lpd.isEmpty());
-    content = lpd.iterator().next();
-    assertNotNull(content);
+      assertTrue(Files.exists(Paths.get(service.validationXmlFile(o))));
+    }
 
     //cleanup
-    md = service.clear(md);
+    service.clear(md);
     assertTrue(md.getContent().isEmpty());
     md = service.metadata().findByIdentifier("TEST");
     assertTrue(md.getContent().isEmpty());
@@ -182,7 +175,7 @@ public class ServiceAndJpaTest {
     CPathUtils.cleanupDirectory(service.outputDir(metadata), true);
     assertTrue(metadata.getContent().isEmpty());
 
-    service.analyzeAndOrganizeContent(metadata);
+    service.buildContent(metadata);
     assertFalse(metadata.getContent().isEmpty());
 
     Content pd = metadata.getContent().iterator().next();

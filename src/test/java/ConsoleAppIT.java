@@ -44,10 +44,10 @@ import java.util.zip.GZIPOutputStream;
  */
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"admin", "premerge"})
-@SpringBootTest(classes = ConsoleApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class ConsoleApplicationIntegrationTest
+@SpringBootTest(classes = {ConsoleApplication.class})
+public class ConsoleAppIT
 {
-  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIntegrationTest.class);
+  static final Logger log = LoggerFactory.getLogger(ConsoleAppIT.class);
   static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
@@ -68,18 +68,15 @@ public class ConsoleApplicationIntegrationTest
     assertTrue(service.settings().getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
     assertEquals("Homo sapiens", service.settings().getOrganismsAsTaxonomyToNameMap().get("9606"));
 
-    // prepare the metadata (always cleanup the data output directories FOR TESTS, because of recent updates in PreMerger!)
     // load the test metadata and create warehouse
-    service.addOrUpdateMetadata("classpath:metadata.conf");
+    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.conf"))
+      service.metadata().save(mdata);
     Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
     assertNotNull(ds);
-    service.clear(ds);
     ds = service.metadata().findByIdentifier("TEST_CHEBI");
     assertNotNull(ds);
-    service.clear(ds);
     ds = service.metadata().findByIdentifier("TEST_MAPPING");
     assertNotNull(ds);
-    service.clear(ds);
 
     PreMerger premerger = new PreMerger(service, validator, true);
     premerger.premerge();
@@ -175,12 +172,11 @@ public class ConsoleApplicationIntegrationTest
     //additional 'test' metadata entry
     Metadata md = new Metadata("test", "Reactome", "Foo", "", "",
       "", METADATA_TYPE.BIOPAX, "", "", null, "free");
-    service.save(md);
+    service.metadata().save(md);
     // normally, setProvenanceFor gets called during Premerge stage
     md.setProvenanceFor(m);
     // which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
     assertEquals(1, m.getObjects(Provenance.class).size());
-
 
     // SERVICE-TIER features tests
 

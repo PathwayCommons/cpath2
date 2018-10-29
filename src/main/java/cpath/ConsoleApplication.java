@@ -301,15 +301,16 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   /**
-   * Helper function to get provider metadata.
+   * Loads data providers' metadata.
    *
    * @param location String PROVIDER_URL or local file.
-   * @throws IOException, IllegalStateException (when not maintenance mode)
    */
-  public void fetchMetadata(final String location) throws IOException {
+  public void fetchMetadata(final String location)  {
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     // grab the data
-    service.addOrUpdateMetadata(location);
+    // load the test metadata and create warehouse
+    for (Metadata mdata : CPathUtils.readMetadata(location))
+      service.metadata().save(mdata);
     //back to read-only schema mode (useful when called from the web admin app)
     System.setProperty("hibernate.hbm2ddl.auto", "validate");
   }

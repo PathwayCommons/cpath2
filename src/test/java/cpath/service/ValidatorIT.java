@@ -7,11 +7,11 @@ import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.validator.BiopaxIdentifier;
 import org.biopax.validator.api.CvRule;
 import org.biopax.validator.api.Rule;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.Validation;
-import org.biopax.validator.impl.IdentifierImpl;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -27,7 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BiopaxConfiguration.class})
 @ActiveProfiles({"premerge"})
-public class BiopaxValidatorIntegrationTest {
+public class ValidatorIT {
 
 	@Autowired
 	ApplicationContext context;
@@ -50,7 +50,7 @@ public class BiopaxValidatorIntegrationTest {
 		m.add(ca);
 		m.add(tr);
 
-		Validation v = new Validation(new IdentifierImpl());//, "", true, null, 0, null);// do auto-fix
+		Validation v = new Validation(new BiopaxIdentifier());//, "", true, null, 0, null);// do auto-fix
 		v.setModel(m);
 		Validator validator = context.getBean(Validator.class);
 		validator.validate(v);
@@ -68,7 +68,7 @@ public class BiopaxValidatorIntegrationTest {
 		UnificationXref x = level3.create(UnificationXref.class, "1");
 		x.setDb("EntrezGene"); //but official preferred name is: "NCBI Gene"
 		x.setId("0000000");
-		Validation v = new Validation(new IdentifierImpl());
+		Validation v = new Validation(new BiopaxIdentifier());
 		rule.check(v, x);
 		assertTrue(v.getError().isEmpty()); //no error
 	}
@@ -82,7 +82,7 @@ public class BiopaxValidatorIntegrationTest {
 		cv.addTerm("(2S,3R)-3-hydroxyaspartic acid");
 		ModificationFeature mf = level3.create(ModificationFeature.class, "MF_MOD_00036");
 		mf.setModificationType(cv);
-		Validation v = new Validation(new IdentifierImpl(), "", true, null, 0, null); // auto-fix=true - fixex "no xref" error
+		Validation v = new Validation(new BiopaxIdentifier(), "", true, null, 0, null); // auto-fix=true - fixex "no xref" error
 		rule.check(v, mf);
 
 		assertEquals(0, v.countErrors(mf.getUri(), null, "illegal.cv.term", null, false, false));
@@ -114,12 +114,11 @@ public class BiopaxValidatorIntegrationTest {
 		 */
 		assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "c00002", UnificationXref.class)));
 		assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "C00002", UnificationXref.class)));
-		m = null;
 
 		// However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerger) together
 		// will, in fact, fix and merge these two xrefs
 		m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
-		Validation v = new Validation(new IdentifierImpl(), null, true, null, 0, null);
+		Validation v = new Validation(new BiopaxIdentifier(), null, true, null, 0, null);
 		v.setModel(m);
 		m.setXmlBase(base);
 		Validator validator = context.getBean(Validator.class);

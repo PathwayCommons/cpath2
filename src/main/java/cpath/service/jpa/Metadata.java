@@ -166,8 +166,7 @@ public final class Metadata {
         pubmedId, availability);
   }
 
-  //setter is for JPA and tests only:
-  void setId(Long id) {
+  public void setId(Long id) {
     this.id = id;
   }
 

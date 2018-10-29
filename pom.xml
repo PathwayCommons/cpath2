@@ -33,7 +33,7 @@
     <paxtools.version>5.1.0</paxtools.version>
     <apache-jena-libs.version>3.2.0</apache-jena-libs.version>
     <jena.version>2.6.4</jena.version>
-    <validator.version>4.0.1-SNAPSHOT</validator.version>
+    <validator.version>5.0.0-SNAPSHOT</validator.version>
     <junit.version>4.12</junit.version>
     <commons-lang.version>3.4</commons-lang.version>
     <collections-generic.version>4.01</collections-generic.version>
@@ -329,25 +329,14 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
           </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.validator</groupId>
-        <artifactId>obo-fetcher</artifactId>
-        <version>${validator.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
           <!--old servlet-api prevents newer embedded tomcat from starting (in spring boot 2.x app)-->
           <exclusion>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -440,17 +429,6 @@
         <artifactId>lucene-queryparser</artifactId>
         <version>${lucene.version}</version>
       </dependency>
-      <!--<dependency>-->
-        <!--&lt;!&ndash;for java11&ndash;&gt;-->
-        <!--<groupId>org.javassist</groupId>-->
-        <!--<artifactId>javassist</artifactId>-->
-        <!--<version>3.23.1-GA</version>-->
-      <!--</dependency>-->
-      <dependency>
-        <groupId>org.codehaus.woodstox</groupId>
-        <artifactId>woodstox-core-lgpl</artifactId>
-        <version>4.4.1</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -484,10 +462,6 @@
       <artifactId>biopax-validator</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.biopax.validator</groupId>
-      <artifactId>obo-fetcher</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>normalizer</artifactId>
     </dependency>
@@ -515,10 +489,6 @@
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>org.codehaus.woodstox</groupId>-->
-      <!--<artifactId>woodstox-core-lgpl</artifactId>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>paxtools-trove</artifactId>
@@ -584,7 +554,7 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <!-- mainly due to org.obo in biopax-validator directly uses log4j api -->
+      <!-- due to org.obo in biopax-validator uses log4j impl -->
       <groupId>org.slf4j</groupId>
       <artifactId>log4j-over-slf4j</artifactId>
       <scope>runtime</scope>
@@ -664,6 +634,11 @@
       <artifactId>spring-boot-starter-actuator</artifactId>
       <scope>runtime</scope>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.restdocs</groupId>
+      <artifactId>spring-restdocs-mockmvc</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.springfox</groupId>

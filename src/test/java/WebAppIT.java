@@ -1,6 +1,3 @@
-
-import static org.junit.Assert.*;
-
 import cpath.Application;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -14,14 +11,15 @@ import org.springframework.util.MultiValueMap;
 
 import java.io.UnsupportedEncodingException;
 
-//@Ignore
+import static org.junit.Assert.*;
+
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"web"})
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class WebApplicationTest {
+@SpringBootTest(classes = {Application.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class WebAppIT {
 
-	@Autowired
-	private TestRestTemplate template;
+  @Autowired
+  private TestRestTemplate template;
 
 	@Test
 	public void testGetTypes() {
@@ -29,7 +27,7 @@ public class WebApplicationTest {
 		assertNotNull(result);
 		assertTrue(result.contains("{\"id\":\"types\",\"title\":\"BioPAX classes\""));
 	}
-	
+
 
 	@Test
 	public void testSearchPathway() {
@@ -45,18 +43,19 @@ public class WebApplicationTest {
 	public void testGetQueryById() throws UnsupportedEncodingException {
 		String result = template.getForObject("/get?uri={uri}",
 				String.class, "http://identifiers.org/uniprot/P27797");
+    assertNotNull(result);
 		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
-		assertNotNull(result);
 	}
 
 
-	@Ignore
-	@Test //when HTTP POST requests are disabled
+	@Test //if POST isn't disabled
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		map.add("uri", "http://identifiers.org/uniprot/P27797");
 		String result = template.postForObject("/get", map, String.class);
-		assertTrue(result.contains("Method Not Allowed"));
+    assertNotNull(result);
+    assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
+//		assertTrue(result.contains("Method Not Allowed"));
 	}
 
 }

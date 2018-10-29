@@ -1,47 +1,17 @@
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Conversion;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.util.EquivalenceGrouper;
 import org.junit.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
 public class QuickTest {
-    @Test
-    public void splitSliceJoin() {
-        String cols[] = "A\tB\tC\tD\tE".split("\t", 4);
-        assertEquals(4, cols.length); //A, B, C and "D\tE"
-        //join columns 0, 1, 2 -
-        String res = StringUtils.join(Arrays.copyOfRange(cols, 0, 3), '\t');
-        assertEquals("A\tB\tC", res);
-        //System.out.println(String.format("%3.1f",35.6345f));
-
-        Matcher matcher = Pattern.compile("([a-zA-Z0-9\\. ]+)\\s*\\(\\s*(\\d+)\\s*\\)").matcher("Homo sapiens (9606)");
-        assertTrue(matcher.find());
-        assertEquals(2, matcher.groupCount());
-//        System.out.println(String.format("%s - %s",matcher.group(1),matcher.group(2)));
-
-        //test poorly documented use or $ ref in the replacement string in String.replaceAll... (works!)
-        String symbolPattern = ".* (\\w+): .*";
-        String symbol = ("...for TCF3: transcription factor (...)").replaceAll(symbolPattern, "$1");
-        assertEquals("TCF3",symbol);
-
-        // "[one,two,three]" vs. "{one,two,three}"
-        String arr[] = new String[]{"one","two","three"};
-        assertNotEquals(Arrays.toString(arr), ArrayUtils.toString(arr));
-    }
 
     //Having Evidence prevents otherwise equivalent proteins from merging
     //by using ModelUtils.mergeEquivalentPhysicalEntities(model) utility...
@@ -72,4 +42,5 @@ public class QuickTest {
         ModelUtils.mergeEquivalentPhysicalEntities(model);
         assertEquals(1, model.getObjects(Protein.class).size());
     }
+
 }

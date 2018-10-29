@@ -1,6 +1,6 @@
 package cpath.service;
 
-import org.biopax.validator.impl.ExceptionsAspect;
+import org.biopax.validator.ExceptionsAspect;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.*;
 import org.springframework.context.annotation.aspectj.EnableSpringConfigured;
