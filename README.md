@@ -1,16 +1,35 @@
-# cPath2
+# cPath2: pathway data builder and server.
 
 [![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2)
 
 [![codebeat badge](https://codebeat.co/badges/cb01acef-739d-4926-a98e-9d5b46e2e252)](https://codebeat.co/projects/github-com-pathwaycommons-cpath2-master)
 
-A pathway data integration and query platform for [Pathway Commons](http://www.pathwaycommons.org) (PC). 
+cPath2 is a biological pathway data integration and query platform 
+for [Pathway Commons](http://www.pathwaycommons.org) (PC) projects.
 
-The long-term vision is to achieve a complete computable map of the cell across all species and conditions. We aim to provide for the efficient exchange of pathway data; aggregation and integration of pathways from major available sources into a shared public information store; distribution in a value-added, standardized form; availability to the end-user via advanced internet web service technology; and dissemination of the technology of biological knowledge representation and pathway analysis by collaboration and training.
+Pathway Commons is a convenient point of access to biological pathway 
+information and analysis methods collected from several curated public 
+pathway and interaction databases. Our effort builds on the diverse and 
+active community of pathway databases, the development in this community 
+of a common language for biological pathway data exchange 
+([BioPAX](http://www.biopax.org)) and work in the C. Sander and G. Bader 
+groups since late 2002 in building infrastructure for managing, integrating, 
+and analyzing biological pathway information. 
+ 
+BioPAX is a standard language that enables integration, exchange, 
+visualization and complex analysis of biological pathway data. Specifically, 
+BioPAX supports data exchange between pathway data groups and thus reduces 
+the complexity of interchange between data formats by providing an accepted 
+standard format for pathway data.
 
-This effort builds on the recent emergence of a diverse and active community of pathway databases, the development in this community of a common language for biological pathway data exchange ([BioPAX](http://www.biopax.org)) and work in the Sander and Bader groups since late 2002 in building infrastructure for managing, integrating, and analyzing pathway information.
+Our long-term vision is to achieve a complete computable map of the cell across all species and 
+conditions. We aim to provide for the efficient exchange of pathway data; aggregation and 
+integration of pathways from major available sources into a shared public information store;
+distribution in a value-added, standardized form; availability to the end-user via advanced 
+internet web service technology; and dissemination of the technology of biological knowledge 
+representation and pathway analysis by collaboration and training.
 
-
+  
 ## Credits ###
 [![IntelliJ IDEA](http://imagej.net/_images/thumb/1/1b/Intellij-idea.png/97px-Intellij-idea.png)](http://www.jetbrains.com/idea)
 
@@ -25,7 +44,7 @@ This effort builds on the recent emergence of a diverse and active community of 
 Directory 'work' is where the configuration, data files and indices are saved.  
 
 The directory may contain: 
-- cpath2.properties (to configure modes, physical location, admin credentials, instance name, version, description, etc.);
+- application.properties (to configure various server and model options);
 - metadata.conf (describes the bio data to be imported/integrated);
 - data/ directory (where original and intermediate data are stored);
 - index/ (Lucene index directory for the final BioPAX model);
@@ -34,7 +53,8 @@ The directory may contain:
 
 In order to create a new cpath2 instance, run 
 
-`cpath2.sh console` 
+    cpath2.sh
+
 
 to execute one of the data integration stages: import metadata, 
 clean, convert, normalize data, build the warehouse, the main BioPAX model, Lucene index, and downloads.
@@ -42,13 +62,13 @@ clean, convert, normalize data, build the warehouse, the main BioPAX model, Luce
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
 
-    nohup sh cpath2.sh server 2>&1 &
+    nohup sh cpath2.sh -server 2>&1 &
 
-(watch the nohup.out and cpath2.log)
+(watch the `nohup.out` and `cpath2.log`)
 
 ### Metadata
 
-A cPath2 metadata configuration file is a plain text file (the default is metadata.conf) 
+A cPath2 metadata configuration file is a plain text file (the default is `metadata.conf`) 
 having the following format:
  - one data source definition per line;
  - blank lines and lines that begin with "#" are ignored (remarks);
@@ -58,31 +78,32 @@ having the following format:
 The metadata columns are, in order: 
  1. IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
  2. NAME - can contain one (must) or multiple provider names, separated 
- by semicolon, i.e.: [displayName;]standardName[;name1;name2;..];
+ by semicolon, i.e.: `[displayName;]standardName[;name1;name2;..]`;
  BIOPAX, PSI_MI, PSI_MITAB metadata entries should have at least the standard 
  official name, if possible (it is used for filtering in search/graph queries and by the data exporter);
  3. DESCRIPTION - free text: organization name, release date, web site, comments;
  4. URL to the Data - can be any URI (file://, http://, ftp://, classpath:). 
  It's just a memo, because original data usually needs re-packing.
- The cpath2 data fetcher looks for the data/IDENTIFIER.zip 
+ The cPath2 data fetcher looks for the `data/<IDENTIFIER>.zip` 
  input files (multi-entry zip archives are ok). How the data are then processed depends 
  on its TYPE (see below) and cleaner/converter implementations (if specified).
  So, as described above, a cPath2 Data Manager (a person) should  
  download, re-package, and save the required archives to data/
- (following the IDENTIFIER.zip naming convention) in advance.
+ (following `<IDENTIFIER>.zip` file name style) in advance.
  5. URL to the Data Provider's Homepage (optional, good to have)
  6. IMAGE URL (optional) - can be pointing to a resource logo;
  7. TYPE - one of: BIOPAX, PSI_MI, PSI_MITAB, WAREHOUSE, MAPPING;
- 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
+ 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like `cpath.cleaner.internal.UniProtCleanerImpl`);
  9. CONVERTER_CLASS - leave empty or use a specific converter class, 
- e.g., cpath.converter.internal.UniprotConverterImpl, cpath.converter.internal.PsimiConverterImpl;
+ e.g., `cpath.converter.internal.UniprotConverterImpl`, `cpath.converter.internal.PsimiConverterImpl`;
  10. PUBMED ID - PubMed record ID (only number) of the main publication
  11. AVAILABILITY - values: 'free', 'academic', 'purchase'
 
 A Converter or Cleaner implementation is not required to be implemented in the main cpath2 project sources. 
 It's also possible to configure (metadata.conf) and plug into --premerge stage external 
 cleaner/converter classes after the cpath2-cli.jar is released:
-simply include to the cpath2-cli.sh Java options like: "-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class" 
+simply include to the cpath2-cli.sh Java options like:
+ `-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class` 
 
 ### Data
 
@@ -108,14 +129,14 @@ Note: BioPAX L1, L2 models will be auto-converted to the BioPAX Level3.
 Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder as follows:
  - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
  - extract what you need (e.g. some species data only)
- - create a new zip archive using name like "IDENTIFIER.zip" (datasource identifier, e.g., reactome_human.zip).
+ - create a new zip archive using name like `<IDENTIFIER>.zip` (datasource identifier, e.g., `reactome_human.zip`).
 
 ### Run 
 
-Set "cpath2.admin.enabled=true" in the cpath2.properties (or via "-Dcpath2.admin.enabled=true" java option).
+Set `spring.profiles.active=admin` in the properties configuration file (or java `-Dspring.profiles.active=admin` option).
 To see available data import/export commands and options, run: 
 
-`cpath2.sh console` 
+    cpath2.sh
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
  - -metadata (sh cpath2.sh -metadata)
