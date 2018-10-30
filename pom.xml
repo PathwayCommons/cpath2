@@ -9,7 +9,7 @@
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>parent</artifactId>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.0.1-SNAPSHOT</version>
 	<description>cPath2 parent project</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 	<inceptionYear>2009</inceptionYear>
