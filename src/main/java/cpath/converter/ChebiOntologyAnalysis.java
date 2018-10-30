@@ -116,7 +116,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			throw new IllegalArgumentException("The second parameter must be not null input stream");
 		
 		try {
-			Scanner scanner = new Scanner(inputStream);
+			Scanner scanner = new Scanner(inputStream, "UTF-8");
 
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine();

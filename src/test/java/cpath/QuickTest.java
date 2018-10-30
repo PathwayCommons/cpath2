@@ -1,3 +1,5 @@
+package cpath;
+
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;

@@ -1,7 +1,6 @@
-package cpath.service;
-
 import static org.junit.Assert.*;
 
+import cpath.service.BiopaxConfiguration;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;

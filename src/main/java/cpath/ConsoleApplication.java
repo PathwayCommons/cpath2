@@ -12,6 +12,7 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
 
+import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -32,6 +33,8 @@ import org.springframework.core.env.Environment;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
@@ -250,8 +253,9 @@ public class ConsoleApplication implements CommandLineRunner {
     BlacklistGenerator3 gen = new BlacklistGenerator3();
     Blacklist blacklist = gen.generateBlacklist(service.getModel());
     // Write all the blacklisted ids to the output
-    if (blacklist != null)
-      blacklist.write(new FileOutputStream(service.settings().blacklistFile()));
+    if (blacklist != null) {
+      blacklist.write(service.settings().blacklistFile());
+    }
 
     LOG.info("index: all done.");
   }
@@ -372,6 +376,7 @@ public class ConsoleApplication implements CommandLineRunner {
     SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
     sio.absoluteUris(outputAbsoluteUris);
     sio.convertToOWL(model, os, uris);
+    IOUtils.closeQuietly(os);//though, convertToOWL must have done this already
   }
 
 
@@ -436,17 +441,21 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("loaded.");
 
     // create an imported data summary file.txt (issue#23)
-    PrintWriter writer = new PrintWriter(service.settings().downloadsDir() + File.separator + "datasources.txt");
+    PrintWriter writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
+      Paths.get(service.settings().downloadsDir(), "datasources.txt")),"UTF-8")
+    );
     String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
-    writer.println(StringUtils.join(Arrays.asList(
-        "#CPATH2:", service.settings().getName(), "version", service.settings().getVersion(), date), " "));
-    writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
-        "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));
+    writer.println(String.join(" ", Arrays
+      .asList("#CPATH2:", service.settings().getName(), "version", service.settings().getVersion(), date)));
+    writer.println("#Columns:\t" + String.join("\t", Arrays.asList(
+        "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS")));
     Iterable<Metadata> allMetadata = service.metadata().findAll();
     for (Metadata m : allMetadata) {
+      //we use StringUtils.join instead String.join as there are only only char sequence objects
       writer.println(StringUtils.join(Arrays.asList(
           CPathUtils.getMetadataUri(model, m), m.getDescription(), m.getType(), m.getUrlToHomepage(),
-          m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
+          m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t")
+      );
     }
     writer.flush();
     writer.close();
@@ -467,7 +476,9 @@ public class ConsoleApplication implements CommandLineRunner {
       if (--left % 10000 == 0)
         LOG.info(left + " xrefs to map...");
     }
-    writer = new PrintWriter(service.settings().downloadsDir() + File.separator + "uniprot.txt");
+    writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
+      Paths.get(service.settings().downloadsDir(), "uniprot.txt")),"UTF-8")
+    );
     writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
         service.settings().getVersion()));
     for (String ac : acs)
@@ -486,7 +497,8 @@ public class ConsoleApplication implements CommandLineRunner {
     //auto-generate export.sh script (to run Paxtools commands for exporting BioPAX to other formats)
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
     final String commonPrefix = service.settings().exportArchivePrefix(); //e.g., PathwayCommons8
-    writer = new PrintWriter(service.settings().exportScriptFile());
+    writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
+      Paths.get(service.settings().exportScriptFile())), "UTF-8"));
     writer.println("#!/bin/sh");
     writer.println("# An auto-generated script for converting the BioPAX data archives");
     writer.println("# in the downloads directory to other formats.");
@@ -523,7 +535,7 @@ public class ConsoleApplication implements CommandLineRunner {
   private void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
     //make output file name prefix that includes datasource and ends with '.':
     final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
-    final String commaSepTaxonomyIds = StringUtils.join(service.settings().getOrganismTaxonomyIds(), ',');
+    final String commaSepTaxonomyIds = String.join(",", service.settings().getOrganismTaxonomyIds());
 
     if (exportToGSEA) {
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,

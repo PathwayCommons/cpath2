@@ -32,9 +32,9 @@ import cpath.service.CPathUtils;
  * among the compounds and classes.
  */
 class ChebiOboConverter extends BaseConverter
-{	
+{
 	private static Logger log = LoggerFactory.getLogger(ChebiOboConverter.class);
-	
+
 	private final String _IDENTIFIERS_ORG = "http://identifiers.org/";
 	private final String _ENTRY_START = "[Term]";
 	private final String _ID = "id: ";
@@ -43,27 +43,27 @@ class ChebiOboConverter extends BaseConverter
 	private final String _NAME = "name: ";
 	private final String _DEF = "def: ";
 	private final String _SYNONYM = "synonym: ";
-	
+
 	//to extract a text value between quotation marks from 'def:' and 'synonym:' lines:
 	private final Pattern namePattern = Pattern.compile("\"(.+?)\"");
 	//to extract ID, DB values from 'xref:' lines:
 	//(since ChEBI OBO format has been slightly changed in 2017, pattern was updated)
 	private final Pattern xrefPattern = Pattern.compile("(.+?):(\\S+)");
-	
-	public void convert(InputStream is, OutputStream os) {		
-        Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
-        model.setXmlBase(xmlBase); //important
-        
-        try {
-        	//read&copy the input stream content to a tmp file
-        	//(this will allow to read it twice; see below)
-        	Path f = Files.createTempFile("chebi", "obo");
-        	CPathUtils.copy(is, Files.newOutputStream(f));
 
-        	//The first pass.
-        	//Read each [TERM] data to create SMR with xrefs;
-        	//Do NOT skip any terms, even those without InChIKey (e.g., pharma categories, pills, generics)
-			Scanner scanner = new Scanner(Files.newInputStream(f));
+	public void convert(InputStream is, OutputStream os) {
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		model.setXmlBase(xmlBase); //important
+
+		try {
+			//read&copy the input stream content to a tmp file
+			//(this will allow to read it twice; see below)
+			Path f = Files.createTempFile("chebi", "obo");
+			CPathUtils.copy(is, Files.newOutputStream(f));
+
+			//The first pass.
+			//Read each [TERM] data to create SMR with xrefs;
+			//Do NOT skip any terms, even those without InChIKey (e.g., pharma categories, pills, generics)
+			Scanner scanner = new Scanner(Files.newInputStream(f), "UTF-8");
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine();
 				if (!line.startsWith(_ENTRY_START)) {
@@ -72,10 +72,10 @@ class ChebiOboConverter extends BaseConverter
 				}
 
 				Map<String, String> chebiEntryMap = new HashMap<String, String>();
-				
+
 				while (scanner.hasNextLine()) {
 					line = scanner.nextLine();
-					if (line.isEmpty()) 
+					if (line.isEmpty())
 						break;
 					// start of entry
 					if (line.startsWith(_ID)) {
@@ -83,16 +83,16 @@ class ChebiOboConverter extends BaseConverter
 					}
 					else if (line.startsWith(_NAME)) {
 						chebiEntryMap.put(_NAME, removePrefix(_NAME, line));
-					} 
+					}
 					else if (line.startsWith(_DEF)) {
 						Matcher matcher = namePattern.matcher(line);
 						if(!matcher.find())
 							throw new IllegalStateException("Pattern failed to match a quoted comment in: " + line);
 						chebiEntryMap.put(_DEF, matcher.group(1));
-					} 
+					}
 					else if (line.startsWith(_ALT_ID)) {
 						updateMapEntry(chebiEntryMap, _ALT_ID, line);
-					} 
+					}
 					else if (line.startsWith(_SYNONYM)) {
 						updateMapEntry(chebiEntryMap, _SYNONYM, line);
 					}
@@ -100,21 +100,21 @@ class ChebiOboConverter extends BaseConverter
 						updateMapEntry(chebiEntryMap, _XREF, line);
 					}
 				}
-				
+
 				buildSmallMoleculeReference(model, chebiEntryMap);
 			}
-			
+
 			// The second pass -
 			// to generate member relationships and rel. xrefs to other chebi classes
 			ChebiOntologyAnalysis analysis = new ChebiOntologyAnalysis();
 			analysis.setInputStream(Files.newInputStream(f,StandardOpenOption.DELETE_ON_CLOSE));
 			analysis.execute(model);
-        }
-		catch (Exception e) {
+		}
+		catch (IOException e) {
 			throw new RuntimeException("Failed to convert ChEBI OBO to BioPAX", e);
 		}
 
-		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);		
+		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);
 	}
 
 
@@ -139,22 +139,22 @@ class ChebiOboConverter extends BaseConverter
 		x.setId(id);
 		x.setDb("ChEBI");
 		smr.addXref(x);
-		
+
 		// set displayName
 		smr.setDisplayName(chebiEntryMap.get(_NAME));
 		//comment
 		smr.addComment(chebiEntryMap.get(_DEF));
- 
+
 		//add rel. xrefs using alt_id (if any present)
 		if(chebiEntryMap.get(_ALT_ID) != null) {
 			String[] alt = chebiEntryMap.get(_ALT_ID).split("\t");
 			for(String altid : alt) {
 				RelationshipXref rx = CPathUtils
-						.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model, false);
+					.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model, false);
 				smr.addXref(rx);
-			} 
+			}
 		}
-		
+
 		//use synonyms to create names, structure, formula, and InChIKey rel.xref, if the field is present
 		//i.e., if it's not a generic/class type chebi entry
 		final String entry = chebiEntryMap.get(_SYNONYM);
@@ -176,11 +176,11 @@ class ChebiOboConverter extends BaseConverter
 					}
 					//add RX because a InChIKey can map to several CHEBI IDs
 					RelationshipXref rx = CPathUtils
-							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model, false);
+						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model, false);
 					smr.addXref(rx);
 				} else if (sy.contains("InChI=")) {
 					String structureUri = Normalizer
-							.uri(xmlBase, null, name, ChemicalStructure.class);
+						.uri(xmlBase, null, name, ChemicalStructure.class);
 					ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
 					if (structure == null) {
 						structure = model.addNew(ChemicalStructure.class, structureUri);
@@ -200,7 +200,7 @@ class ChebiOboConverter extends BaseConverter
 				}
 			}
 		}
-			
+
 		// add xrefs (external)
 		if(chebiEntryMap.get(_XREF) != null) {
 			String[] xrefs = chebiEntryMap.get(_XREF).split("\t");
@@ -227,7 +227,7 @@ class ChebiOboConverter extends BaseConverter
 					}
 				} else {
 					throw new IllegalStateException("Pattern failed " +
-							"to match xref id and db within " + xs);
+						"to match xref id and db within " + xs);
 				}
 			}
 		}

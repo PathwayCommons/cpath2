@@ -87,7 +87,7 @@ public final class CPathUtils {
     // get data from service
     try {
       // we'd like to read lines at a time
-      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream());
+      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream(), "UTF-8");
       // are we ready to read?
       while (scanner.hasNextLine()) {
         // grab a line
@@ -162,19 +162,6 @@ public final class CPathUtils {
     return toReturn;
   }
 
-  /**
-   * Close the OutputStream quietly.
-   *
-   * @param os
-   */
-  private static void closeQuietly(final OutputStream os) {
-    try {
-      os.close();
-    } catch (Exception e) {
-      LOGGER.warn("os.close() failed." + e);
-    }
-  }
-
 
   /**
    * Writes or overwrites from the array to target file.
@@ -193,7 +180,7 @@ public final class CPathUtils {
       throw new RuntimeException("write: failed writing byte[] to "
           + " to " + file, e);
     } finally {
-      closeQuietly(os);
+      IOUtils.closeQuietly(os);
     }
   }
 

@@ -225,22 +225,22 @@ public final class PreMerger {
   {
     Set<Mapping> mappings = new HashSet<>();
 
-    Scanner scaner = new Scanner(new GZIPInputStream(new FileInputStream(service.originalFile(content))));
+    Scanner scanner = new Scanner(new GZIPInputStream(Files.newInputStream(
+      Paths.get(service.originalFile(content)))), "UTF-8");
 
-    String line = scaner.nextLine(); //get the first, title line
+    String line = scanner.nextLine(); //get the first, title line
     String head[] = line.split("\t");
     assert head.length == 2 : "bad header";
     String from = head[0].trim();
     String to = head[1].trim();
-    while (scaner.hasNextLine()) {
-      line = scaner.nextLine();
+    while (scanner.hasNextLine()) {
+      line = scanner.nextLine();
       String pair[] = line.split("\t");
       String srcId = pair[0].trim();
       String tgtId = pair[1].trim();
       mappings.add(new Mapping(from, srcId, to, tgtId));
     }
-
-    scaner.close();
+    scanner.close();
 
     return mappings;
   }

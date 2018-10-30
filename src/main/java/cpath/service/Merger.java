@@ -193,14 +193,11 @@ public final class Merger {
 		//quick-fix BioSource : set name if not set
 		Map<String,String> orgMap = service.settings().getOrganismsAsTaxonomyToNameMap();
 		for(BioSource org : providerModel.getObjects(BioSource.class)) {
-			for (String tax : orgMap.keySet()) {
+			for (Map.Entry<String,String> entry : orgMap.entrySet()) {
 				// BioSource URIs are already normalized and contain identifiers.org/taxonomy
-				// (if it was possible to do) but may also contain a suffix after "_" (cell type, tissue terms)
-				if(org.getUri().startsWith("http://identifiers.org/taxonomy/" + tax + "_")) {
-					String name = orgMap.get(tax);
-					if(!org.getName().contains(name)) {
-						org.addName(name);
-					}
+				// (if it was possible); might also contain a suffix after "_" (cell type, tissue terms)
+				if(org.getUri().startsWith("http://identifiers.org/taxonomy/" + entry.getKey() + "_")) {
+					org.addName(entry.getValue()); //won't duplicate if the name exists in the Set
 				}
 			}
 		}
@@ -503,9 +500,10 @@ public final class Merger {
 
 	private void copySomeOfPropertyValues(Map<EntityReference, EntityReference> replacements, Model model) {
 		// post-fix
-		for (EntityReference old : replacements.keySet()) {			
-			final EntityReference repl = replacements.get(old);	
-			
+		for (Map.Entry<EntityReference,EntityReference> entry: replacements.entrySet()) {
+      final EntityReference old = entry.getKey();
+			final EntityReference repl = entry.getValue();
+
 			for (EntityFeature ef : new HashSet<>(old.getEntityFeature()))
 			{ // move entity features of the replaced ER to the new canonical one
 				// remove the ef from the old ER

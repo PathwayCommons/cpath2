@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import cpath.service.api.Indexer;
 import cpath.service.api.Searcher;
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -72,11 +71,11 @@ public class SearchEngine implements Indexer, Searcher {
 	
 	//Default fields to use with the MultiFieldQueryParser;
 	//one can still search in other fields directly, like - pathway:some_keywords datasource:"pid"
-	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
+	final static String[] DEFAULT_FIELDS =
 	{
 			FIELD_KEYWORD, //data type properties (name, id, term, comment) of this and child elements;
 			FIELD_XREFID,
-			FIELD_NAME,
+			FIELD_NAME
 	};
 
 	private final Model model;
@@ -251,7 +250,7 @@ public class SearchEngine implements Indexer, Searcher {
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
-				final String text = StringUtils.join(ModelUtils.getKeywords(bpe,2, keywordsFilter), " ");
+				final String text = String.join(" ", ModelUtils.getKeywords(bpe,2, keywordsFilter));
 				try {
 					TokenStream tokenStream = analyzer.tokenStream("", new StringReader(text));
 					String res = highlighter.getBestFragments(tokenStream, text, 7, "...");

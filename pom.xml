@@ -47,10 +47,6 @@
     <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
     <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
-    <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
-    <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
-    <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
   </properties>
 
   <issueManagement>
@@ -178,22 +174,20 @@
           <forkCount>1</forkCount>
           <argLine>-Xmx2g -Dfile.encoding=UTF-8 -ea --illegal-access=permit</argLine>
           <systemPropertyVariables>
-            <CPATH2_HOME>tmp</CPATH2_HOME>
+            <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven-failsafe-plugin.version}</version>
         <configuration>
-          <argLine>--illegal-access=permit</argLine>
+          <argLine>-Xmx3g -Dfile.encoding=UTF-8 --illegal-access=permit</argLine>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>${versions-maven-plugin.version}</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -201,7 +195,7 @@
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>${dockerfile-maven-plugin.version}</version>
+        <version>1.4.4</version>
         <configuration>
           <repository>${docker.image.prefix}/cpath2</repository>
           <buildArgs>
@@ -241,6 +235,17 @@
         <artifactId>maven-war-plugin</artifactId>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>3.1.7</version>
+        <configuration>
+          <onlyAnalyze>cpath.*,cpath.service.*,cpath.service.web.*,
+            cpath.service.web.args.*,cpath.service.web.args.binding.*
+            cpath.service.api.*,cpath.service.jaxb.*,cpath.service.jpa.*,
+            cpath.cleaner.*,cpath.converter.*</onlyAnalyze>
         </configuration>
       </plugin>
     </plugins>

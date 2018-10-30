@@ -1,17 +1,14 @@
 # TODO: an experimental Dockerfile
 
 FROM openjdk:8-jdk-alpine
-VOLUME /tmp
-
-# in development, test data, index get generated in the project's ./tmp -
-COPY tmp /tmp
-WORKDIR /tmp
-ENV CPATH2_HOME /tmp
+VOLUME /work
 
 # in production, work dir. contains actual application.properties, data, index, db -
 #COPY work /work
-#WORKDIR /work
-#ENV CPATH2_HOME /work
+# but in development, test data, index get generated in the project's ./target/work dir.
+COPY target/work /work
+WORKDIR /work
+ENV CPATH2_HOME /work
 
 ARG JAR_FILE
 COPY ${JAR_FILE} /pc2.jar

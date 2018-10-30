@@ -137,10 +137,12 @@ public class BiopaxConverter {
       dataResponse.setProviders(providers(m));
       return dataResponse;
     } catch (Exception e) {
-      try {
-        Files.delete(tmpPath);
-      } catch (Exception ex) {
-        log.error(e.toString());
+      if(tmpPath != null) {
+        try {
+          Files.delete(tmpPath);
+        } catch (Exception ex) {
+          log.error(e.toString());
+        }
       }
       return new ErrorResponse(INTERNAL_ERROR, e);
     }

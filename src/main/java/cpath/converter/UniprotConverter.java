@@ -40,7 +40,7 @@ final class UniprotConverter extends BaseConverter {
         Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
         model.setXmlBase(xmlBase);
 
-		Scanner scanner = new Scanner(is);
+		Scanner scanner = new Scanner(is, "UTF-8");
 		final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
 		log.info("convert(), starting to read data...");
 		long linesReadSoFar = 0;

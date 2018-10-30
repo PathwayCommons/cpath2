@@ -71,6 +71,7 @@ public class BiopaxModelController extends BasicController {
       String[] uris = args.getUri();
       Map<String,String> options = new HashMap<String,String>();
       if(args.getPattern()!=null && args.getPattern().length>0) {
+        //used StringUtils.join vs String.join due to it's array of enum. objects, not char sequences.
         options.put("pattern", StringUtils.join(args.getPattern(), ","));
       }
       ServiceResponse result = service.fetch(args.getFormat(), options, args.getSubpw(), uris);

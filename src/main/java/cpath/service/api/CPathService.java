@@ -235,10 +235,9 @@ public interface CPathService {
   String outputDir(Metadata metadata);
 
   /**
-   * For the given Metadata, unpacks and reads the corresponding
-   * original zip data archive, creating new {@link cpath.service.jpa.Content} objects
-   * in the metadata's dataFile collection.
-   * Skips for system files/directory entries.
+   * Given Metadata (data source), this procedure expands the corresponding
+   * original data archive (zip), creating new {@link cpath.service.jpa.Content} objects
+   * in the metadata's dataFile collection (it skips system file/directory entries).
    *
    * @param metadata Metadata
    */

@@ -872,14 +872,15 @@ public class CPathServiceImpl implements CPathService {
     return Paths.get(settings.dataDir(), metadata.getIdentifier()).toString();
   }
 
-  public void buildContent(Metadata metadata)
-  {
+  public void buildContent(Metadata metadata) {
+    //collect the info about data files in the data source archive
     Collection<Content> contentCollection = new HashSet<>();
 
     try {
-      String fname = (metadata.getUrlToData().startsWith("classpath:")) //a hack for junit tests
+      String fname = (metadata.getUrlToData().startsWith("classpath:"))//a hack for test
         ? CPathUtils.LOADER.getResource(metadata.getUrlToData()).getFile().getPath()
-        : getDataArchiveName(metadata);
+          : getDataArchiveName(metadata);//production
+
       ZipFile zipFile = new ZipFile(fname);
       Enumeration<? extends ZipEntry> entries = zipFile.entries();
       while(entries.hasMoreElements())
@@ -904,9 +905,12 @@ public class CPathServiceImpl implements CPathService {
         // expand original contend and save to the gzip output file
         Path out = Paths.get(originalFile(content));
         if(!Files.exists(out)) {
-          CPathUtils.copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out)));//auto-close
+          CPathUtils.copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out)));
+          //- streams get auto-closed
         }
       }
+      //done all zip entries
+      zipFile.close();
     } catch (IOException e) {
       throw new RuntimeException("analyzeAndOrganizeContent(), " +
         "failed reading from: " + metadata.getIdentifier() , e);
@@ -918,30 +922,31 @@ public class CPathServiceImpl implements CPathService {
       log.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
   }
 
+  public void saveValidationReport(Content content, Validation validation) {
+    saveValidationReport(content,validation,false);
+    saveValidationReport(content,validation,true);
+  }
 
-  public void saveValidationReport(Content content, Validation v) {
-    Writer writer;
+  private void saveValidationReport(Content content, Validation v, boolean isHtml) {
     try {
-      writer = new OutputStreamWriter(
-        new GZIPOutputStream(new FileOutputStream(validationXmlFile(content))));
-      ValidatorUtils.write(v, writer, null);
-      writer.flush();
-      writer.close();//important
-    } catch (IOException e) {
-      log.error("saveValidationReport, failed to save the XML report", e);
-    }
-    // transform to html report and save (frankly, not needed)
-    // (fails if old saxon libs present in the classpath, e.g., those come with the psimi-converter...)
-    try {
-      writer = new OutputStreamWriter(
-        new GZIPOutputStream(new FileOutputStream(validationHtmlFile(content))));
-      StreamSource xsl = new StreamSource((new DefaultResourceLoader())
-        .getResource("classpath:html-result.xsl").getInputStream());
+      Path path;
+      StreamSource xsl;
+      if(isHtml) {
+        path = Paths.get(validationHtmlFile(content));
+        // transform to html report and save
+        // (fails if old saxon libs present in the classpath, e.g., in the psimi-converter)
+        xsl = new StreamSource((new DefaultResourceLoader())
+          .getResource("classpath:html-result.xsl").getInputStream());
+      } else {
+        path = Paths.get(validationXmlFile(content));
+        xsl = null;
+      }
+      Writer writer = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(path)), "UTF-8");
       ValidatorUtils.write(v, writer, xsl);
       writer.flush();
       writer.close();//important
-    } catch (Exception e) {
-      log.error("saveValidationReport, failed to transform the XML to HTML report", e);
+    } catch (IOException e) {
+      log.error("saveValidationReport: failed to save the report", e);
     }
   }
 
