@@ -1,8 +1,8 @@
 # cPath2: pathway data builder and server.
 
-[![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2)
-
-[![codebeat badge](https://codebeat.co/badges/cb01acef-739d-4926-a98e-9d5b46e2e252)](https://codebeat.co/projects/github-com-pathwaycommons-cpath2-master)
+[![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2) 
+[![codebeat badge](https://codebeat.co/badges/cb01acef-739d-4926-a98e-9d5b46e2e252)](https://codebeat.co/projects/github-com-pathwaycommons-cpath2-master) 
+[![Coverage Status](https://coveralls.io/repos/github/PathwayCommons/cpath2/badge.svg?branch=master)](https://coveralls.io/github/PathwayCommons/cpath2?branch=master) 
 
 cPath2 is a biological pathway data integration and query platform 
 for [Pathway Commons](http://www.pathwaycommons.org) (PC) projects.
