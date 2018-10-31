@@ -11,6 +11,8 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
@@ -20,6 +22,7 @@ import cpath.service.jaxb.SearchResponse;
 public class SearchEngineTest {
 
   static final ResourceLoader resourceLoader = new DefaultResourceLoader();
+  static final Logger logger = LoggerFactory.getLogger(SearchEngineTest.class);
 
   @Test
   public final void testSearch() throws IOException {
@@ -47,8 +50,12 @@ public class SearchEngineTest {
     assertNotNull(response);
     assertFalse(response.isEmpty());
     assertEquals(2, response.getSearchHit().size());
-    //if debug logging mode is enabled, there will be 'excerpt' field
-//    assertNotNull(response.getSearchHit().get(0).getExcerpt());
+
+    //if debug logging is enabled, there will be 'excerpt' field
+    if(logger.isDebugEnabled())
+      assertNotNull(response.getSearchHit().get(0).getExcerpt());
+    else
+      assertNull(response.getSearchHit().get(0).getExcerpt());
 
     response = searchEngine.search("ATP", 0, Pathway.class, null, null);
     assertNotNull(response);

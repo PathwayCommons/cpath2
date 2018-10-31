@@ -3,12 +3,9 @@ package cpath.service.jaxb;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Search hit java bean.
@@ -28,8 +25,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
                 "pathway",
                 "excerpt",
                 "numParticipants",
-                "numProcesses",
-                "size"
+                "numProcesses"
         }
 )
 public class SearchHit implements Serializable {
@@ -42,7 +38,6 @@ public class SearchHit implements Serializable {
     private List<String> organism;
     private List<String> pathway;
     private String excerpt;
-    private Integer size;
     private Integer numParticipants;
     private Integer numProcesses;
 

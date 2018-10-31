@@ -20,11 +20,10 @@
         </encoder>
     </appender>
 
-    <logger name="psidev.psi.mi" level="error"/>
-    <logger name="org.biopax.paxtools.impl" level="error"/>
-    <logger name="org.apache.tomcat.util.scan" level="error"/>
-
-    <root level="info">
+    <logger name="cpath" level="info"/>
+    <logger name="org.biopax" level="warn"/>
+    <logger name="org.springframework" level="info"/>
+    <root level="error">
         <appender-ref ref="file"/>
     </root>
 

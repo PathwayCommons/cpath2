@@ -23,7 +23,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <start-class>cpath.Application</start-class>
-    <license.licenseName>MIT License</license.licenseName>
+    <license.licenseName>MIT</license.licenseName>
     <lucene.version>7.5.0</lucene.version>
     <h2.version>1.4.197</h2.version>
     <paxtools.version>5.1.0</paxtools.version>
@@ -31,7 +31,8 @@
     <jena.version>2.6.4</jena.version>
     <validator.version>5.0.0-SNAPSHOT</validator.version>
     <junit.version>4.12</junit.version>
-    <commons-lang.version>3.8.1</commons-lang.version>
+    <commons-lang3.version>3.8.1</commons-lang3.version>
+    <commons-text.version>1.6</commons-text.version>
     <commons-collections.version>3.2.2</commons-collections.version>
     <github.global.server>github</github.global.server>
     <swagger2.version>2.7.0</swagger2.version>
@@ -157,27 +158,32 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
-        <!--<configuration>-->
-          <!--<release>8</release>-->
-        <!--</configuration>-->
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <reuseForks>false</reuseForks>
-          <forkCount>1</forkCount>
-          <argLine>-Xmx3g -Dfile.encoding=UTF-8 -ea --illegal-access=permit</argLine>
+          <argLine>-Xmx3g -Dfile.encoding=UTF-8 -ea</argLine>
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
-          <argLine>-Xmx3g -Dfile.encoding=UTF-8 --illegal-access=permit</argLine>
+          <argLine>-Xmx3g -Dfile.encoding=UTF-8</argLine>
+          <systemPropertyVariables>
+            <CPATH2_HOME>target/work</CPATH2_HOME>
+          </systemPropertyVariables>
+          <runOrder>alphabetical</runOrder>
+          <includes>
+            <include>**/*IT.java</include>
+          </includes>
         </configuration>
       </plugin>
       <plugin>
@@ -402,7 +408,12 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang.version}</version>
+        <version>${commons-lang3.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-text</artifactId>
+        <version>${commons-text.version}</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
@@ -537,7 +548,10 @@
         </exclusion>
       </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+    </dependency>
     <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
