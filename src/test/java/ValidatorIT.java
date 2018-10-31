@@ -22,7 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 
-//@Ignore //TODO: enable and run tests after updating biopax-validator version
+@Ignore //TODO: enable and run tests after updating biopax-validator version
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BiopaxConfiguration.class})
 @ActiveProfiles({"premerge"})

@@ -47,8 +47,8 @@ public class SearchEngineTest {
     assertNotNull(response);
     assertFalse(response.isEmpty());
     assertEquals(2, response.getSearchHit().size());
-    //if debug mode (tests) - there will be 'excerpt' field
-    assertNotNull(response.getSearchHit().get(0).getExcerpt());
+    //if debug logging mode is enabled, there will be 'excerpt' field
+//    assertNotNull(response.getSearchHit().get(0).getExcerpt());
 
     response = searchEngine.search("ATP", 0, Pathway.class, null, null);
     assertNotNull(response);

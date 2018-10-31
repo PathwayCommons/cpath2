@@ -20,14 +20,8 @@
         </encoder>
     </appender>
 
-    <logger name="org" level="warn"/>
-    <logger name="com" level="warn"/>
-    <logger name="net" level="error"/>
-    <logger name="java" level="warn"/>
-    <logger name="javax" level="warn"/>
     <logger name="psidev.psi.mi" level="error"/>
     <logger name="org.biopax.paxtools.impl" level="error"/>
-    <logger name="org.biopax.paxtools.util.BPCollections" level="info"/>
     <logger name="org.apache.tomcat.util.scan" level="error"/>
 
     <root level="info">
