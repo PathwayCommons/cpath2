@@ -17,15 +17,11 @@
  
   <logger name="cpath" level="info" />
   <logger name="org.biopax" level="info" />
+  <logger name="org.biopax.obo" level="warn" />
   <logger name="org.springframework" level="info" />
-  <logger name="org.hibernate" level="error" />
-  <logger name="com.mchange" level="error" />
-  <logger name="net.sf.ehcache" level="warn" />
-  <logger name="org.obo" level="warn" />
-  <logger name="java.sql" level="warn" />
-  <logger name="org.apache.tomcat.util.scan" level="error"/>
- 
-  <root level="info">
+
+  <root level="warn">
     <appender-ref ref="console" />
   </root>
+
 </configuration>

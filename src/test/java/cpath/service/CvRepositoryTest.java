@@ -3,13 +3,10 @@ package cpath.service;
 import static org.junit.Assert.*;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.psidev.ontology_manager.OntologyTermI;
-import org.biopax.psidev.ontology_manager.impl.OntologyTermImpl;
 import org.junit.Test;
 
 
@@ -19,9 +16,8 @@ public class CvRepositoryTest {
 	
 	static {
 		final Properties cfg = new Properties();
-		cfg.put("MI", "classpath:mi.obo");
-		cfg.put("MOD", "classpath:mod.obo");
-		cfg.put("GO", "classpath:go.obo");
+		cfg.put("GO", "classpath:test-go.obo");
+		cfg.put("MOD", "classpath:test-mod.obo");
 		ontologyManager = new OntologyManager(cfg, null);
 	}
 	
@@ -30,36 +26,9 @@ public class CvRepositoryTest {
 		Collection<String> ontologyIDs = ontologyManager.getOntologyIDs();
 		assertTrue(ontologyIDs.contains("GO"));
 		assertEquals("gene ontology", ontologyManager.getOntology("GO").getName().toLowerCase());
-		assertTrue(ontologyIDs.contains("MI"));
 		assertTrue(ontologyIDs.contains("MOD"));
 	}
 
-	@Test
-	public void testOntologyTermsToUris() {
-		OntologyTermI term = new OntologyTermImpl("GO", "GO:0005654", "nucleoplasm");
-		Set<OntologyTermI> terms = new HashSet<>();
-		terms.add(term);
-		Set<String> urns = ontologyManager.ontologyTermsToUris(terms);
-		assertFalse(urns.isEmpty());
-		assertTrue(urns.size() == 1);
-		String urn = urns.iterator().next();
-		assertEquals("http://identifiers.org/go/GO:0005654", urn);
-	}
-
-	@Test
-	public void testSearchForTermByAccession() {
-		OntologyTermI term = ontologyManager.findTermByAccession("GO:0005654");
-		assertNotNull(term);
-		assertEquals("nucleoplasm", term.getPreferredName());
-	}
-
-	@Test
-	public void testSearchMODForTermByAccession() {
-		OntologyTermI term = ontologyManager.findTermByAccession("MOD:00046");
-		assertNotNull(term);
-		assertEquals("MOD", term.getOntologyId());
-	}
-	
 	@Test
 	public void testGetDirectChildren() {
 		Set<String> dc = ontologyManager.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");

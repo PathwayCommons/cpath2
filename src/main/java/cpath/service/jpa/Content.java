@@ -6,20 +6,17 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 /**
  * A bio pathway/network data file from some data provider.
  */
+@Deprecated //TODO: remove, refactor to simply use strings (path) in Metadata.content
 @Entity
 @DynamicUpdate
 @DynamicInsert
 @Table(name = "content", uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "filename"}))
 public final class Content {
-
-  private static Logger log = LoggerFactory.getLogger(Content.class);
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,4 +1,4 @@
-# TODO: an experimental Dockerfile
+# experimental Dockerfile
 
 FROM openjdk:8-jdk-alpine
 VOLUME /work

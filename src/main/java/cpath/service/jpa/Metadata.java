@@ -22,9 +22,8 @@ import org.biopax.paxtools.model.level3.Score;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
-
 /**
- * Data Provider Metadata.
+ * Data provider/source metadata.
  */
 @Entity
 @DynamicUpdate
@@ -32,7 +31,7 @@ import org.hibernate.annotations.DynamicUpdate;
 @Table(name = "metadata")
 public final class Metadata {
 
-  // for metadata reading from a plain config. file
+  // for metadata reading from a configuration file
   public static final int METADATA_IDENTIFIER_INDEX = 0;
   public static final int METADATA_NAME_INDEX = 1;
   public static final int METADATA_DESCRIPTION_INDEX = 2;
@@ -105,7 +104,7 @@ public final class Metadata {
 
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   @JoinColumn(name = "metadata_id")
-  private Set<Content> content;
+  private Set<Content> content; //TODO: refactor to use Set<String> (paths) instead Set<Content>
 
   private String pubmedId;
   private String availability;

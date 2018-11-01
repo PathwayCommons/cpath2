@@ -21,8 +21,8 @@ public class Settings
   private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
   /**
-   * Name for the system environment and/or JVM variable
-   * cPath2 uses to know its "home" directory location.
+   * System environment/JVM variable name to define the work directory
+   * (for properties, data, log).
    */
   public static final String HOME_DIR = "CPATH2_HOME";
 
@@ -47,20 +47,20 @@ public class Settings
   public static final String INDEX_SUBDIR = "index";
 
   /**
-   * cpath2 internal "blacklist" (of the ubiquitous molecules
-   * to be excluded by graph queries and data converters/exporters).
+   * The "blacklist" of the ubiquitous molecules
+   * to be excluded by graph queries and data converters.
    */
   public static final String BLACKLIST_FILE = "blacklist.txt";
 
   public static final String EXPORT_SCRIPT_FILE ="export.sh";
 
   /**
-   * cpath2 Metadata configuration default file name.
+   * Metadata configuration default file name.
    */
   public static final String METADATA_FILE = "metadata.conf";
 
   /**
-   * Common prefix for cPath2 generated BioPAX comments
+   * Common prefix for generated BioPAX comments
    */
   public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
 

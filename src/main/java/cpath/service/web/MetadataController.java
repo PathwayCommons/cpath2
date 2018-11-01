@@ -18,9 +18,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import static org.springframework.http.MediaType.*;
+
 @Profile("web")
 @RestController
-@RequestMapping(method = RequestMethod.GET)
+@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
 //@CrossOrigin //enabled, allowed *, get/post/head by default for a spring-boot app
 public class MetadataController extends BasicController {
 
@@ -31,7 +33,7 @@ public class MetadataController extends BasicController {
     binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
   }
 
-  @RequestMapping("/metadata/logo/{identifier}")
+  @RequestMapping(value = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
   public byte[] queryForLogo(@PathVariable String identifier)
     throws IOException {
     Metadata ds = service.metadata().findByIdentifier(identifier);
@@ -53,7 +55,7 @@ public class MetadataController extends BasicController {
   }
 
 
-  @RequestMapping("/metadata")
+  @RequestMapping(value = "/metadata", produces = {APPLICATION_JSON_VALUE})
   public Map<String, Object> queryForMetadata() {
     TreeMap<String, Object> props = new TreeMap();
 
@@ -69,7 +71,7 @@ public class MetadataController extends BasicController {
   }
 
   // to return a xml or json data http response
-  @RequestMapping("/metadata/datasources")
+  @RequestMapping(value = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
   public List<Metadata> queryForDatasources() {
     log.debug("Getting pathway datasources info.");
     //pathway/interaction data sources
@@ -92,7 +94,7 @@ public class MetadataController extends BasicController {
     return ds;
   }
 
-  @RequestMapping("/metadata/datasources/{identifier}")
+  @RequestMapping(value = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
   public Metadata datasource(@PathVariable String identifier) {
     Metadata m = service.metadata().findByIdentifier(identifier);
     if (m == null)
@@ -100,7 +102,7 @@ public class MetadataController extends BasicController {
     return m;
   }
 
-  @RequestMapping("/miriam/uri/{db}/{id}")
+  @RequestMapping(value = "/miriam/uri/{db}/{id}", produces = {APPLICATION_JSON_VALUE, TEXT_PLAIN_VALUE})
   public String identifierOrgUri(@PathVariable String db, @PathVariable String id) {
     try {
       return MiriamLink.getIdentifiersOrgURI(db, id);
@@ -110,7 +112,7 @@ public class MetadataController extends BasicController {
     return null;
   }
 
-  @RequestMapping("/miriam/url/{db}/{id}")
+  @RequestMapping(value = "/miriam/url/{db}/{id}", produces = APPLICATION_JSON_VALUE)
   public String[] miriamUrl(@PathVariable String db, @PathVariable String id) {
     try {
       return MiriamLink.getLocations(db, id);

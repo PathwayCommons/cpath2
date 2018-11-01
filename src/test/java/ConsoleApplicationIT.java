@@ -1,24 +1,28 @@
 import cpath.ConsoleApplication;
+
 import cpath.service.api.CPathService;
 import cpath.service.api.OutputFormat;
 import cpath.service.jpa.Mapping;
 import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
 import cpath.service.*;
-import cpath.service.jaxb.DataResponse;
-import cpath.service.jaxb.SearchResponse;
-import cpath.service.jaxb.ServiceResponse;
-import cpath.service.jaxb.TraverseResponse;
+import cpath.service.jaxb.*;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.validator.api.Validator;
 import org.biopax.paxtools.normalizer.Normalizer;
+
+import org.biopax.validator.BiopaxIdentifier;
+import org.biopax.validator.api.Validator;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.api.beans.Behavior;
+import org.biopax.validator.api.beans.Validation;
+import org.biopax.validator.rules.ProteinModificationFeatureCvRule;
+import org.biopax.validator.rules.XrefRule;
+
 import org.junit.*;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +36,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Console app - data integration tests (using test metadata, data, index).
@@ -45,9 +48,9 @@ import java.util.zip.GZIPOutputStream;
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"admin", "premerge"})
 @SpringBootTest(classes = {ConsoleApplication.class})
-public class ConsoleAppIT
+public class ConsoleApplicationIT
 {
-  static final Logger log = LoggerFactory.getLogger(ConsoleAppIT.class);
+  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIT.class);
   static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
@@ -55,6 +58,119 @@ public class ConsoleAppIT
 
   @Autowired
   Validator validator;
+
+  @Autowired
+  XrefRule xrefRule;
+
+  @Autowired
+  ProteinModificationFeatureCvRule proteinModificationFeatureCvRule;
+
+  @Autowired
+  ValidatorUtils utils;
+
+  final BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
+
+  /*
+   * This tests that the BioPAX Validator framework
+   * is properly configured and usable in the current context.
+   */
+  @Test //controlType
+  public void testValidateModel() {
+    Catalysis ca = level3.create(Catalysis.class, "catalysis1");
+    ca.setControlType(ControlType.INHIBITION);
+    ca.addComment("error: illegal controlType");
+    TemplateReactionRegulation tr = level3.create(TemplateReactionRegulation.class, "regulation1");
+    tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
+    tr.addComment("error: illegal controlType");
+    Model m = level3.createModel();
+    m.add(ca);
+    m.add(tr);
+    Validation v = new Validation(new BiopaxIdentifier());//, "", true, null, 0, null);// do auto-fix
+    v.setModel(m);
+    validator.validate(v);
+    validator.getResults().remove(v);
+    System.out.println(v.getError());
+    assertEquals(2, v.countErrors(null, null, "range.violated", null, false, false));
+  }
+
+  /*
+   * Checks DB names and synonyms were loaded there -
+   */
+  @Test
+  public void testXrefRuleEntezGene() {
+    UnificationXref x = level3.create(UnificationXref.class, "1");
+    x.setDb("EntrezGene"); //but official preferred name is: "NCBI Gene"
+    x.setId("0000000");
+    Validation v = new Validation(new BiopaxIdentifier());
+    xrefRule.check(v, x);
+    assertTrue(v.getError().isEmpty()); //no error
+  }
+
+  @Test
+  public void testProteinModificationFeatureCvRule() {
+    //System.out.print("proteinModificationFeatureCvRule valid terms are: " + rule.getValidTerms().toString());
+    assertTrue(proteinModificationFeatureCvRule.getValidTerms().contains("(2S,3R)-3-hydroxyaspartic acid".toLowerCase()));
+    SequenceModificationVocabulary cv = level3.create(SequenceModificationVocabulary.class, "MOD_00036");
+    cv.addTerm("(2S,3R)-3-hydroxyaspartic acid");
+    ModificationFeature mf = level3.create(ModificationFeature.class, "MF_MOD_00036");
+    mf.setModificationType(cv);
+    Validation v = new Validation(new BiopaxIdentifier(), "", true, null, 0, null); // auto-fix=true - fixex "no xref" error
+    proteinModificationFeatureCvRule.check(v, mf);
+    assertEquals(0, v.countErrors(mf.getUri(), null, "illegal.cv.term", null, false, false));
+    assertEquals(1, v.countErrors(mf.getUri(), null, "no.xref.cv.terms", null, false, false)); //- one but fixed though -
+    assertEquals(0, v.countErrors(null, null, null, null, false, true)); //- no unfixed errors
+  }
+
+
+  @Test
+  public void testNormalizeTestFile() {
+    SimpleIOHandler simpleReader = new SimpleIOHandler();
+    simpleReader.mergeDuplicates(true);
+
+    Normalizer normalizer = new Normalizer();
+    String base = "test/";
+    normalizer.setXmlBase(base);
+
+    Model m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
+    normalizer.normalize(m);
+
+    /*
+     * Normalizer, if used alone (without Validator), does not turn DB or ID values to upper case
+     * when generating a new xref URI anymore... (that was actually a bad idea);
+     * "c00022", by the way, is illegal identifier (- C00022 is a valid KEGG id),
+     * which wouldn't pass the Premerger (import pipeline) stage without critical errors...
+     * BioPAX Normalizer alone cannot fix such IDs, because there are non-trivial cases,
+     * where we cannot simply convert the first symbol to upper case...;
+     * More importantly, bio identifiers are normally case sensitive.
+     */
+    assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "c00002", UnificationXref.class)));
+    assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "C00002", UnificationXref.class)));
+
+    // However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerger) together
+    // will, in fact, fix and merge these two xrefs
+    m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
+    Validation v = new Validation(new BiopaxIdentifier(), null, true, null, 0, null);
+    v.setModel(m);
+    m.setXmlBase(base);
+    validator.validate(v);
+    validator.getResults().remove(v);
+    m = (Model) v.getModel();
+    normalizer.normalize(m);
+
+    assertFalse(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "c00002", UnificationXref.class)));
+    assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "C00002", UnificationXref.class)));
+  }
+
+  /*
+   * Checks that correct classpath:profiles.properties (less strict profile)
+   * is loaded (not that from the biopax-validator jar)
+   */
+  @Test
+  public void testRulesProfile() {
+    assertThat(utils.getRuleBehavior("org.biopax.validator.rules.AcyclicPathwayRule", null),
+      is(equalTo(Behavior.IGNORE)));
+  }
+
 
   @Test
   @DirtiesContext

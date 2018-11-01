@@ -1,0 +1,210 @@
+format-version: 1.2
+data-version: releases/2017-08-15
+subsetdef: goantislim_grouping "Grouping classes that can be excluded"
+subsetdef: gocheck_do_not_annotate "Term not to be used for direct annotation"
+subsetdef: gocheck_do_not_manually_annotate "Term not to be used for direct manual annotation"
+subsetdef: goslim_agr "AGR slim"
+subsetdef: goslim_aspergillus "Aspergillus GO slim"
+subsetdef: goslim_candida "Candida GO slim"
+subsetdef: goslim_chembl "ChEMBL protein targets summary"
+subsetdef: goslim_generic "Generic GO slim"
+subsetdef: goslim_goa "GOA and proteome slim"
+subsetdef: goslim_metagenomics "Metagenomics GO slim"
+subsetdef: goslim_mouse "Mouse GO slim"
+subsetdef: goslim_pir "PIR GO slim"
+subsetdef: goslim_plant "Plant GO slim"
+subsetdef: goslim_pombe "Fission yeast GO slim"
+subsetdef: goslim_synapse "synapse GO slim"
+subsetdef: goslim_virus "Viral GO slim"
+subsetdef: goslim_yeast "Yeast GO slim"
+subsetdef: gosubset_prok "Prokaryotic GO subset"
+subsetdef: mf_needs_review "Catalytic activity terms in need of attention"
+subsetdef: termgenie_unvetted "Terms created by TermGenie that do not follow a template and require additional vetting by editors"
+subsetdef: virus_checked "Viral overhaul terms"
+synonymtypedef: syngo_official_label "label approved by the SynGO project"
+synonymtypedef: systematic_synonym "Systematic synonym" EXACT
+default-namespace: gene_ontology
+remark: cvs version: use data-version
+remark: Includes Ontology(OntologyID(Anonymous-33)) [Axioms: 212 Logical Axioms: 212]
+remark: Includes Ontology(OntologyID(OntologyIRI(<http://purl.obolibrary.org/obo/go/never_in_taxon.owl>))) [Axioms: 18 Logical Axioms: 0]
+ontology: go
+
+[Term]
+id: GO:0005737
+name: cytoplasm
+namespace: cellular_component
+def: "All of the contents of a cell excluding the plasma membrane and nucleus, but including other subcellular structures." [ISBN:0198547684]
+subset: goslim_candida
+subset: goslim_chembl
+subset: goslim_generic
+subset: goslim_metagenomics
+subset: goslim_plant
+subset: goslim_yeast
+subset: gosubset_prok
+xref: Wikipedia:Cytoplasm
+is_a: GO:0044424 ! intracellular part
+
+[Term]
+id: GO:0044424
+name: intracellular part
+namespace: cellular_component
+def: "Any constituent part of the living contents of a cell; the matter contained within (but not including) the plasma membrane, usually taken to exclude large vacuoles and masses of secretory or ingested material. In eukaryotes it includes the nucleus and cytoplasm." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+subset: gosubset_prok
+is_a: GO:0044464 ! cell part
+relationship: part_of GO:0005622 ! intracellular
+
+[Term]
+id: GO:0044464
+name: cell part
+namespace: cellular_component
+def: "Any constituent part of a cell, the basic structural and functional unit of all organisms." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+subset: goslim_pir
+subset: gosubset_prok
+synonym: "cellular subcomponent" EXACT [NIF_Subcellular:sao628508602]
+synonym: "protoplast" RELATED [GOC:mah]
+xref: NIF_Subcellular:sao628508602
+is_a: GO:0005575 ! cellular_component
+relationship: part_of GO:0005623 ! cell
+
+[Term]
+id: GO:0005622
+name: intracellular
+namespace: cellular_component
+def: "The living contents of a cell; the matter contained within (but not including) the plasma membrane, usually taken to exclude large vacuoles and masses of secretory or ingested material. In eukaryotes it includes the nucleus and cytoplasm." [ISBN:0198506732]
+subset: goslim_chembl
+subset: goslim_generic
+subset: goslim_metagenomics
+subset: goslim_pir
+subset: goslim_plant
+subset: gosubset_prok
+synonym: "internal to cell" EXACT []
+synonym: "nucleocytoplasm" RELATED [GOC:mah]
+synonym: "protoplasm" EXACT []
+synonym: "protoplast" RELATED [GOC:mah]
+xref: Wikipedia:Intracellular
+is_a: GO:0044464 ! cell part
+
+[Term]
+id: GO:0005654
+name: nucleoplasm
+namespace: cellular_component
+def: "That part of the nuclear content other than the chromosomes or the nucleolus." [GOC:ma, ISBN:0124325653]
+subset: goslim_chembl
+subset: goslim_generic
+subset: goslim_plant
+xref: NIF_Subcellular:sao661522542
+xref: Wikipedia:Nucleoplasm
+is_a: GO:0044428 ! nuclear part
+relationship: part_of GO:0031981 ! nuclear lumen
+
+[Term]
+id: GO:0044428
+name: nuclear part
+namespace: cellular_component
+def: "Any constituent part of the nucleus, a membrane-bounded organelle of eukaryotic cells in which chromosomes are housed and replicated." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+synonym: "nuclear subcomponent" EXACT [NIF_Subcellular:sao1499850686]
+synonym: "nucleus component" EXACT []
+xref: NIF_Subcellular:sao1499850686
+is_a: GO:0044446 ! intracellular organelle part
+relationship: part_of GO:0005634 ! nucleus
+
+[Term]
+id: GO:0044451
+name: nucleoplasm part
+namespace: cellular_component
+def: "Any constituent part of the nucleoplasm, that part of the nuclear content other than the chromosomes or the nucleolus." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+is_a: GO:0044428 ! nuclear part
+relationship: part_of GO:0005654 ! nucleoplasm
+
+[Term]
+id: GO:0071821
+name: FANCM-MHF complex
+namespace: cellular_component
+def: "A protein complex contains the proteins FANCM and MHF, or their orthologs, plays an essential role in DNA remodeling, protects replication forks, and is conserved in eukaryotes." [GOC:mah, GOC:vw, PMID:20347428]
+is_a: GO:0043234 ! protein complex
+is_a: GO:0044451 ! nucleoplasm part
+
+[Term]
+id: GO:0070847
+name: core mediator complex
+namespace: cellular_component
+def: "A protein complex that interacts with the carboxy-terminal domain of the largest subunit of RNA polymerase II and plays an active role in transducing the signal from a transcription factor to the transcriptional machinery. The core mediator complex has a stimulatory effect on basal transcription, and contains most of the same subdomains as the larger form of mediator complex -- a head domain comprising proteins known in Saccharomyces as Srb2, -4, and -5, Med6, -8, and -11, and Rox3 proteins; a middle domain comprising Med1, -4, and -7, Nut1 and -2, Cse2, Rgr1, Soh1, and Srb7 proteins; and a tail consisting of Gal11p, Med2p, Pgd1p, and Sin4p -- but lacks the regulatory subcomplex comprising Ssn2, -3, and -8, and Srb8 proteins. Metazoan core mediator complexes have similar modular structures and include homologs of yeast Srb and Med proteins." [PMID:11454195, PMID:16168358, PMID:17870225]
+synonym: "C mediator complex" EXACT [PMID:17870225]
+synonym: "S mediator complex" EXACT [PMID:17043218]
+is_a: GO:0044451 ! nucleoplasm part
+is_a: GO:0090575 ! RNA polymerase II transcription factor complex
+relationship: part_of GO:0016591 ! DNA-directed RNA polymerase II, holoenzyme
+
+[Term]
+id: GO:0044422
+name: organelle part
+namespace: cellular_component
+def: "Any constituent part of an organelle, an organized structure of distinctive morphology and function. Includes constituent parts of the nucleus, mitochondria, plastids, vacuoles, vesicles, ribosomes and the cytoskeleton, but excludes the plasma membrane." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+subset: gosubset_prok
+is_a: GO:0005575 ! cellular_component
+relationship: part_of GO:0043226 ! organelle
+
+[Term]
+id: GO:0031981
+name: nuclear lumen
+namespace: cellular_component
+def: "The volume enclosed by the nuclear inner membrane." [GOC:mah, GOC:pz]
+is_a: GO:0044428 ! nuclear part
+is_a: GO:0070013 ! intracellular organelle lumen
+
+[Term]
+id: GO:0044428
+name: nuclear part
+namespace: cellular_component
+def: "Any constituent part of the nucleus, a membrane-bounded organelle of eukaryotic cells in which chromosomes are housed and replicated." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: goantislim_grouping
+subset: gocheck_do_not_annotate
+synonym: "nuclear subcomponent" EXACT [NIF_Subcellular:sao1499850686]
+synonym: "nucleus component" EXACT []
+xref: NIF_Subcellular:sao1499850686
+is_a: GO:0044446 ! intracellular organelle part
+relationship: part_of GO:0005634 ! nucleus
+
+[Term]
+id: GO:0005737
+name: cytoplasm
+namespace: cellular_component
+def: "All of the contents of a cell excluding the plasma membrane and nucleus, but including other subcellular structures." [ISBN:0198547684]
+subset: goslim_candida
+subset: goslim_chembl
+subset: goslim_generic
+subset: goslim_metagenomics
+subset: goslim_plant
+subset: goslim_yeast
+subset: gosubset_prok
+xref: Wikipedia:Cytoplasm
+is_a: GO:0044424 ! intracellular part
+
+[Term]
+id: GO:0044446
+name: intracellular organelle part
+namespace: cellular_component
+def: "A constituent part of an intracellular organelle, an organized structure of distinctive morphology and function, occurring within the cell. Includes constituent parts of the nucleus, mitochondria, plastids, vacuoles, vesicles, ribosomes and the cytoskeleton but excludes the plasma membrane." [GOC:jl]
+comment: Note that this term is in the subset of terms that should not be used for direct gene product annotation. Instead, select a child term or, if no appropriate child term exists, please request a new term. Direct annotations to this term may be amended during annotation QC.
+subset: gocheck_do_not_annotate
+subset: gosubset_prok
+is_a: GO:0044422 ! organelle part
+is_a: GO:0044424 ! intracellular part
+relationship: part_of GO:0043229 ! intracellular organelle
+
