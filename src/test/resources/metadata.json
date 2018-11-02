@@ -1,4 +1,6 @@
 {
+  "description" : "Pathway Commons data sources (metadata)",
+  "version" : 11,
   "datasources" : [
     {
       "identifier": "TEST_UNIPROT",
