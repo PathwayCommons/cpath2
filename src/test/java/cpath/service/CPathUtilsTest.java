@@ -27,7 +27,6 @@ public class CPathUtilsTest {
 	
 	static Model model;
 	static SimpleIOHandler exporter;
-	static int count = 0;
 
 	static {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
