@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2) 
 [![codebeat badge](https://codebeat.co/badges/cb01acef-739d-4926-a98e-9d5b46e2e252)](https://codebeat.co/projects/github-com-pathwaycommons-cpath2-master) 
 [![Coverage Status](https://coveralls.io/repos/github/PathwayCommons/cpath2/badge.svg?branch=master)](https://coveralls.io/github/PathwayCommons/cpath2?branch=master) 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/80dca0fb21674e0fb5509bc3ae063868)](https://www.codacy.com/app/IgorRodchenkov/cpath2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=IgorRodchenkov/cpath2&amp;utm_campaign=Badge_Grade) 
 
 cPath2 is a biological pathway data integration and query platform 
 for [Pathway Commons](http://www.pathwaycommons.org) (PC) projects.
