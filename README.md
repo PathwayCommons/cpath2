@@ -1,8 +1,8 @@
 # cPath2: pathway data builder and server.
 
-- [![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2) 
-- [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c9722bf60f714e87a7137ff2f2586926)](https://www.codacy.com/app/IgorRodchenkov/cpath2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PathwayCommons/cpath2&amp;utm_campaign=Badge_Grade)
-- [![Coverage Status](https://coveralls.io/repos/github/PathwayCommons/cpath2/badge.svg?branch=master)](https://coveralls.io/github/PathwayCommons/cpath2?branch=master) 
+-  [![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2) 
+-  [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c9722bf60f714e87a7137ff2f2586926)](https://www.codacy.com/app/IgorRodchenkov/cpath2?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PathwayCommons/cpath2&amp;utm_campaign=Badge_Grade)
+-  [![Coverage Status](https://coveralls.io/repos/github/PathwayCommons/cpath2/badge.svg?branch=master)](https://coveralls.io/github/PathwayCommons/cpath2?branch=master) 
 
 cPath2 is a biological pathway data integration and query platform 
 for [Pathway Commons](http://www.pathwaycommons.org) (PC) projects.
