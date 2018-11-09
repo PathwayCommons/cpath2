@@ -32,7 +32,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringRunner.class)
 @ActiveProfiles("admin")
 @DataJpaTest(includeFilters = @ComponentScan.Filter(Component.class))
-//@Import({Settings.class, CPathService.class}) //currently, it'd do the same as the above line
 public class ServiceAndJpaTest {
 
   @Autowired
