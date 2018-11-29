@@ -1,9 +1,9 @@
-package cpath.service.web;
+package cpath.web;
 
 import cpath.service.api.GraphType;
 import cpath.service.api.OutputFormat;
 import cpath.service.jaxb.*;
-import cpath.service.web.args.binding.*;
+import cpath.web.args.binding.*;
 
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;

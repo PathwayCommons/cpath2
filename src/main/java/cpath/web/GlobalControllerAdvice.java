@@ -1,4 +1,4 @@
-package cpath.service.web;
+package cpath.web;
 
 import cpath.service.Settings;
 import org.springframework.beans.factory.annotation.Autowired;

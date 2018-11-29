@@ -1,5 +1,6 @@
-package cpath.service;
+package cpath.web;
 
+import cpath.service.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +32,7 @@ public class SpringFoxConfig {
     return new Docket(DocumentationType.SWAGGER_2)
       .select()
 //      .apis(RequestHandlerSelectors.any()) //this then shows Spring actuators, swagger, etc..
-//      .apis(RequestHandlerSelectors.basePackage("cpath.service.web"))
+//      .apis(RequestHandlerSelectors.basePackage("cpath.web"))
       .apis(RequestHandlerSelectors.withClassAnnotation(RestController.class))
             .paths(PathSelectors.any())
       .build()

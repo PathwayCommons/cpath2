@@ -63,7 +63,7 @@ public class CPathServiceImpl implements CPathService {
 
   static final Class<? extends BioPAXElement>[] DEFAULT_SEED_TYPES = new Class[]{PhysicalEntity.class, Gene.class};
 
-  Searcher searcher;
+  private Searcher searcher;
 
   @Autowired
   MetadataRepository metadataRepository;
@@ -87,9 +87,6 @@ public class CPathServiceImpl implements CPathService {
   private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
   private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
-  /**
-   * Constructor
-   */
   public CPathServiceImpl() {
     this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
     this.simpleIO.mergeDuplicates(true);

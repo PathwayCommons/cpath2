@@ -1,9 +1,5 @@
-package cpath;
+package cpath.service;
 
-import cpath.service.CPathUtils;
-import cpath.service.Merger;
-import cpath.service.PreMerger;
-import cpath.service.SearchEngine;
 import cpath.service.api.Analysis;
 import cpath.service.api.CPathService;
 import cpath.service.api.Searcher;

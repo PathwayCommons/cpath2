@@ -1,4 +1,4 @@
-package cpath.service.web;
+package cpath.web;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 
 import cpath.service.CPathUtils;
 import cpath.service.jpa.Metadata;
-import cpath.service.web.args.binding.MetadataTypeEditor;
+import cpath.web.args.binding.MetadataTypeEditor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

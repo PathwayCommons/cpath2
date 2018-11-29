@@ -1,4 +1,4 @@
-package cpath.service.web.args;
+package cpath.web.args;
 
 
 import io.swagger.annotations.ApiParam;

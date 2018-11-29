@@ -1,12 +1,10 @@
 package cpath.service;
 
 import org.springframework.context.annotation.*;
-import org.springframework.context.annotation.aspectj.EnableSpringConfigured;
 
-@Profile("premerge")
 @Configuration
-@EnableSpringConfigured //enables AOP
-@ImportResource("classpath*:META-INF/spring/appContext-validator.xml")
-@ComponentScan(basePackages = {"org.biopax.validator"})
+@Profile("premerge")
+@ImportResource({"classpath*:META-INF/spring/appContext-validator.xml",
+  "classpath*:META-INF/spring/appContext-loadTimeWeaving.xml"})
 public class BiopaxConfiguration {
 }

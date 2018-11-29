@@ -59,11 +59,6 @@ public class Settings
    */
   public static final String METADATA_FILE = "metadata.conf";
 
-  /**
-   * Common prefix for generated BioPAX comments
-   */
-  public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
-
   private Boolean sbgnLayoutEnabled;
   private String xmlBase;
   private Integer maxHitsPerPage;
@@ -241,12 +236,9 @@ public class Settings
   }
 
   /**
-   * Gets current Home Directory (full path; must exist).
-   *
-   * The cpath2 home system environment variable
-   * (which must be set) overrides the java option, if any.
-   *
-   * @return
+   * Gets the work directory (must exist).
+   * CPATH2_HOME system environment variable value overrides the JVM option if it's defined.
+   * @return CPATH2_HOME value (default 'target/work' is for unit tests)
    */
   public String homeDir() {
     String homedir = System.getProperty(HOME_DIR);

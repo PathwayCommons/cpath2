@@ -1,4 +1,4 @@
-package cpath;
+package cpath.web;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Profile;
@@ -12,7 +12,6 @@ import org.springframework.web.servlet.view.JstlView;
 @Profile({"web"})
 public class WebApplication implements WebMvcConfigurer
 {
-
   // Enable content negotiation via
   // content-type (application/json, application/xml) or path extension (.json or .xml)
   @Override

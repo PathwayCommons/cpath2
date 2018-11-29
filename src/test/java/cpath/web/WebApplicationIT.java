@@ -1,4 +1,5 @@
-import cpath.Application;
+package cpath.web;
+
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"web"})
-@SpringBootTest(classes = {Application.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class WebApplicationIT {
 
   @Autowired

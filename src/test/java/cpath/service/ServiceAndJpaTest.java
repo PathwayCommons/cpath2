@@ -28,14 +28,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
-
 @RunWith(SpringRunner.class)
 @ActiveProfiles("admin")
 @DataJpaTest(includeFilters = @ComponentScan.Filter(Component.class))
 public class ServiceAndJpaTest {
 
   @Autowired
-  CPathService service;
+  private CPathService service;
 
   @Test
   public final void testSettings() {

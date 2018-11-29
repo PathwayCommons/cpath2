@@ -3,7 +3,7 @@ package cpath.analysis;
 import java.util.HashSet;
 import java.util.Set;
 
-import cpath.ConsoleApplication;
+import cpath.service.ConsoleApplication;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BindingFeature;
 import org.biopax.paxtools.model.level3.EntityFeature;

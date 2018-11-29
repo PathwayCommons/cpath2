@@ -1,4 +1,4 @@
-package cpath.service.web;
+package cpath.web;
 
 import java.util.*;
 
@@ -6,9 +6,9 @@ import cpath.service.ErrorResponse;
 import cpath.service.api.GraphType;
 import cpath.service.api.OutputFormat;
 import cpath.service.api.Status;
-import cpath.service.web.args.*;
+import cpath.web.args.*;
 import cpath.service.jaxb.*;
-import cpath.service.web.args.binding.*;
+import cpath.web.args.binding.*;
 
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;

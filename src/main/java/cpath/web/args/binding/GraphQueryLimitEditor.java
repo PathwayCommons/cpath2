@@ -1,4 +1,4 @@
-package cpath.service.web.args.binding;
+package cpath.web.args.binding;
 
 import org.biopax.paxtools.query.algorithm.LimitType;
 

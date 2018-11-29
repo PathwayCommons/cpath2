@@ -1,6 +1,5 @@
-package cpath.service.web;
+package cpath.web;
 
-import cpath.WebApplication;
 import cpath.service.Settings;
 import cpath.service.api.CPathService;
 import cpath.service.jaxb.SearchHit;

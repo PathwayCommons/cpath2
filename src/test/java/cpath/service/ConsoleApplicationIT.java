@@ -1,11 +1,10 @@
-import cpath.ConsoleApplication;
+package cpath.service;
 
 import cpath.service.api.CPathService;
 import cpath.service.api.OutputFormat;
 import cpath.service.jpa.Mapping;
 import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
-import cpath.service.*;
 import cpath.service.jaxb.*;
 
 import org.biopax.paxtools.model.*;
@@ -47,7 +46,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"admin", "premerge"})
-@SpringBootTest(classes = {ConsoleApplication.class})
+@SpringBootTest
 public class ConsoleApplicationIT
 {
   static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIT.class);

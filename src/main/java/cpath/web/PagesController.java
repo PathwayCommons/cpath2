@@ -1,4 +1,4 @@
-package cpath.service.web;
+package cpath.web;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;

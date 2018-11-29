@@ -1,4 +1,4 @@
-package cpath.service.web.args;
+package cpath.web.args;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;

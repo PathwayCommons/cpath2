@@ -43,6 +43,8 @@
     <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
     <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
+    <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 --illegal-access=permit -ea</jvm.options>
+    <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring.version}/spring-instrument-${spring.version}.jar</agent>
   </properties>
 
   <issueManagement>
@@ -163,7 +165,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Xmx3g -Dfile.encoding=UTF-8 -ea</argLine>
+          <argLine>${jvm.options}</argLine>
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
@@ -177,7 +179,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
-          <argLine>-Xmx3g -Dfile.encoding=UTF-8</argLine>
+          <argLine>${jvm.options} -javaagent:${agent}</argLine>
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
@@ -232,6 +234,8 @@
         </executions>
         <configuration>
           <mainClass>${start-class}</mainClass>
+          <jvmArguments>${jvm.options}</jvmArguments>
+          <agent>${agent}</agent>
         </configuration>
       </plugin>
       <plugin>
@@ -244,12 +248,36 @@
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>3.1.7</version>
-        <!--<configuration>-->
-          <!--<onlyAnalyze>cpath.*,cpath.service.*,cpath.service.web.*,-->
-            <!--cpath.service.web.args.*,cpath.service.web.args.binding.*-->
-            <!--cpath.service.api.*,cpath.service.jaxb.*,cpath.service.jpa.*,-->
-            <!--cpath.cleaner.*,cpath.converter.*</onlyAnalyze>-->
-        <!--</configuration>-->
+        <configuration>
+          <onlyAnalyze>cpath.-</onlyAnalyze>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.1</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-instrument</artifactId>
+              <!--<version>${spring.version}</version>-->
+              <type>jar</type>
+              <overWrite>false</overWrite>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+              <destFileName>spring-instrument.jar</destFileName>
+            </artifactItem>
+          </artifactItems>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -454,10 +482,6 @@
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>org.apache.lucene</groupId>-->
-      <!--<artifactId>lucene-core</artifactId>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-highlighter</artifactId>
@@ -580,7 +604,6 @@
       <artifactId>logback-classic</artifactId>
       <scope>runtime</scope>
     </dependency>
-
     <!--Spring Boot, JPA, Validation API, Jackson, etc.-->
     <dependency>
       <groupId>com.h2database</groupId>
@@ -598,10 +621,6 @@
       <artifactId>jackson-databind</artifactId>
       <scope>runtime</scope>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>org.springframework.boot</groupId>-->
-      <!--<artifactId>spring-boot-starter</artifactId>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>

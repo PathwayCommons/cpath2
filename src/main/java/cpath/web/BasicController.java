@@ -1,4 +1,4 @@
-package cpath.service.web;
+package cpath.web;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -18,10 +18,10 @@ import static cpath.service.api.Status.*;
 import cpath.service.api.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.api.OutputFormat;
-import cpath.service.web.args.ServiceQuery;
-import cpath.service.web.args.Search;
-import cpath.service.web.args.TopPathways;
-import cpath.service.web.args.Traverse;
+import cpath.web.args.ServiceQuery;
+import cpath.web.args.Search;
+import cpath.web.args.TopPathways;
+import cpath.web.args.Traverse;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
