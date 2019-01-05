@@ -26,7 +26,7 @@
     <license.licenseName>MIT</license.licenseName>
     <lucene.version>7.5.0</lucene.version>
     <h2.version>1.4.197</h2.version>
-    <paxtools.version>5.1.0</paxtools.version>
+    <paxtools.version>5.2.1-SNAPSHOT</paxtools.version>
     <apache-jena-libs.version>3.2.0</apache-jena-libs.version>
     <jena.version>2.6.4</jena.version>
     <validator.version>5.0.0-SNAPSHOT</validator.version>
