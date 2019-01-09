@@ -21,21 +21,22 @@ public class Application {
     {
       application = new SpringApplication(Application.class);
       application.setAdditionalProfiles("web");
+      ConfigurableApplicationContext applicationContext = application.run(args);
+      CPathService service = applicationContext.getBean(CPathService.class);
+      service.init();
     }
     else
     {
       application = new SpringApplication(ConsoleApplication.class);
       if (args[0].equals(ConsoleApplication.Cmd.PREMERGE.toString())) {
-        //enable biopax-validator configuration
+        //"premerge" profile enables biopax-validator configuration
         application.setAdditionalProfiles("admin", "premerge");
       } else {
         application.setAdditionalProfiles("admin");
       }
+      ConfigurableApplicationContext applicationContext = application.run(args);
+      applicationContext.close();
     }
-
-    ConfigurableApplicationContext applicationContext = application.run(args);
-    CPathService service = applicationContext.getBean(CPathService.class);
-    service.init();
   }
 
 }

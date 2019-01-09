@@ -61,7 +61,7 @@ clean, convert, normalize data, build the warehouse, the main BioPAX model, Luce
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
 
-    nohup sh cpath2.sh -server 2>&1 &
+    nohup bash cpath2.sh -server 2>&1 &
 
 (watch the `nohup.out` and `cpath2.log`)
 
@@ -138,7 +138,7 @@ To see available data import/export commands and options, run:
     cpath2.sh
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
- - -metadata (sh cpath2.sh -metadata)
+ - -metadata (bash cpath2.sh -metadata)
  - -premerge `[--buildWarehouse]`  
  - -merge
  - -index

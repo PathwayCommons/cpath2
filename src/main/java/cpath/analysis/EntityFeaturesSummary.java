@@ -19,15 +19,14 @@ import cpath.service.api.Analysis;
  * (just for development and debugging).
  * 
  * This class is not an essential part of this system; 
- * it's to be optionally called using the cpath-cli.sh script,
- * i.e., via {@link ConsoleApplication} '-run-analysis' console command.
+ * it's to be optionally called using the cpath2.sh script,
+ * i.e., via {@link ConsoleApplication} '-run-analysis' command.
  * 
  * This uses a Java option: cpath.analysis.filter.metadataids=id1,id2,.. 
  * (if not defined, all data are analyzed; IDs are cpath2 metadata/datasource identifiers,
  * i.e., not providers' names)
  * 
  * @author rodche
- *
  */
 public final class EntityFeaturesSummary implements Analysis<Model> {
 	

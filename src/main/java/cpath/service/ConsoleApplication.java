@@ -169,12 +169,10 @@ public class ConsoleApplication implements CommandLineRunner {
     } else {
       System.err.println(usage());
     }
-
-//    System.exit(0); //important
   }
 
   /**
-   * Executes a code that uses or edits the main BioPAX model.
+   * Runs a class that analyses or modifies the main BioPAX model.
    *
    * @param analysisClass a class that implements {@link Analysis}
    * @param readOnly

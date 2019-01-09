@@ -11,10 +11,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import cpath.analysis.TraverseAnalysis;
-import cpath.service.api.CPathService;
-import cpath.service.api.Indexer;
-import cpath.service.api.OutputFormat;
-import cpath.service.api.Searcher;
+import cpath.service.api.*;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -517,8 +514,7 @@ public class CPathServiceImpl implements CPathService {
       Class<? extends BioPAXElement> type = BioPAXLevel.L3.getInterfaceForName(propertyPath.substring(0, idx));
       //Not only absolute URIs but also IDs (to search for biopax type objects) now work!
       String[] sourceUris =  findUrisByIds(uris, type);
-      TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
-      traverseAnalysis.execute(paxtoolsModel);
+      new TraverseAnalysis(res, sourceUris).execute(paxtoolsModel);
       return res;
     } catch (IllegalArgumentException e) { //- catches IllegalBioPAXArgumentException too
       log.error("traverse() failed to init path accessor. " + e);
