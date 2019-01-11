@@ -43,7 +43,6 @@ public final class Metadata {
   public static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
   public static final int METADATA_PUBMEDID_INDEX = 9;
   public static final int METADATA_AVAILABILITY_INDEX = 10;
-  public static final int NUMBER_METADATA_ITEMS = 11;
 
   private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
 
@@ -102,8 +101,7 @@ public final class Metadata {
   private String cleanerClassname;
   private String converterClassname;
 
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-  @JoinColumn(name = "metadata_id")
+  @ElementCollection(fetch = FetchType.EAGER)
   private Set<String> files;
 
   private String pubmedId;
@@ -176,6 +174,10 @@ public final class Metadata {
     return files;
   }
 
+  public boolean addFile(String path) {
+    return files.add(path);
+  }
+
   /**
    * Sets the identifier.
    * No spaces, dashes, allowed.
@@ -201,7 +203,7 @@ public final class Metadata {
    * value in cpath2 full-text search queries
    * (for pathway datasource types only)
    *
-   * @return
+   * @return identifier
    */
   public String getIdentifier() {
     return identifier;
@@ -215,8 +217,8 @@ public final class Metadata {
    * as this will be recommended to use as filter ('datasource')
    * value in cpath2 full-text search queries
    *
-   * @param name
-   * @throws IllegalArgumentException
+   * @param name semicolon-separated names: displayName;standardName;name3;name4...
+   * @throws IllegalArgumentException when name is null
    */
   public void setName(List<String> name) {
     if (name == null) {
@@ -228,7 +230,7 @@ public final class Metadata {
   /**
    * Gets the data provider/source name.
    *
-   * @return
+   * @return names
    */
   public List<String> getName() {
     return name;
@@ -261,7 +263,6 @@ public final class Metadata {
   public String getUrlToHomepage() {
     return urlToHomepage;
   }
-
 
   public void setType(METADATA_TYPE metadata_type) {
     if (metadata_type == null) {
@@ -298,12 +299,10 @@ public final class Metadata {
         ? null : converterClassname;
   }
 
-
   @Override
   public String toString() {
     return identifier;
   }
-
 
   /**
    * Creates a new Provenance from this Metadata and sets
@@ -316,7 +315,7 @@ public final class Metadata {
    * @param model BioPAX model to update
    */
   public void setProvenanceFor(Model model) {
-    Provenance pro = null;
+    Provenance pro;
 
     // we create URI from the Metadata identifier and version.
     final String uri = model.getXmlBase() + identifier;
@@ -359,7 +358,7 @@ public final class Metadata {
    * Returns the standard name (the second one in the name list),
    * if present, otherwise - returns the first name (display name)
    *
-   * @return
+   * @return name
    */
   public String standardName() {
     //also capitalize (can be extremely useful...)

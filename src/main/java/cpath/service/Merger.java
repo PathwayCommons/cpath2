@@ -151,7 +151,7 @@ public final class Merger {
 			providerModel.setXmlBase(xmlBase);
 
 			for (String pwdata : metadata.getFiles()) {
-				if (!new File(service.normalizedFile(pwdata)).exists()) {
+				if (!new File(CPathUtils.normalizedFile(pwdata)).exists()) {
 					log.warn("Skip '" + pwdata + "' - no normalized data found (failed premerge)");
 					continue;
 				}
@@ -159,9 +159,9 @@ public final class Merger {
 				log.info("Merging: " + pwdata);
 
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream = CPathUtils.gzipInputStream(service.normalizedFile(pwdata));
+				InputStream inputStream = CPathUtils.gzipInputStream(CPathUtils.normalizedFile(pwdata));
 				if(inputStream == null) {
-					log.error("Skipped " + pwdata + " - " + "cannot read " + service.normalizedFile(pwdata));
+					log.error("Skipped " + pwdata + " - " + "cannot read " + CPathUtils.normalizedFile(pwdata));
 					continue;
 				}
 
@@ -927,7 +927,7 @@ public final class Merger {
 				for(String s : er.getName()) {
 					if(names.contains(s.toLowerCase())) {
 						//extract the ChEBI accession from URI, add
-						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
+						mp.add(CPathUtils.idFromNormalizedUri(er.getUri()));
 						break;
 					}
 				}

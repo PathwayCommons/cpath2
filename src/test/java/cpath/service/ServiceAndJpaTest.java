@@ -112,41 +112,23 @@ public class ServiceAndJpaTest {
     Metadata md = new Metadata("TEST", "test", "test", "", "",
         "", METADATA_TYPE.BIOPAX, null, null, null, "free");
 
-    //cleanup previous tests data if any
     service.clear(md);
-    String content = "test 0"; //space will be replaced
-    md.getFiles().add(content);
-    //add the second pd (for the tests at the end of this method)
-    md.getFiles().add("test1");
-    // persist
+    String origfile = Paths.get(service.intermediateDataDir(md), "test_1.gz").toString();
+    md.addFile(origfile);
     service.metadata().save(md);
-
-    // test pathwaydata content is not accidentally erased
-    Iterator<String> it = md.getFiles().iterator();
-    content = it.next();
-    //we want test0 for following assertions
-    if ("test1".equals(content))
-      content = it.next();
-    assertEquals("test_0", content);
 
     //even if we update from the db, data must not be empty
     md = service.metadata().findByIdentifier(md.getIdentifier());
     assertNotNull(md);
     assertEquals("TEST", md.getIdentifier());
-    assertEquals(2, md.getFiles().size());
-    it = md.getFiles().iterator();
-    content = it.next();
-    //we want test0 for following assertions
-    if ("test1".equals(content))
-      content = it.next();
-    assertEquals("test_0", content);
+    assertEquals(1, md.getFiles().size());
+    String datafile = md.getFiles().iterator().next();
+    assertEquals(origfile, datafile);
 
-    // write validation result to files
-    for (String f : md.getFiles()) {
-      String out = service.validationFile(f);
-      service.saveValidationReport(new Validation(null, f, false, Behavior.WARNING, 0, null), out);
-      assertTrue(Files.exists(Paths.get(out)));
-    }
+    String out = CPathUtils.validationFile(datafile);
+    service.saveValidationReport(
+      new Validation(null, datafile, false, Behavior.WARNING, 0, null), out);
+    assertTrue(Files.exists(Paths.get(out)));
 
     //cleanup
     service.clear(md);
@@ -172,7 +154,7 @@ public class ServiceAndJpaTest {
         "free"
     );
 
-    CPathUtils.cleanupDirectory(service.outputDir(metadata), true);
+    CPathUtils.cleanupDirectory(service.intermediateDataDir(metadata), true);
     assertTrue(metadata.getFiles().isEmpty());
 
     service.unzipData(metadata);

@@ -1,11 +1,12 @@
 package cpath.service;
 
-import java.io.FileOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,10 +41,10 @@ import static cpath.service.jpa.Metadata.*;
 
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
+  private static final String dataFileSuffixRegex = "\\.(.+)?\\.gz$";
 
   // LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
   public static final ResourceLoader LOADER = new DefaultResourceLoader();
-
 
   private CPathUtils() {
     throw new AssertionError("Not instantiable");
@@ -55,7 +56,7 @@ public final class CPathUtils {
    * @param path      path to the directory
    * @param createNew true/false
    */
-  public static void cleanupDirectory(String path, boolean createNew) {
+  static void cleanupDirectory(String path, boolean createNew) {
     Path dir = Paths.get(path);
     try {
       if (Files.exists(dir) && Files.isDirectory(dir)) {
@@ -74,7 +75,7 @@ public final class CPathUtils {
    * @param url String
    * @return Collection<Metadata>
    */
-  public static Collection<Metadata> readMetadata(final String url) {
+  static Collection<Metadata> readMetadata(final String url) {
     // order of lines/records in the Metadata table does matter (since 2013/03);
     // so List is used here instead of HashSet
     List<Metadata> toReturn = new ArrayList<>();
@@ -87,7 +88,7 @@ public final class CPathUtils {
     // get data from service
     try {
       // we'd like to read lines at a time
-      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream(), "UTF-8");
+      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream(), StandardCharsets.UTF_8.name());
       // are we ready to read?
       while (scanner.hasNextLine()) {
         // grab a line
@@ -155,29 +156,6 @@ public final class CPathUtils {
     return toReturn;
   }
 
-
-  /**
-   * Writes or overwrites from the array to target file.
-   *
-   * @param src
-   * @param file
-   * @throws RuntimeException when there was an IO problem
-   */
-  public static void write(byte[] src, String file) {
-    FileOutputStream os = null;
-    try {
-      os = new FileOutputStream(file);
-      os.write(src);
-      os.flush();
-    } catch (IOException e) {
-      throw new RuntimeException("write: failed writing byte[] to "
-          + " to " + file, e);
-    } finally {
-      IOUtils.closeQuietly(os);
-    }
-  }
-
-
   /**
    * Replaces the URI of a BioPAX object
    * using java reflection. Normally, one should avoid this;
@@ -203,15 +181,14 @@ public final class CPathUtils {
     model.add(el);
   }
 
-
   /**
    * Loads the BioPAX model from a Gzip archive
    * previously created by the same cpath2 instance.
    *
-   * @param archive
+   * @param archive file path
    * @return big BioPAX model
    */
-  public static Model importFromTheArchive(String archive) {
+  static Model importFromTheArchive(String archive) {
     Model model = null;
 
     try {
@@ -224,7 +201,6 @@ public final class CPathUtils {
 
     return model;
   }
-
 
   /**
    * Reads from the input and writes to the output stream
@@ -239,7 +215,6 @@ public final class CPathUtils {
     os.close();
   }
 
-
   /**
    * For a warehouse (normalized) EntityReference's or CV's URI
    * gets the corresponding identifier (e.g., UniProt or ChEBI primary ID).
@@ -249,11 +224,10 @@ public final class CPathUtils {
    * @param uri URI
    * @return local part URI - ID
    */
-  public static String idfromNormalizedUri(String uri) {
-    Assert.isTrue(uri.contains("http://identifiers.org/"));
+  static String idFromNormalizedUri(String uri) {
+    Assert.isTrue(uri.contains("http://identifiers.org/"),"Not a Identifiers.org URI");
     return uri.substring(uri.lastIndexOf('/') + 1);
   }
-
 
   /**
    * Auto-fix an ID of particular type before using it
@@ -299,28 +273,17 @@ public final class CPathUtils {
   /**
    * Whether a string starts with any of the prefixes (case insensitive).
    *
-   * @param s        to search in
-   * @param prefixes search terms
-   * @return
+   * @param s a string
+   * @param prefixes optional array of prefix terms to match
+   * @return true/false
    */
-  public static boolean startsWithAnyIgnoreCase(String s, Collection<String> prefixes) {
+  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
     for (String prefix : prefixes) {
       if (StringUtils.startsWithIgnoreCase(s, prefix)) {
         return true;
       }
     }
     return false;
-  }
-
-  /**
-   * Whether a string starts with any of the prefixes (case insensitive).
-   *
-   * @param s
-   * @param prefixes
-   * @return
-   */
-  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
-    return startsWithAnyIgnoreCase(s, Arrays.asList(prefixes));
   }
 
   /**
@@ -338,7 +301,7 @@ public final class CPathUtils {
     RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId) {
     Assert.notNull(vocab, "vocab is null");
 
-    RelationshipXref toReturn = null;
+    RelationshipXref toReturn;
 
     String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab.toString(), RelationshipXref.class);
     if (model.containsID(uri)) {
@@ -373,7 +336,7 @@ public final class CPathUtils {
     return toReturn;
   }
 
-  public static Set<String> getXrefIds(BioPAXElement bpe) {
+  static Set<String> getXrefIds(BioPAXElement bpe) {
     final Set<String> ids = new HashSet<>();
 
     //Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
@@ -404,7 +367,7 @@ public final class CPathUtils {
     return ids;
   }
 
-  public static InputStream gzipInputStream(String gzPath) {
+  static InputStream gzipInputStream(String gzPath) {
     Path path = Paths.get(gzPath);
     try {
       return new GZIPInputStream(Files.newInputStream(path));
@@ -418,9 +381,9 @@ public final class CPathUtils {
   /**
    * Generate a URI (for a Provenance instance.)
    *
-   * @return
+   * @return URI
    */
-  public static String getMetadataUri(Model model, Metadata metadata) {
+  static String getMetadataUri(Model model, Metadata metadata) {
     return model.getXmlBase() + metadata.getIdentifier();
   }
 
@@ -433,8 +396,7 @@ public final class CPathUtils {
    * @return Converter
    */
   public static Converter newConverter(String converterClassName) {
-    Converter converter = (Converter) newInstance(converterClassName);
-    return converter;
+    return (Converter) newInstance(converterClassName);
   }
 
   /**
@@ -445,7 +407,7 @@ public final class CPathUtils {
    * @param cleanerClassName canonical java class name for the Cleaner implementation
    * @return instance of the class
    */
-  public static Cleaner newCleaner(String cleanerClassName) {
+  static Cleaner newCleaner(String cleanerClassName) {
     return (Cleaner) newInstance(cleanerClassName);
   }
 
@@ -466,5 +428,21 @@ public final class CPathUtils {
     }
 
     return null;
+  }
+
+  public static String normalizedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".normalized.gz");
+  }
+
+  public static String validationFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".issues.gz");
+  }
+
+  public static String convertedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".converted.gz");
+  }
+
+  public static String cleanedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".cleaned.gz");
   }
 }

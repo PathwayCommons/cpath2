@@ -133,11 +133,9 @@ To see available data import/export commands and options, run:
     cpath2.sh
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
- - -metadata (bash cpath2.sh -metadata)
- - -premerge `[--buildWarehouse]`  
- - -merge
- - -index
- - -export (w/o arguments - default - generates blacklist.txt, etc., and a script to be run separately)
+ - -help
+ - -build `[--rebuild]` (bash cpath2.sh -build)
+ - -export
 
 Extras/other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 

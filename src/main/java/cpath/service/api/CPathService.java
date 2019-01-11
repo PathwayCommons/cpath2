@@ -221,7 +221,7 @@ public interface CPathService {
 
   String getDataArchiveName(Metadata metadata);
 
-  String outputDir(Metadata metadata);
+  String intermediateDataDir(Metadata metadata);
 
   /**
    * Given Metadata (data source), this procedure expands the corresponding
@@ -231,14 +231,6 @@ public interface CPathService {
   void unzipData(Metadata metadata);
 
   void saveValidationReport(Validation v, String reportFile);
-
-  String normalizedFile(String file);
-
-  String validationFile(String file);
-
-  String convertedFile(String file);
-
-  String cleanedFile(String file);
 
   Settings settings();
 

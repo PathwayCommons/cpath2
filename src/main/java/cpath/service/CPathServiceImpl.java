@@ -735,7 +735,7 @@ public class CPathServiceImpl implements CPathService {
   }
 
   public void clear(Metadata metadata) {
-    CPathUtils.cleanupDirectory(outputDir(metadata), true);
+    CPathUtils.cleanupDirectory(intermediateDataDir(metadata), true);
     metadata.setNumInteractions(null);
     metadata.setNumPathways(null);
     metadata.setNumPhysicalEntities(null);
@@ -836,14 +836,11 @@ public class CPathServiceImpl implements CPathService {
   }
 
 
-  public String outputDir(Metadata metadata) {
+  public String intermediateDataDir(Metadata metadata) {
     return Paths.get(settings.dataDir(), metadata.getIdentifier()).toString();
   }
 
   public void unzipData(Metadata metadata) {
-    //collect the info about data files in the data source archive
-    Collection<String> contentCollection = new HashSet<>();
-
     try {
       String fname = (metadata.getUrlToData().startsWith("classpath:"))//a hack for test
         ? CPathUtils.LOADER.getResource(metadata.getUrlToData()).getFile().getPath()
@@ -863,17 +860,16 @@ public class CPathServiceImpl implements CPathService {
           log.info("unzipData(), skipped " + entryName);
           continue;
         }
-
         // create pathway data object
         log.info("unzipData(), adding " + entryName + " of " + metadata.getIdentifier());
-        String datafile = originalInputDataFile(metadata, entryName);
-        // add object to return collection
-        contentCollection.add(datafile);
+        //create the original data file path/name, replacing all unsafe symbols with underscores
+        String datafile = mapDataEntryToFile(metadata.getIdentifier(), entryName);
+        metadata.addFile(datafile);
         // expand original contend and save to the gzip output file
         Path out = Paths.get(datafile);
         if(!Files.exists(out)) {
           CPathUtils.copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out)));
-          //- streams get auto-closed
+          //streams get auto-closed after copied
         }
       }
       //done all zip entries
@@ -882,14 +878,13 @@ public class CPathServiceImpl implements CPathService {
       throw new RuntimeException("unzipData(), failed reading from: " + metadata.getIdentifier() , e);
     }
 
-    if(!contentCollection.isEmpty()) {
-      metadata.getFiles().addAll(contentCollection);
-    } else
+    if(metadata.getFiles().isEmpty())
       log.warn("unzipData(), no data found for " + metadata);
   }
 
-  private String originalInputDataFile(Metadata metadata, String entryName) {
-    return Paths.get(settings.dataDir(),metadata.getIdentifier(), entryName + ".gz").toString();
+  private String mapDataEntryToFile(String metadataIdentifier, String zipEntryName) {
+    return Paths.get(settings.dataDir(),metadataIdentifier,
+      zipEntryName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".gz").toString();
   }
 
   public void saveValidationReport(Validation v, String reportFile) {
@@ -902,22 +897,6 @@ public class CPathServiceImpl implements CPathService {
     } catch (IOException e) {
       log.error("saveValidationReport: failed to save the report", e);
     }
-  }
-
-  public String normalizedFile(String inputFile) {
-    return inputFile.replaceFirst("\\.gz$",".normalized.gz");
-  }
-
-  public String validationFile(String inputFile) {
-    return inputFile.replaceFirst("\\.gz$",".issues.gz");
-  }
-
-  public String convertedFile(String inputFile) {
-    return inputFile.replaceFirst("\\.gz$",".converted.gz");
-  }
-
-  public String cleanedFile(String inputFile) {
-    return inputFile.replaceFirst("\\.gz$",".cleaned.gz");
   }
 
 }
