@@ -113,15 +113,8 @@ public final class CPathUtils {
           }
         }
 
-        assert tokens.length == NUMBER_METADATA_ITEMS : "readMetadata(): " +
-            "wrong number of columns, " + tokens.length + " instead of "
-            + NUMBER_METADATA_ITEMS + ", in the metadata record: " + line;
-
         // get metadata type
         Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
-
-        LOGGER.debug("readMetadata(): make a Metadata bean.");
-
         // create a metadata bean
         Metadata metadata = new Metadata(
             tokens[METADATA_IDENTIFIER_INDEX],

@@ -9,6 +9,7 @@ import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -29,6 +30,7 @@ import org.springframework.core.env.Environment;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -43,13 +45,14 @@ import java.util.zip.GZIPOutputStream;
 @Profile({"admin"})
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
+  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
 
   @Autowired
   private CPathService service;
 
   /**
    * Validator bean is available when "premerge" profile is activated;
-   * Used in {@link #runPremerge(boolean, boolean)}
+   * Used in {@link #premerge(boolean)}
    */
   @Autowired(required = false)
   private Validator validator;
@@ -58,15 +61,12 @@ public class ConsoleApplication implements CommandLineRunner {
   private Environment environment;
 
   public enum Cmd {
-    // command types
+    // commands
     HELP("-help"),
-    SERVER("-server"),
-    METADATA("-metadata"),
-    PREMERGE("-premerge"),
-    MERGE("-merge"),
-    INDEX("-index"),
+    BUILD("-build"),
     EXPORT("-export"),
-    ANALYSIS("-run-analysis"),;
+    ANALYSIS("-run-analysis");
+
     //name to use as the application's command line argument
     private String command;
 
@@ -79,9 +79,6 @@ public class ConsoleApplication implements CommandLineRunner {
       return command;
     }
   }
-
-  final static String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
-
 
   @Override
   public void run(String... params) throws Exception
@@ -105,39 +102,29 @@ public class ConsoleApplication implements CommandLineRunner {
     // process command line args and do smth.
     if (args.length == 0) {
       System.out.println("Use -help to see command line options");
-      return;
-    } else if (args[0].equals(Cmd.INDEX.toString())) {
-
-      index();
-
-    } else if (args[0].equals(Cmd.METADATA.toString())) {
-      if (args.length == 1) {
-        fetchMetadata("file:" + service.settings().getMetadataLocation());
-      } else {
-        fetchMetadata(args[1]);
-      }
-    } else if (args[0].equals(Cmd.PREMERGE.toString())) {
-      boolean rebuildWarehouse = false;
+    } else if (args[0].equals(Cmd.BUILD.toString())) {
       boolean force = false;
       if (args.length > 1) {
         for (int i = 1; i < args.length; i++) {
-          if (args[i].equalsIgnoreCase("--buildWarehouse"))
-            rebuildWarehouse = true;
-          if (args[i].equalsIgnoreCase("--force"))
+          if (args[i].equalsIgnoreCase("--rebuild"))
             force = true;
         }
       }
-      runPremerge(rebuildWarehouse, force);
-    } else if (args[0].equals(Cmd.MERGE.toString())) {
 
-      runMerge();
+      fetchMetadata();
+
+      premerge(force);
+
+      merge();
+
+      index();
+
+      createDownloads();
 
     } else if (args[0].equals(Cmd.EXPORT.toString())) {
-      //(the first args[0] is the command name
-      if (args.length < 2) {
-        LOG.info("Default mode: creating datasources.txt, " +
-            "summary.txt and data archives in the downloads dir...");
-        createDownloads();
+      //args[0] is the command name
+      if(args.length < 2) {
+        LOG.error("Output file is not specified.");
       } else {
         String[] uris = new String[]{};
         String[] datasources = new String[]{};
@@ -155,33 +142,35 @@ public class ConsoleApplication implements CommandLineRunner {
           else
             LOG.error("Skipped unrecognized argument: " + args[i]);
         }
+
         exportData(args[1], uris, absoluteUris, datasources, types);
       }
     } else if (args[0].equals(Cmd.ANALYSIS.toString())) {
       if (args.length < 2)
-        fail(args, "No Analysis implementation class provided.");
+        LOG.error("No Analysis<Model> class provided.");
       else if (args.length == 2)
         executeAnalysis(args[1], true);
-      else if (args.length > 2 && "--update".equalsIgnoreCase(args[2]))
+      else if ("--update".equalsIgnoreCase(args[2]))
         executeAnalysis(args[1], false);
     } else if(args[0].equals(Cmd.HELP.toString()))  {
       System.out.println(usage());
     } else {
       System.err.println(usage());
     }
+
   }
 
   /**
    * Runs a class that analyses or modifies the main BioPAX model.
    *
    * @param analysisClass a class that implements {@link Analysis}
-   * @param readOnly
+   * @param readOnly whether this is to modify and replace the BioPAX Model or not
    */
-  public void executeAnalysis(String analysisClass, boolean readOnly) {
-    Analysis analysis = null;
+  private void executeAnalysis(String analysisClass, boolean readOnly) {
+    Analysis<Model> analysis;
     try {
-      Class<Analysis> c = (Class<Analysis>) Class.forName(analysisClass);
-      analysis = c.newInstance();
+      Class c =  Class.forName(analysisClass);
+      analysis = (Analysis<Model>) c.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -203,20 +192,11 @@ public class ConsoleApplication implements CommandLineRunner {
 
   }
 
-  private void fail(String[] args, String details) {
-    throw new IllegalArgumentException(
-        "Invalid cpath2 command: " + Arrays.toString(args) + "; " + details);
-  }
-
-
-  /**
+  /*
    * Builds a new BioPAX full-text index,creates the black list or ubiquitous molecules,
    * and calculates/updates the total no. of pathways, interactions, physical entities in the main db.
-   *
-   * @throws IOException
-   * @throws IllegalStateException when not in maintenance mode
    */
-  public void index() throws IOException {
+  private void index() throws IOException {
     LOG.info("index: indexing...");
     service.index();
 
@@ -254,12 +234,10 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("index: all done.");
   }
 
-  /**
+  /*
    * Performs cpath2 Merge stage.
-   *
-   * @throws IllegalStateException when not maintenance mode
    */
-  public void runMerge() {
+  private void merge() {
     //disable 2nd level hibernate cache (ehcache)
     // otherwise the merger eventually fails with a weird exception
     // (this probably depends on the cache config. parameters)
@@ -268,16 +246,12 @@ public class ConsoleApplication implements CommandLineRunner {
     merger.merge();
   }
 
-
-  /**
+  /*
    * Executes the premerge stage:
    * organize, clean, convert, validate, normalize pathway/interaction data,
    * and create BioPAX utility class objects warehouse and id-mapping.
-   *
-   * @param rebuildWarehouse
-   * @throws IllegalStateException when not maintenance mode
    */
-  public void runPremerge(boolean rebuildWarehouse, boolean force) {
+  private void premerge(boolean rebuild) {
     LOG.info("runPremerge: initializing (DAO, validator, premerger)...");
     //test that officially supported organisms are specified (throws a runtime exception otherwise)
     service.settings().getOrganismTaxonomyIds();
@@ -287,27 +261,25 @@ public class ConsoleApplication implements CommandLineRunner {
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     System.setProperty("net.sf.ehcache.disabled", "true");
 
-    PreMerger premerger = new PreMerger(service, validator, force);
+    PreMerger premerger = new PreMerger(service, validator, rebuild);
     premerger.premerge();
 
     // create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
-    if (rebuildWarehouse)
+    if (rebuild)
       premerger.buildWarehouse();
 
     //back to read-only schema mode (useful when called from the web Main page)
     System.setProperty("hibernate.hbm2ddl.auto", "validate");
   }
 
-  /**
+  /*
    * Loads data providers' metadata.
-   *
-   * @param location String PROVIDER_URL or local file.
    */
-  public void fetchMetadata(final String location)  {
+  private void fetchMetadata()  {
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     // grab the data
     // load the test metadata and create warehouse
-    for (Metadata mdata : CPathUtils.readMetadata(location))
+    for (Metadata mdata : CPathUtils.readMetadata(service.settings().getMetadataLocation()))
       service.metadata().save(mdata);
     //back to read-only schema mode (useful when called from the web admin app)
     System.setProperty("hibernate.hbm2ddl.auto", "validate");
@@ -326,7 +298,7 @@ public class ConsoleApplication implements CommandLineRunner {
    * @param types              filter by biopax type if 'uris' is not empty
    * @throws IOException, IllegalStateException (in maintenance mode)
    */
-  public void exportData(final String output, String[] uris, boolean outputAbsoluteUris,
+  private void exportData(final String output, String[] uris, boolean outputAbsoluteUris,
                          String[] datasources, String[] types) throws IOException {
     if (uris == null)
       uris = new String[]{};
@@ -373,7 +345,6 @@ public class ConsoleApplication implements CommandLineRunner {
     IOUtils.closeQuietly(os);//though, convertToOWL must have done this already
   }
 
-
   private Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type) {
     // 'type' (a BioPAX L3 interface class name) is case insensitive
     for (Class<? extends BioPAXElement> c : SimpleEditorMap.L3
@@ -386,47 +357,41 @@ public class ConsoleApplication implements CommandLineRunner {
     throw new IllegalArgumentException("Illegal BioPAX class name '" + type);
   }
 
-
   private String usage() {
     final String NEWLINE = System.getProperty("line.separator");
-    StringBuilder toReturn = new StringBuilder();
-    toReturn.append("Usage: <-command_name> [<command_args...>] " +
-        "(- parameters within the square braces are optional.)" + NEWLINE);
-    toReturn.append("commands:" + NEWLINE);
-    toReturn.append(Cmd.METADATA.toString() + " <url> (fetch Metadata configuration (default: " +
-        "use metadata.conf file in current directory))" + NEWLINE);
-    toReturn.append(Cmd.PREMERGE.toString() + " [--buildWarehouse] [--force]" +
-        "(organize, clean, convert, normalize input data;" +
-        " create metadata db and create or rebuild the BioPAX utility type objects Warehouse)" + NEWLINE);
-    toReturn.append(Cmd.MERGE.toString() + " (merge all pathway data; overwrites the main biopax model archive)" + NEWLINE);
-    toReturn.append(Cmd.INDEX.toString() + " (build new full-text index of the main merged BioPAX db;" +
-        "create blacklist.txt in the downloads directory; re-calculates the no. pathways, molecules and " +
-        "interactions per data source)" + NEWLINE);
-    toReturn.append(Cmd.EXPORT.toString()
-        + " [filename] [--uris=<uri,uri,..>] [--output-absolute-uris] [--datasources=<nameOrUri,..>] [--types=<interface,..>]" +
-        "(when no arguments provided, it generates the default detailed pathway data and organism-specific " +
-        "BioPAX archives and datasources.txt in the downloads sub-directory; plus, " +
-        "summary.txt, and convert.sh script (for exporting the BioPAX files to various formats with Paxtools). " +
-        "If [filename] is provided, it only exports the main BioPAX model or a sub-model " +
-        "(if the list of URIs or filter option is provided): " +
-        "when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
-        "when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
-        "will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE);
-    toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
-        "if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
-    toReturn.append(Cmd.SERVER.toString() + " (start the web service; in production, set system variable CPATH2_HOME=path/to/work directory)" + NEWLINE);
-    toReturn.append(Cmd.HELP.toString() + " (print these information)" + NEWLINE);
-    return toReturn.toString();
+    return "Usage: <-command_name> [<command_args...>] (parameters within the square braces are optional)" +
+      NEWLINE +
+      "Commands:" +
+      NEWLINE +
+      Cmd.BUILD.toString() +
+      " [--rebuild] (using metadata.json and input data archives, it will " +
+      " clean, convert, normalize pathway data files; (re-)create the BioPAX Warehouse model;" +
+      " merge all the above BioPAX models into the main one;" +
+      " build the full-text index of the merged BioPAX model; generate blacklist.txt; etc. )" +
+      NEWLINE +
+      Cmd.EXPORT.toString() +
+      " [filename] [--uris=<uri,uri,..>] [--output-absolute-uris] [--datasources=<nameOrUri,..>] [--types=<interface,..>]" +
+      " (when no arguments, it generates the default detailed pathway data and organism-specific " +
+      "BioPAX archives and datasources.txt in the downloads sub-directory; plus, " +
+      "summary.txt, and convert.sh script (for exporting the BioPAX files to various formats with Paxtools). " +
+      "If [filename] is provided, it only exports the main BioPAX model or a sub-model " +
+      "(if the list of URIs or filter option is provided): " +
+      "when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
+      "when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
+      "will contain BioPAX elements that pass the filter by data source and/or type)" +
+      NEWLINE +
+      Cmd.ANALYSIS.toString() +
+      " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
+      "if --update is set, one then should re-index and generate new 'downloads')" +
+      NEWLINE +
+      Cmd.HELP.toString() + " (print these information)" + NEWLINE;
   }
 
-
-  /**
+  /*
    * Create cpath2 downloads
    * (exports the db to various formats)
-   *
-   * @throws IOException, IllegalStateException (when not in maintenance mode), InterruptedException
    */
-  public void createDownloads() throws IOException, InterruptedException {
+  private void createDownloads() throws IOException {
     LOG.info("createDownloads(), started...");
 
     //load the main model
@@ -436,7 +401,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
     // create an imported data summary file.txt (issue#23)
     PrintWriter writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
-      Paths.get(service.settings().downloadsDir(), "datasources.txt")),"UTF-8")
+      Paths.get(service.settings().downloadsDir(), "datasources.txt")), StandardCharsets.UTF_8)
     );
     String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
     writer.println(String.join(" ", Arrays
@@ -471,7 +436,7 @@ public class ConsoleApplication implements CommandLineRunner {
         LOG.info(left + " xrefs to map...");
     }
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
-      Paths.get(service.settings().downloadsDir(), "uniprot.txt")),"UTF-8")
+      Paths.get(service.settings().downloadsDir(), "uniprot.txt")), StandardCharsets.UTF_8)
     );
     writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
         service.settings().getVersion()));
@@ -492,7 +457,7 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
     final String commonPrefix = service.settings().exportArchivePrefix(); //e.g., PathwayCommons8
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
-      Paths.get(service.settings().exportScriptFile())), "UTF-8"));
+      Paths.get(service.settings().exportScriptFile())), StandardCharsets.UTF_8));
     writer.println("#!/bin/sh");
     writer.println("# An auto-generated script for converting the BioPAX data archives");
     writer.println("# in the downloads directory to other formats.");
@@ -590,10 +555,9 @@ public class ConsoleApplication implements CommandLineRunner {
       }
     } else {
       LOG.info("won't generate any 'by organism' archives, for only one " +
-          service.settings().getOrganisms() + " is listed in the properties file");
+        ArrayUtils.toString(service.settings().getOrganisms()) + " is listed in the properties file");
     }
   }
-
 
   private void exportBiopax(
       final Model mainModel, final Searcher searcher,

@@ -2,12 +2,9 @@ package cpath;
 
 import cpath.service.ConsoleApplication;
 import cpath.service.api.CPathService;
-import cpath.web.WebApplication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Arrays;
 
 @SpringBootApplication
 public class Application {
@@ -16,20 +13,16 @@ public class Application {
 
     SpringApplication application;
 
-    if (args.length==0 || Arrays.stream(args)
-      .anyMatch(ConsoleApplication.Cmd.SERVER.toString()::equalsIgnoreCase))
-    {
+    if (args.length==0) {
       application = new SpringApplication(Application.class);
       application.setAdditionalProfiles("web");
       ConfigurableApplicationContext applicationContext = application.run(args);
       CPathService service = applicationContext.getBean(CPathService.class);
       service.init();
-    }
-    else
-    {
+    } else {
       application = new SpringApplication(ConsoleApplication.class);
-      if (args[0].equals(ConsoleApplication.Cmd.PREMERGE.toString())) {
-        //"premerge" profile enables biopax-validator configuration
+      if (args[0].equals(ConsoleApplication.Cmd.BUILD.toString())) {
+        //"premerge" enables biopax-validator context
         application.setAdditionalProfiles("admin", "premerge");
       } else {
         application.setAdditionalProfiles("admin");

@@ -1,6 +1,7 @@
 package cpath.service;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +43,6 @@ import cpath.service.jpa.*;
 import cpath.service.jaxb.*;
 
 import javax.annotation.PostConstruct;
-import javax.xml.transform.stream.StreamSource;
 
 import static cpath.service.api.Status.*;
 
@@ -57,8 +57,7 @@ import static cpath.service.api.Status.*;
 @Service
 public class CPathServiceImpl implements CPathService {
   private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
-
-  static final Class<? extends BioPAXElement>[] DEFAULT_SEED_TYPES = new Class[]{PhysicalEntity.class, Gene.class};
+  private static final Class<? extends BioPAXElement>[] DEFAULT_SEED_TYPES = new Class[]{PhysicalEntity.class, Gene.class};
 
   private Searcher searcher;
 
@@ -122,17 +121,11 @@ public class CPathServiceImpl implements CPathService {
     this.paxtoolsModel = paxtoolsModel;
   }
 
-  public Searcher getSearcher() {
-    return searcher;
-  }
-  public void setSearcher(Searcher searcher) {
-    this.searcher = searcher;
-  }
-
   public ServiceResponse search(String queryStr,
-                                int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms)
+                                int page, Class<? extends BioPAXElement> biopaxClass,
+                                String[] dsources, String[] organisms)
   {
-    if(!paxtoolsModelReady() || searcher == null)
+    if(modelNotReady() || searcher == null)
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     try {
@@ -154,7 +147,7 @@ public class CPathServiceImpl implements CPathService {
   public ServiceResponse fetch(final OutputFormat format, Map<String, String> formatOptions,
                                boolean subPathways, final String... uris)
   {
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     // extract/convert a sub-model
@@ -230,7 +223,7 @@ public class CPathServiceImpl implements CPathService {
                                          final String[] datasources,
                                          boolean subPathways)
   {
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     if(direction == null) {
@@ -259,7 +252,7 @@ public class CPathServiceImpl implements CPathService {
                                          Map<String, String> formatOptions, final String[] sources, final Integer limit,
                                          final String[] organisms, final String[] datasources, boolean subPathways)
   {
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     // execute the paxtools graph query
@@ -285,7 +278,7 @@ public class CPathServiceImpl implements CPathService {
                                         final String[] sources, final String[] targets, final Integer limit,
                                         final String[] organisms, final String[] datasources, boolean subPathways)
   {
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     // execute the paxtools graph query
@@ -353,7 +346,7 @@ public class CPathServiceImpl implements CPathService {
                                          final Integer limit, Direction direction,
                                          final String[] organisms, final String[] datasources, boolean subPathways)
   {
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
 
     if (direction == Direction.BOTHSTREAM) {
@@ -446,7 +439,7 @@ public class CPathServiceImpl implements CPathService {
 
       if(types.length==0) types = DEFAULT_SEED_TYPES; //BioPAX types to search in
 
-      for(Class type : types) {
+      for(Class<? extends BioPAXElement> type : types) {
         findAllUris(uris, query, type);
       }
     }
@@ -476,7 +469,7 @@ public class CPathServiceImpl implements CPathService {
       //Find all entity URIs by ID and specific Lucene query (eq. to xrefid:"A" OR xrefid:"B" OR ...
       //sanitize the ID by simply using double quotes around each id):
       String query = "xrefid:\""+idOrUri+"\"";
-      for(Class type : DEFAULT_SEED_TYPES) {
+      for(Class<? extends BioPAXElement> type : DEFAULT_SEED_TYPES) {
         findAllUris(uris, query, type);
       }
     }
@@ -484,7 +477,7 @@ public class CPathServiceImpl implements CPathService {
     return uris;
   }
 
-  void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
+  private void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
     log.debug("findAllUris, search in " + biopaxTypeFilter.getSimpleName() + " using query: " + query);
     int page = 0; // will use search pagination; collect all hits from all result pages
     SearchResponse resp = (SearchResponse) search(query, page, biopaxTypeFilter, null, null);
@@ -499,7 +492,7 @@ public class CPathServiceImpl implements CPathService {
 
   public ServiceResponse traverse(String propertyPath, String... uris) {
 
-    if(!paxtoolsModelReady())
+    if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     TraverseResponse res = new TraverseResponse();
@@ -536,7 +529,7 @@ public class CPathServiceImpl implements CPathService {
    */
   public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
 
-    if(!paxtoolsModelReady() || searcher == null)
+    if(modelNotReady() || searcher == null)
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     if(q==null || q.isEmpty()) //too much data
@@ -546,7 +539,7 @@ public class CPathServiceImpl implements CPathService {
     final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
     int page = 0; // will use search pagination
 
-    SearchResponse r = null;
+    SearchResponse r;
     try {
       r = searcher.search(q, page, Pathway.class, datasources, organisms);
     } catch(Exception e) {
@@ -607,32 +600,14 @@ public class CPathServiceImpl implements CPathService {
     return topPathways;
   }
 
-
-  public Blacklist getBlacklist() {
-    return blacklist;
-  }
-
-  public void setBlacklist(Blacklist blacklist) {
-    this.blacklist = blacklist;
-  }
-
-
   /**
    * Prepares the seed objects for a get(fetch) or traverse query.
    *
    * @param ids an array of IDs to map
    * @return matched biopax elements
    */
-  private Set<BioPAXElement> seedBiopaxElements(String[] ids)
-  {
-    String[] mappedUris = findUrisByIds(ids);
-    Set<BioPAXElement> elements = new HashSet<>();
-    for(String id : mappedUris) {
-      BioPAXElement e = paxtoolsModel.getByID(id);
-      if(e != null)
-        elements.add(e);
-    }
-    return elements;
+  private Set<BioPAXElement> seedBiopaxElements(String[] ids) {
+    return getByUri(findUrisByIds(ids));
   }
 
   /**
@@ -646,27 +621,30 @@ public class CPathServiceImpl implements CPathService {
     Set<Set<BioPAXElement>> ret = new HashSet<>();
     Set<Set<String>> uris = mapToSeeds(ids);
     for(Set<String> set : uris) {
-      Set<BioPAXElement> bpes = new HashSet<>();
-      for (String id : set) {
-        BioPAXElement e = paxtoolsModel.getByID(id);
-        if (e != null)
-          bpes.add(e);
-      }
-      ret.add(bpes);
+      ret.add(getByUri(set.toArray(new String[0])));
     }
+
     return ret;
+  }
+
+  private Set<BioPAXElement> getByUri(String[] uris) {
+    Set<BioPAXElement> elements = new HashSet<>();
+    for (String uri : uris) {
+      BioPAXElement e = paxtoolsModel.getByID(uri);
+      if (e != null) elements.add(e);
+    }
+
+    return elements;
   }
 
   private synchronized void loadBlacklist()
   {
-    Resource blacklistResource = new DefaultResourceLoader()
-      .getResource("file:" + settings.blacklistFile());
-
+    Resource blacklistResource = new DefaultResourceLoader().getResource("file:" + settings.blacklistFile());
     if(blacklistResource.exists()) {
       try {
         this.blacklist = new Blacklist(blacklistResource.getInputStream());
         log.info("loadBlacklist, loaded: " + blacklistResource.getDescription());
-        Assert.notEmpty(blacklist.getListed());
+        Assert.notEmpty(blacklist.getListed(),"The blacklist is empty");
       } catch (IOException e) {
         log.error("loadBlacklist, failed using: "
           + blacklistResource.getDescription(), e);
@@ -676,16 +654,13 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-
-  private boolean paxtoolsModelReady() {
-    return paxtoolsModel != null;
+  private boolean modelNotReady() {
+    return paxtoolsModel == null;
   }
-
 
   public Set<String> map(String fromId, final String toDb) {
-    return map(Arrays.asList(fromId), toDb);
+    return map(Collections.singletonList(fromId), toDb);
   }
-
 
   public Set<String> map(Collection<String> fromIds, final String toDb) {
     Assert.hasText(toDb,"toDb must be not null, empty or blank");
@@ -764,7 +739,7 @@ public class CPathServiceImpl implements CPathService {
     metadata.setNumInteractions(null);
     metadata.setNumPathways(null);
     metadata.setNumPhysicalEntities(null);
-    metadata.getContent().clear();
+    metadata.getFiles().clear();
   }
 
   private void addIdsAsBiopaxAnnotations()
@@ -798,7 +773,7 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  void addSupportedIdsThatMapToChebi(List<String> chebiIds, final Set<String> resultIds) {
+  private void addSupportedIdsThatMapToChebi(List<String> chebiIds, final Set<String> resultIds) {
     //find other IDs that map to the ChEBI ID
     for(String id: chebiIds) {
       List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", id);
@@ -818,7 +793,7 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  void addSupportedIdsThatMapToUniprotId(List<String> uniprotIds, final Set<String> resultIds) {
+  private void addSupportedIdsThatMapToUniprotId(List<String> uniprotIds, final Set<String> resultIds) {
     //find other IDs that map to the UniProt AC
     for(String id: uniprotIds) {
       List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", id);
@@ -865,9 +840,9 @@ public class CPathServiceImpl implements CPathService {
     return Paths.get(settings.dataDir(), metadata.getIdentifier()).toString();
   }
 
-  public void buildContent(Metadata metadata) {
+  public void unzipData(Metadata metadata) {
     //collect the info about data files in the data source archive
-    Collection<Content> contentCollection = new HashSet<>();
+    Collection<String> contentCollection = new HashSet<>();
 
     try {
       String fname = (metadata.getUrlToData().startsWith("classpath:"))//a hack for test
@@ -880,23 +855,22 @@ public class CPathServiceImpl implements CPathService {
       {
         ZipEntry entry = entries.nextElement();
         String entryName = entry.getName();
-        log.info("analyzeAndOrganizeContent(), processing zip entry: " + entryName);
+        log.info("unzipData(), processing zip entry: " + entryName);
         //skip some sys/tmp files (that MacOSX creates sometimes)
         if(entry.isDirectory() || entryName.contains("__MACOSX") || entryName.startsWith(".")
           || entryName.contains("/.") || entryName.contains("\\."))
         {
-          log.info("analyzeAndOrganizeContent(), skipped " + entryName);
+          log.info("unzipData(), skipped " + entryName);
           continue;
         }
 
         // create pathway data object
-        log.info("analyzeAndOrganizeContent(), adding " + entryName + " of " + metadata.getIdentifier());
-        Content content = new Content(metadata, entryName);
+        log.info("unzipData(), adding " + entryName + " of " + metadata.getIdentifier());
+        String datafile = originalInputDataFile(metadata, entryName);
         // add object to return collection
-        contentCollection.add(content);
-
+        contentCollection.add(datafile);
         // expand original contend and save to the gzip output file
-        Path out = Paths.get(originalFile(content));
+        Path out = Paths.get(datafile);
         if(!Files.exists(out)) {
           CPathUtils.copy(zipFile.getInputStream(entry), new GZIPOutputStream(Files.newOutputStream(out)));
           //- streams get auto-closed
@@ -905,37 +879,24 @@ public class CPathServiceImpl implements CPathService {
       //done all zip entries
       zipFile.close();
     } catch (IOException e) {
-      throw new RuntimeException("analyzeAndOrganizeContent(), " +
-        "failed reading from: " + metadata.getIdentifier() , e);
+      throw new RuntimeException("unzipData(), failed reading from: " + metadata.getIdentifier() , e);
     }
 
-    if(contentCollection != null && !contentCollection.isEmpty()) {
-      metadata.getContent().addAll(contentCollection);
+    if(!contentCollection.isEmpty()) {
+      metadata.getFiles().addAll(contentCollection);
     } else
-      log.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
+      log.warn("unzipData(), no data found for " + metadata);
   }
 
-  public void saveValidationReport(Content content, Validation validation) {
-    saveValidationReport(content,validation,false);
-    saveValidationReport(content,validation,true);
+  private String originalInputDataFile(Metadata metadata, String entryName) {
+    return Paths.get(settings.dataDir(),metadata.getIdentifier(), entryName + ".gz").toString();
   }
 
-  private void saveValidationReport(Content content, Validation v, boolean isHtml) {
+  public void saveValidationReport(Validation v, String reportFile) {
     try {
-      Path path;
-      StreamSource xsl;
-      if(isHtml) {
-        path = Paths.get(validationHtmlFile(content));
-        // transform to html report and save
-        // (fails if old saxon libs present in the classpath, e.g., in the psimi-converter)
-        xsl = new StreamSource((new DefaultResourceLoader())
-          .getResource("classpath:html-result.xsl").getInputStream());
-      } else {
-        path = Paths.get(validationXmlFile(content));
-        xsl = null;
-      }
-      Writer writer = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(path)), "UTF-8");
-      ValidatorUtils.write(v, writer, xsl);
+      Writer writer = new OutputStreamWriter(new GZIPOutputStream(
+        Files.newOutputStream(Paths.get(reportFile))), StandardCharsets.UTF_8);
+      ValidatorUtils.write(v, writer, null);
       writer.flush();
       writer.close();//important
     } catch (IOException e) {
@@ -943,49 +904,20 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  public String normalizedFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".normalized.owl.gz";
+  public String normalizedFile(String inputFile) {
+    return inputFile.replaceFirst("\\.gz$",".normalized.gz");
   }
 
-
-  public String validationXmlFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".validation.xml.gz";
+  public String validationFile(String inputFile) {
+    return inputFile.replaceFirst("\\.gz$",".issues.gz");
   }
 
-
-  public String validationHtmlFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".validation.html.gz";
+  public String convertedFile(String inputFile) {
+    return inputFile.replaceFirst("\\.gz$",".converted.gz");
   }
 
-
-  public String convertedFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".converted.owl.gz";
-  }
-
-  public String cleanedFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".cleaned.gz";
-  }
-
-  public String originalFile(Content c) {
-    return settings.dataDir() +
-      File.separator + c.getProvider()
-      + File.separator + c.getFilename()
-      + ".original.gz";
+  public String cleanedFile(String inputFile) {
+    return inputFile.replaceFirst("\\.gz$",".cleaned.gz");
   }
 
 }

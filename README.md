@@ -67,12 +67,7 @@ script as follows:
 
 ### Metadata
 
-A cPath2 metadata configuration file is a plain text file (the default is `metadata.conf`) 
-having the following format:
- - one data source definition per line;
- - blank lines and lines that begin with "#" are ignored (remarks);
- - there are exactly 11 columns; values are separated with tab (so each line has exactly 10 '\t' chars; 
-   empty values (\t\t) are sometimes ok, e.g., when there is no Converter/Cleaner class.
+A cPath2 metadata configuration file is a JSON file (the default is `metadata.json`) 
  
 The metadata columns are, in order: 
  1. IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;

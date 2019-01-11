@@ -104,7 +104,7 @@ public final class Metadata {
 
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   @JoinColumn(name = "metadata_id")
-  private Set<Content> content; //TODO: refactor to use Set<String> (paths) instead Set<Content>
+  private Set<String> files;
 
   private String pubmedId;
   private String availability;
@@ -116,12 +116,11 @@ public final class Metadata {
    * Default Constructor.
    */
   Metadata() {
-    content = new HashSet<>();
+    files = new HashSet<>();
   }
 
   /**
    * Create a Metadata obj with the specified properties;
-   *
    * @param identifier         unique short string, will be used in URIs
    * @param name               the not empty list of names: display name (must present), standard name, other names.
    * @param description        description of the data source (details, release date, version, etc.)
@@ -137,8 +136,8 @@ public final class Metadata {
   public Metadata(final String identifier, final List<String> name, final String description,
                   final String urlToData, String urlToHomepage, final String urlToLogo,
                   final METADATA_TYPE metadata_type, final String cleanerClassname,
-                  final String converterClassname,
-                  final String pubmedId, final String availability) {
+                  final String converterClassname, final String pubmedId, final String availability)
+  {
     this();
     setIdentifier(identifier);
     if (name == null || name.isEmpty())
@@ -173,9 +172,8 @@ public final class Metadata {
     return id;
   }
 
-
-  public Set<Content> getContent() {
-    return content;
+  public Set<String> getFiles() {
+    return files;
   }
 
   /**

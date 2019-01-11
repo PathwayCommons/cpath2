@@ -1,0 +1,26 @@
+[
+  {
+    "identifier" : "chebi",
+    "name" : ["ChEBI"],
+    "description" : "ChEBI Ontology v161, 01-Mar-2018",
+    "urlToData" : "ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo",
+    "urlToHomepage" : "http://www.ebi.ac.uk/chebi/",
+    "iconUrl": "http://pathwaycommons.github.io/cpath2/logos/chebi.png",
+    "type" : "WAREHOUSE",
+    "converterClassname" : "cpath.converter.ChebiOboConverter",
+    "pubmedId" : 23180789,
+    "availability" : "free"
+  },
+  {
+    "identifier" : "uniprot_human",
+    "name" : ["UniProt","SwissProt","UniProtKB"],
+    "description" : "UniProtKB/Swiss-Prot (human), 28-Mar-2018",
+    "urlToData" : "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz",
+    "urlToHomepage" : "http://www.uniprot.org",
+    "iconUrl": "http://pathwaycommons.github.io/cpath2/logos/uniprot.png",
+    "type" : "WAREHOUSE",
+    "converterClassname" : "cpath.converter.UniprotConverter",
+    "pubmedId" : 24253303,
+    "availability" : "free"
+  }
+]
