@@ -28,8 +28,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -39,7 +37,6 @@ import org.springframework.util.Assert;
 import cpath.service.jpa.Metadata;
 
 import static cpath.service.jpa.Metadata.*;
-
 
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
@@ -139,24 +136,6 @@ public final class CPathUtils {
       }
       scanner.close();
 
-      //TODO: (for refactoring) convert metadata to JSON once and remove this code
-      JSONArray a = new JSONArray();
-      for(Metadata m : toReturn) {
-        JSONObject d = new JSONObject();
-        d.put("identifier", m.getIdentifier());
-        d.put("name", m.getName());
-        d.put("type", m.getType().name());
-        d.put("description", m.getDescription());
-        d.put("dataUrl", m.getUrlToData());
-        d.put("iconUrl", m.getIconUrl());
-        d.put("homepageUrl", m.getUrlToHomepage());
-        d.put("cleanerClass", m.getCleanerClassname());
-        d.put("converterClass", m.getConverterClassname());
-        d.put("pubmedId", m.getPubmedId());
-        d.put("availability", m.getAvailability());
-        a.add(d);
-      }
-      System.out.println(a.toJSONString());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
