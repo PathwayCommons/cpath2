@@ -71,7 +71,7 @@ public class CPathUtilsTest {
 	
 	@Test
 	public void testReadMetadata() throws IOException {
-		String url = "classpath:metadata.conf";
+		String url = "classpath:metadata.json";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = CPathUtils.readMetadata(url);
 		assertEquals(3, metadatas.size());

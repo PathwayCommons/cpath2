@@ -57,7 +57,7 @@ public class Settings
   /**
    * Metadata configuration default file name.
    */
-  public static final String METADATA_FILE = "metadata.conf";
+  public static final String METADATA_FILE = "metadata.json";
 
   private Boolean sbgnLayoutEnabled;
   private String xmlBase;

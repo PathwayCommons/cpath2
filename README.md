@@ -44,7 +44,7 @@ Directory 'work' is where the configuration, data files and indices are saved.
 
 The directory may contain: 
 - application.properties (to configure various server and model options);
-- metadata.conf (describes the bio data to be imported/integrated);
+- metadata.json (describes the bio data to be imported/integrated);
 - data/ directory (where original and intermediate data are stored);
 - index/ (Lucene index directory for the final BioPAX model);
 - downloads/ (where blacklist.txt and output data archives are created);
@@ -94,7 +94,7 @@ The metadata columns are, in order:
  11. AVAILABILITY - values: 'free', 'academic', 'purchase'
 
 A Converter or Cleaner implementation is not required to be implemented in the main cpath2 project sources. 
-It's also possible to configure (metadata.conf) and plug into --premerge stage external 
+It's also possible to configure (metadata.json) and plug into --premerge stage external 
 cleaner/converter classes after the cpath2-cli.jar is released:
 simply include to the cpath2-cli.sh Java options like:
  `-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class` 
@@ -112,7 +112,7 @@ Download UniProt, ChEBI, id-mapping tables into the data/ directory, e.g.:
  - etc...
 
 Re-pack/rename the data, i.e., make uniprot_human.zip, chebi.zip, etc.  
-Filenames must be the corresponding metadata identifier, as in metadata.conf; 
+Filenames must be the corresponding metadata identifier, as in metadata.json; 
 only ZIP archive (can contain multiple files) is currently supported by cPath2 data importer 
 (not .zip or no extension means the data will be read as is).
 

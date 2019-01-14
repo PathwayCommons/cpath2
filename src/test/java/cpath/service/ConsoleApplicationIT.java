@@ -184,7 +184,7 @@ public class ConsoleApplicationIT
     assertEquals("Homo sapiens", service.settings().getOrganismsAsTaxonomyToNameMap().get("9606"));
 
     // load the test metadata and create warehouse
-    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.conf"))
+    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.json"))
       service.metadata().save(mdata);
     Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
     assertNotNull(ds);
@@ -284,12 +284,12 @@ public class ConsoleApplicationIT
     assertEquals(4, m.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
-    Metadata md = new Metadata("test", "Reactome", "Foo", "", "",
+    Metadata md = new Metadata("test", Collections.singletonList("Reactome"), "Foo", "", "",
       "", METADATA_TYPE.BIOPAX, "", "", null, "free");
     service.metadata().save(md);
     // normally, setProvenanceFor gets called during Premerge stage
     md.setProvenanceFor(m);
-    // which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
+    // which EXPLICITLY removes all other Provenance values from dataSource properties;
     assertEquals(1, m.getObjects(Provenance.class).size());
 
     // SERVICE-TIER features tests

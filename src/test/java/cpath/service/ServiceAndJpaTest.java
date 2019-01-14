@@ -109,8 +109,9 @@ public class ServiceAndJpaTest {
   @DirtiesContext
   public void testImportContent() {
     // mock metadata and pathway data
-    Metadata md = new Metadata("TEST", "test", "test", "", "",
-        "", METADATA_TYPE.BIOPAX, null, null, null, "free");
+    Metadata md = new Metadata(
+      "TEST", Collections.singletonList("test"), "test", "", "",
+      "", METADATA_TYPE.BIOPAX, null, null, null, "free");
 
     service.clear(md);
     String origfile = Paths.get(service.intermediateDataDir(md), "test_1.gz").toString();
@@ -142,16 +143,16 @@ public class ServiceAndJpaTest {
   public void testReadContent() throws IOException {
     // in case there's no "metadata page" prepared -
     Metadata metadata = new Metadata("TEST",
-        "Test;testReadContent",
-        "N/A",
-        "classpath:test2.owl.zip",
-        "",
-        "",
-        Metadata.METADATA_TYPE.BIOPAX,
-        null, // no cleaner (same as using "")
-        "", // no converter
-        null,
-        "free"
+      Arrays.asList("Test", "testReadContent"),
+      "N/A",
+      "classpath:test2.owl.zip",
+      "",
+      "",
+      Metadata.METADATA_TYPE.BIOPAX,
+      null, // no cleaner (same as using "")
+      "", // no converter
+      null,
+      "free"
     );
 
     CPathUtils.cleanupDirectory(service.intermediateDataDir(metadata), true);

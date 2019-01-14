@@ -152,16 +152,6 @@ public final class Metadata {
     setAvailability(availability);
   }
 
-  public Metadata(final String identifier, final String name, final String description,
-                  final String urlToData, String urlToHomepage, final String urlToLogo,
-                  final METADATA_TYPE metadata_type, final String cleanerClassname,
-                  final String converterClassname,
-                  final String pubmedId, final String availability) {
-    this(identifier, Arrays.asList(name.split("\\s*;\\s*")), description, urlToData,
-        urlToHomepage, urlToLogo, metadata_type, cleanerClassname, converterClassname,
-        pubmedId, availability);
-  }
-
   public void setId(Long id) {
     this.id = id;
   }

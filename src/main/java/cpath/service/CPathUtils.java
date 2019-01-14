@@ -3,14 +3,15 @@ package cpath.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.*;
 
 import cpath.service.api.Cleaner;
@@ -28,6 +29,10 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -35,8 +40,6 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
 import cpath.service.jpa.Metadata;
-
-import static cpath.service.jpa.Metadata.*;
 
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
@@ -86,57 +89,18 @@ public final class CPathUtils {
 
     // get data from service
     try {
-      // we'd like to read lines at a time
-      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream(), StandardCharsets.UTF_8.name());
-      // are we ready to read?
-      while (scanner.hasNextLine()) {
-        // grab a line
-        String line = scanner.nextLine();
-        if ("".equals(line.trim()))
-          continue;
-        else if (line.trim().startsWith("#")) {
-          LOGGER.info("readMetadata(), ignored line: " + line);
-          continue; //ignore/skip parsing
-        }
-
-        /* for now, assume line is delimited into 9 columns by '\t' (tab);
-         * empty strings in the middle (the result of using \t\t) and
-         * trailing empty string after the last tabulation (i.e., Converter
-         * class name, if any), will be added to the tokens array as well.
-         */
-        String[] tokens = line.split("\t", -1);
-
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("readMetadata(), token size: " + tokens.length);
-          for (String token : tokens) {
-            LOGGER.debug("readMetadata(), token: " + token);
-          }
-        }
-
-        // get metadata type
-        Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
-        // create a metadata bean
-        Metadata metadata = new Metadata(
-            tokens[METADATA_IDENTIFIER_INDEX],
-            tokens[METADATA_NAME_INDEX],
-            tokens[METADATA_DESCRIPTION_INDEX],
-            tokens[METADATA_DATA_URL_INDEX],
-            tokens[METADATA_HOMEPAGE_URL_INDEX],
-            tokens[METADATA_ICON_URL_INDEX],
-            metadataType,
-            tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-            tokens[METADATA_CONVERTER_CLASS_NAME_INDEX],
-            tokens[METADATA_PUBMEDID_INDEX],
-            tokens[METADATA_AVAILABILITY_INDEX]);
-
+      JSONObject jo = (JSONObject) new JSONParser().parse(new InputStreamReader(LOADER.getResource(url).getInputStream()));
+      for (JSONObject ds : (Iterable<JSONObject>) jo.get("datasources")) {
+        Metadata.METADATA_TYPE type = Metadata.METADATA_TYPE.valueOf((String) ds.get("type"));
+        List<String> names = (List<String>) ((JSONArray) ds.get("name")).stream().collect(Collectors.toList());
+        Metadata metadata = new Metadata((String) ds.get("identifier"), names, (String) ds.get("description"),
+          (String) ds.get("dataUrl"), (String) ds.get("homepageUrl"), (String) ds.get("iconUrl"),
+          type, (String) ds.get("cleanerClass"), (String) ds.get("converterClass"),
+          (String) ds.get("pubmedId"), (String) ds.get("availability"));
         LOGGER.info("readMetadata(): adding Metadata: " + metadata.getIdentifier());
-
-        // add metadata object toc collection we return
         toReturn.add(metadata);
       }
-      scanner.close();
-
-    } catch (IOException e) {
+    } catch (ParseException | IOException e) {
       throw new RuntimeException(e);
     }
 
