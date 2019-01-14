@@ -24,9 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -41,7 +40,7 @@ import java.util.zip.GZIPOutputStream;
  * The cPath2 console application for a pathway data manager
  * to build a new cPath2 instance (metadata, BioPAX model, full-text index, downloads)
  */
-@SpringBootApplication
+@Component
 @Profile({"admin"})
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
@@ -57,15 +56,13 @@ public class ConsoleApplication implements CommandLineRunner {
   @Autowired(required = false)
   private Validator validator;
 
-  @Autowired
-  private Environment environment;
-
   public enum Cmd {
     // commands
     HELP("-help"),
     BUILD("-build"),
     EXPORT("-export"),
-    ANALYSIS("-run-analysis");
+    ANALYSIS("-run-analysis"),
+    SERVER("-server");
 
     //name to use as the application's command line argument
     private String command;
@@ -86,10 +83,6 @@ public class ConsoleApplication implements CommandLineRunner {
     if (!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
       LOG.error("Default Charset, " + Charset.defaultCharset() +
           " (is NOT 'UTF-8'); problems with input data are possible...");
-
-    final String[] activeProfiles = environment.getActiveProfiles();
-//    final boolean isAdminProfile = Arrays.stream(activeProfiles).anyMatch("admin"::equals);
-    LOG.info(String.format("Active profiles: %s", Arrays.toString(activeProfiles)));
 
     // Cleanup arguments - remove empty/null strings from the end, which were
     // possibly the result of calling this method from a shell script
@@ -362,13 +355,13 @@ public class ConsoleApplication implements CommandLineRunner {
     return "Usage: <-command_name> [<command_args...>] (parameters within the square braces are optional)" +
       NEWLINE +
       "Commands:" +
-      NEWLINE +
+      NEWLINE + NEWLINE +
       Cmd.BUILD.toString() +
-      " [--rebuild] (using metadata.json and input data archives, it will " +
+      " [--rebuild] (using metadata.json and input data archives, it will" +
       " clean, convert, normalize pathway data files; (re-)create the BioPAX Warehouse model;" +
       " merge all the above BioPAX models into the main one;" +
-      " build the full-text index of the merged BioPAX model; generate blacklist.txt; etc. )" +
-      NEWLINE +
+      " build the full-text index of the merged BioPAX model; generate blacklist.txt; etc.)" +
+      NEWLINE + NEWLINE +
       Cmd.EXPORT.toString() +
       " [filename] [--uris=<uri,uri,..>] [--output-absolute-uris] [--datasources=<nameOrUri,..>] [--types=<interface,..>]" +
       " (when no arguments, it generates the default detailed pathway data and organism-specific " +
@@ -379,11 +372,14 @@ public class ConsoleApplication implements CommandLineRunner {
       "when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
       "when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
       "will contain BioPAX elements that pass the filter by data source and/or type)" +
-      NEWLINE +
+      NEWLINE + NEWLINE +
       Cmd.ANALYSIS.toString() +
       " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
       "if --update is set, one then should re-index and generate new 'downloads')" +
-      NEWLINE +
+      NEWLINE + NEWLINE +
+      Cmd.SERVER.toString() +
+      " [options...] (start the web service using extra configuration, such as Spring application properties)" +
+      NEWLINE + NEWLINE +
       Cmd.HELP.toString() + " (print these information)" + NEWLINE;
   }
 

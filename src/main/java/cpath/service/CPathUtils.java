@@ -28,6 +28,8 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -130,25 +132,31 @@ public final class CPathUtils {
             tokens[METADATA_PUBMEDID_INDEX],
             tokens[METADATA_AVAILABILITY_INDEX]);
 
-        if (LOGGER.isInfoEnabled()) {
-          LOGGER.info("readMetadata(): adding Metadata: "
-              + "identifier=" + metadata.getIdentifier()
-              + "; name=" + metadata.getName()
-              + "; date/comment=" + metadata.getDescription()
-              + "; location=" + metadata.getUrlToData()
-              + "; icon=" + metadata.getIconUrl()
-              + "; type=" + metadata.getType()
-              + "; cleaner=" + metadata.getCleanerClassname()
-              + "; converter=" + metadata.getConverterClassname()
-              + "; pubmedId=" + metadata.getPubmedId()
-              + "; availability=" + metadata.getAvailability()
-          );
-        }
+        LOGGER.info("readMetadata(): adding Metadata: " + metadata.getIdentifier());
 
         // add metadata object toc collection we return
         toReturn.add(metadata);
       }
       scanner.close();
+
+      //TODO: (for refactoring) convert metadata to JSON once and remove this code
+      JSONArray a = new JSONArray();
+      for(Metadata m : toReturn) {
+        JSONObject d = new JSONObject();
+        d.put("identifier", m.getIdentifier());
+        d.put("name", m.getName());
+        d.put("type", m.getType().name());
+        d.put("description", m.getDescription());
+        d.put("dataUrl", m.getUrlToData());
+        d.put("iconUrl", m.getIconUrl());
+        d.put("homepageUrl", m.getUrlToHomepage());
+        d.put("cleanerClass", m.getCleanerClassname());
+        d.put("converterClass", m.getConverterClassname());
+        d.put("pubmedId", m.getPubmedId());
+        d.put("availability", m.getAvailability());
+        a.add(d);
+      }
+      System.out.println(a.toJSONString());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -430,19 +438,19 @@ public final class CPathUtils {
     return null;
   }
 
-  public static String normalizedFile(String inputFile) {
+  static String normalizedFile(String inputFile) {
     return inputFile.replaceFirst(dataFileSuffixRegex,".normalized.gz");
   }
 
-  public static String validationFile(String inputFile) {
+  static String validationFile(String inputFile) {
     return inputFile.replaceFirst(dataFileSuffixRegex,".issues.gz");
   }
 
-  public static String convertedFile(String inputFile) {
+  static String convertedFile(String inputFile) {
     return inputFile.replaceFirst(dataFileSuffixRegex,".converted.gz");
   }
 
-  public static String cleanedFile(String inputFile) {
+  static String cleanedFile(String inputFile) {
     return inputFile.replaceFirst(dataFileSuffixRegex,".cleaned.gz");
   }
 }

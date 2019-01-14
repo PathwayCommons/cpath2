@@ -90,11 +90,10 @@ public class CPathServiceImpl implements CPathService {
 
   /**
    * Loads the main BioPAX model, etc.
-   * This is not required (is useless) during the data import
+   * This is not required during the data import
    * (in premerge, merge, index, etc.);
    * call this only after the web service is up and running.
    */
-  @PostConstruct
   synchronized public void init() {
     if(paxtoolsModel == null) {
       paxtoolsModel = loadMainModel();

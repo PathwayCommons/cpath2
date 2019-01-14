@@ -62,7 +62,7 @@ public class Settings
   private Boolean sbgnLayoutEnabled;
   private String xmlBase;
   private Integer maxHitsPerPage;
-  private String metadataLocation = Paths.get(homeDir(), METADATA_FILE).toString();
+  private String metadataLocation = "file:" + Paths.get(homeDir(), METADATA_FILE).toString();
   private String name;
   private String description;
   private String version;

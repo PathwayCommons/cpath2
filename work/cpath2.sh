@@ -7,7 +7,7 @@ CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss32m -Xmx60g -Dpaxtools.CollectionProvider
 
 for arg in "$@"; do
   if [ "$arg" == "-build" ] ; then
-    # enable load time weaving
+    echo "enabled load time weaving"
     CPATH2_OPTS="$CPATH2_OPTS -javaagent:../target/spring-instrument.jar"
     break
   fi
