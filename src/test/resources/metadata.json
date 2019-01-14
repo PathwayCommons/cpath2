@@ -1,43 +1,47 @@
 {
-  "description" : "Pathway Commons data sources (metadata)",
-  "version" : 11,
-  "datasources" : [
+  "description": "Pathway Commons data sources (metadata)",
+  "version": 11,
+  "datasources": [
     {
+      "dataUrl": "classpath:test_uniprot_data.dat.zip",
       "identifier": "TEST_UNIPROT",
-      "name": "UniProt",
+      "homepageUrl": "http:\/\/www.uniprot.org",
+      "name": [
+        "UniProt"
+      ],
+      "converterClass": "cpath.converter.UniprotConverter",
       "description": "Test Uniprot Data",
-      "data": "classpath:test_uniprot_data.dat.zip",
-      "homepage": "http://www.uniprot.org",
-      "logo": "http://pathway-commons.googlecode.com/files/uniprot.png",
-      "type": "warehouse",
-      "converter": "cpath.converter.UniprotConverter",
-      "cleaner": null,
-      "pubmedId": "00000000",
-      "availability": "free"
+      "iconUrl": "http:\/\/pathway-commons.googlecode.com\/files\/uniprot.png",
+      "availability": "free",
+      "type": "WAREHOUSE",
+      "pubmedId": "00000000"
     },
     {
+      "dataUrl": "classpath:chebi.obo.zip",
       "identifier": "TEST_CHEBI",
-      "name": "ChEBI",
+      "homepageUrl": "http:\/\/www.ebi.ac.uk\/chebi\/",
+      "name": [
+        "ChEBI"
+      ],
+      "converterClass": "cpath.converter.ChebiOboConverter",
       "description": "Test ChEBI OBO",
-      "data": "classpath:chebi.obo.zip",
-      "homepage": "http://www.ebi.ac.uk/chebi/",
-      "logo": "http://pathway-commons.googlecode.com/files/chebi.png",
-      "type": "warehouse",
-      "converter": "cpath.converter.ChebiOboConverter",
-      "pubmedId": "00000000",
-      "availability": "free"
+      "iconUrl": "http:\/\/pathway-commons.googlecode.com\/files\/chebi.png",
+      "availability": "free",
+      "type": "WAREHOUSE",
+      "pubmedId": "00000000"
     },
     {
+      "dataUrl": "classpath:test_mapping.zip",
       "identifier": "TEST_MAPPING",
-      "name": "UniChem",
-      "description": "Test UniChem batch id-mapping (to ChEBI, manually edited/fixed to use here)",
-      "data": "classpath:test_mapping.zip",
-      "homepage": "http://www.ebi.ac.uk/unichem/wholesourcemap",
-      "logo": "http://www.ebi.ac.uk/unichem/static/images/UniChem_logo2_255.png",
-      "type": "warehouse",
-      "converter": "cpath.converter.ChebiOboConverter",
-      "pubmedId": "23317286",
-      "availability": "free"
+      "homepageUrl": "http:\/\/www.ebi.ac.uk\/unichem\/wholesourcemap",
+      "name": [
+        "UniChem"
+      ],
+      "description": "Test UniChem batch id-mapping (to ChEBI, manually edited\/fixed to use here)",
+      "iconUrl": "http:\/\/www.ebi.ac.uk\/unichem\/static\/images\/UniChem_logo2_255.png",
+      "availability": "free",
+      "type": "MAPPING",
+      "pubmedId": "23317286"
     }
   ]
 }

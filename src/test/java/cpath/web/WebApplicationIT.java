@@ -1,5 +1,6 @@
 package cpath.web;
 
+import cpath.service.api.CPathService;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,15 @@ public class WebApplicationIT {
 
   @Autowired
   private TestRestTemplate template;
+
+  @Autowired
+	private CPathService service;
+
+  @Before
+	public void init() {
+  	if(service.getModel()==null)
+  		service.init();
+	}
 
 	@Test
 	public void testGetTypes() {

@@ -7,11 +7,9 @@ import java.util.Map;
 import java.util.Set;
 
 import cpath.service.Settings;
-import cpath.service.jpa.Content;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.service.jpa.MappingsRepository;
@@ -39,14 +37,6 @@ public interface CPathService {
 
   void setModel(Model paxtoolsModel);
 
-  Searcher getSearcher();
-
-  void setSearcher(Searcher searcher);
-
-  Blacklist getBlacklist();
-
-  void setBlacklist(Blacklist blacklist);
-
   /**
    * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
    * - a complete BioPAX sub-model with all available child elements and
@@ -63,9 +53,9 @@ public interface CPathService {
   /**
    * Full-text search for the BioPAX elements.
    *
-   * @param queryStr
+   * @param queryStr search expression (a keyword or Lucene query string)
    * @param page search results page no.
-   * @param biopaxClass
+   * @param biopaxClass biopax type (interface, such as Pathway, Complex)
    * @param dsources URIs of data sources
    * @param organisms URIs of organisms
    * @return search/error response
@@ -149,20 +139,19 @@ public interface CPathService {
    *
    * @see PathAccessor
    *
-   * @param propertyPath
-   * @param sourceUris
-   * @return
+   * @param propertyPath Paxtools' BioPAX object property path (path accessor) expression
+   * @param sourceUris URIs of model elements to start traversing from
+   * @return traverse or error response bean
    */
   ServiceResponse traverse(String propertyPath, String... sourceUris);
 
   /**
    * Lists (some non-trivial) parent pathways in the current BioPAX model.
    *
-   *
    * @param q query string (keywords or Lucene syntax query string)
    * @param organisms filter values (URIs, names, or taxonomy IDs)
    * @param datasources filter values (URIs, names)
-   * @return
+   * @return top pathways or error response object
    */
   ServiceResponse topPathways(String q, String[] organisms, String[] datasources);
 
@@ -190,9 +179,9 @@ public interface CPathService {
 
   /**
    * Record web service and data access events.
-   * @param ip
-   * @param category
-   * @param name
+   * @param ip IP address
+   * @param category log event category
+   * @param name event name
    */
   void track(String ip, String category, String name);
 
@@ -220,7 +209,7 @@ public interface CPathService {
    * Clears the metadata object and the db record,
    * and also drops/creates the data directory.
    *
-   * @param metadata
+   * @param metadata data source metadata
    */
   void clear(Metadata metadata);
 
@@ -232,30 +221,16 @@ public interface CPathService {
 
   String getDataArchiveName(Metadata metadata);
 
-  String outputDir(Metadata metadata);
+  String intermediateDataDir(Metadata metadata);
 
   /**
    * Given Metadata (data source), this procedure expands the corresponding
-   * original data archive (zip), creating new {@link cpath.service.jpa.Content} objects
-   * in the metadata's dataFile collection (it skips system file/directory entries).
-   *
+   * original data archive (zip), collecting the data file names.
    * @param metadata Metadata
    */
-  void buildContent(Metadata metadata);
+  void unzipData(Metadata metadata);
 
-  void saveValidationReport(Content c, Validation v);
-
-  String normalizedFile(Content c);
-
-  String validationXmlFile(Content c);
-
-  String validationHtmlFile(Content c);
-
-  String convertedFile(Content c);
-
-  String cleanedFile(Content c);
-
-  String originalFile(Content c);
+  void saveValidationReport(Validation v, String reportFile);
 
   Settings settings();
 

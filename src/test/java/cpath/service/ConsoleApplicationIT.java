@@ -49,8 +49,8 @@ import static org.junit.Assert.*;
 @SpringBootTest
 public class ConsoleApplicationIT
 {
-  static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIT.class);
-  static final ResourceLoader resourceLoader = new DefaultResourceLoader();
+  private static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIT.class);
+  private static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
   CPathService service;
@@ -67,7 +67,7 @@ public class ConsoleApplicationIT
   @Autowired
   ValidatorUtils utils;
 
-  final BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
+  private final BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
 
   /*
    * This tests that the BioPAX Validator framework
@@ -184,7 +184,7 @@ public class ConsoleApplicationIT
     assertEquals("Homo sapiens", service.settings().getOrganismsAsTaxonomyToNameMap().get("9606"));
 
     // load the test metadata and create warehouse
-    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.conf"))
+    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.json"))
       service.metadata().save(mdata);
     Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
     assertNotNull(ds);
@@ -246,14 +246,14 @@ public class ConsoleApplicationIT
     assertTrue(mps.size() > 2);
     mps = service.mapping().findBySrcIdAndDestIgnoreCase("P01118", "UniProt");
     assertEquals(1, mps.size());
-    assertTrue("P01116".equals(mps.iterator().next().getDestId()));
+    assertEquals("P01116", mps.iterator().next().getDestId());
     mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
     assertEquals(1, mps.size());
-    assertTrue("P01116".equals(mps.iterator().next().getDestId()));
+    assertEquals("P01116", mps.iterator().next().getDestId());
     mps = service.mapping().findBySrcIdAndDestIgnoreCase("1J7P", "UNIPROT");//PDB to UniProt
     assertFalse(mps.isEmpty());
     assertEquals(1, mps.size());
-    assertTrue("P62158".equals(mps.iterator().next().getDestId()));
+    assertEquals("P62158", mps.iterator().next().getDestId());
 
     // **** MERGE ***
     Merger merger = new Merger(service);
@@ -264,7 +264,6 @@ public class ConsoleApplicationIT
      */
     //Load test models from files
     final List<Model> pathwayModels = initPathwayModels();
-    int i = 0;
     Model target = BioPAXLevel.L3.getDefaultFactory().createModel();
     for (Model m : pathwayModels) {
       merger.merge("", m, target); //use empty "" description
@@ -285,12 +284,12 @@ public class ConsoleApplicationIT
     assertEquals(4, m.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
-    Metadata md = new Metadata("test", "Reactome", "Foo", "", "",
+    Metadata md = new Metadata("test", Collections.singletonList("Reactome"), "Foo", "", "",
       "", METADATA_TYPE.BIOPAX, "", "", null, "free");
     service.metadata().save(md);
     // normally, setProvenanceFor gets called during Premerge stage
     md.setProvenanceFor(m);
-    // which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
+    // which EXPLICITLY removes all other Provenance values from dataSource properties;
     assertEquals(1, m.getObjects(Provenance.class).size());
 
     // SERVICE-TIER features tests
@@ -361,7 +360,7 @@ public class ConsoleApplicationIT
     assertFalse(((DataResponse) res).getProviders().isEmpty());
 
     // fetch a small molecule by URI
-    res = (DataResponse) service.fetch(OutputFormat.BIOPAX, null, false,
+    res = service.fetch(OutputFormat.BIOPAX, null, false,
       "http://identifiers.org/chebi/CHEBI:20");
     assertNotNull(res);
     assertFalse(res.isEmpty());
@@ -428,7 +427,7 @@ public class ConsoleApplicationIT
 //		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class))); //OLD SDF converter used such URI
     SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
     assertNotNull(smr.getStructure());
-    assertTrue(StructureFormatType.InChI == smr.getStructure().getStructureFormat());
+    assertSame(StructureFormatType.InChI, smr.getStructure().getStructureFormat());
     assertNotNull(smr.getStructure().getStructureData());
 
     assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
@@ -487,7 +486,7 @@ public class ConsoleApplicationIT
     pr = (ProteinReference) mergedModel.getByID("http://identifiers.org/uniprot/P01116");
     assertEquals(5, pr.getEntityFeature().size()); // 3 from test uniprot + 2 from test data files
     for (EntityFeature ef : pr.getEntityFeature()) {
-      assertTrue(pr == ef.getEntityFeatureOf());
+      assertSame(pr, ef.getEntityFeatureOf());
     }
 
     // inspired by humancyc case ;)
@@ -496,7 +495,8 @@ public class ConsoleApplicationIT
     assertEquals(1, px.getXrefOf().size());
     //these are not the two original ProteinReference (those got replaced/removed)
     //the xref is not copied from the original PR to the merged (canonical) one anymore -
-    assertFalse(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
+    XReferrable owner = (XReferrable) mergedModel.getByID("http://identifiers.org/uniprot/O75191");
+    assertFalse(px.getXrefOf().contains(owner));
     //the owner of the px is the Protein
     String pUri = "http://biocyc.org/biopax/biopax-level3Protein155359";
 //		System.out.println("pUri=" + pUri);

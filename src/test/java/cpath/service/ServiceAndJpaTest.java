@@ -13,6 +13,7 @@ import cpath.service.jpa.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.validator.api.beans.Behavior;
 import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -108,49 +109,33 @@ public class ServiceAndJpaTest {
   @DirtiesContext
   public void testImportContent() {
     // mock metadata and pathway data
-    Metadata md = new Metadata("TEST", "test", "test", "", "",
-        "", METADATA_TYPE.BIOPAX, null, null, null, "free");
+    Metadata md = new Metadata(
+      "TEST", Collections.singletonList("test"), "test", "", "",
+      "", METADATA_TYPE.BIOPAX, null, null, null, "free");
 
-    //cleanup previous tests data if any
     service.clear(md);
-    Content content = new Content(md, "test 0"); //space will be replaced
-    md.getContent().add(content);
-    //add the second pd (for the tests at the end of this method)
-    md.getContent().add(new Content(md, "test1"));
-    // persist
+    String origfile = Paths.get(service.intermediateDataDir(md), "test_1.gz").toString();
+    md.addFile(origfile);
     service.metadata().save(md);
-
-    // test pathwaydata content is not accidentally erased
-    Iterator<Content> it = md.getContent().iterator();
-    content = it.next();
-    //we want test0 for following assertions
-    if ("test1".equals(content.getFilename()))
-      content = it.next();
-    assertEquals("test_0", content.getFilename());
 
     //even if we update from the db, data must not be empty
     md = service.metadata().findByIdentifier(md.getIdentifier());
     assertNotNull(md);
     assertEquals("TEST", md.getIdentifier());
-    assertEquals(2, md.getContent().size());
-    it = md.getContent().iterator();
-    content = it.next();
-    //we want test0 for following assertions
-    if ("test1".equals(content.getFilename()))
-      content = it.next();
-    assertEquals("test_0", content.getFilename());
+    assertEquals(1, md.getFiles().size());
+    String datafile = md.getFiles().iterator().next();
+    assertEquals(origfile, datafile);
 
-    // write validation result to files
-    for (Content o : md.getContent()) {
-      service.saveValidationReport(o, new Validation(null));
-      assertTrue(Files.exists(Paths.get(service.validationXmlFile(o))));
-    }
+    String out = CPathUtils.validationFile(datafile);
+    service.saveValidationReport(
+      new Validation(null, datafile, false, Behavior.WARNING, 0, null), out);
+    assertTrue(Files.exists(Paths.get(out)));
 
     //cleanup
     service.clear(md);
-    assertTrue(md.getContent().isEmpty());
+    assertTrue(md.getFiles().isEmpty());
     md = service.metadata().findByIdentifier("TEST");
-    assertTrue(md.getContent().isEmpty());
+    assertTrue(md.getFiles().isEmpty());
   }
 
   @Test
@@ -158,28 +143,28 @@ public class ServiceAndJpaTest {
   public void testReadContent() throws IOException {
     // in case there's no "metadata page" prepared -
     Metadata metadata = new Metadata("TEST",
-        "Test;testReadContent",
-        "N/A",
-        "classpath:test2.owl.zip",
-        "",
-        "",
-        Metadata.METADATA_TYPE.BIOPAX,
-        null, // no cleaner (same as using "")
-        "", // no converter
-        null,
-        "free"
+      Arrays.asList("Test", "testReadContent"),
+      "N/A",
+      "classpath:test2.owl.zip",
+      "",
+      "",
+      Metadata.METADATA_TYPE.BIOPAX,
+      null, // no cleaner (same as using "")
+      "", // no converter
+      null,
+      "free"
     );
 
-    CPathUtils.cleanupDirectory(service.outputDir(metadata), true);
-    assertTrue(metadata.getContent().isEmpty());
+    CPathUtils.cleanupDirectory(service.intermediateDataDir(metadata), true);
+    assertTrue(metadata.getFiles().isEmpty());
 
-    service.buildContent(metadata);
-    assertFalse(metadata.getContent().isEmpty());
+    service.unzipData(metadata);
+    assertFalse(metadata.getFiles().isEmpty());
 
-    Content pd = metadata.getContent().iterator().next();
+    String pd = metadata.getFiles().iterator().next();
     SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
     reader.mergeDuplicates(true);
-    InputStream is = new GZIPInputStream(new FileInputStream(service.originalFile(pd)));
+    InputStream is = new GZIPInputStream(new FileInputStream(pd));
     Model m = reader.convertFromOWL(is);
     assertFalse(m.getObjects().isEmpty());
   }

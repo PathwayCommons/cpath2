@@ -44,7 +44,7 @@ Directory 'work' is where the configuration, data files and indices are saved.
 
 The directory may contain: 
 - application.properties (to configure various server and model options);
-- metadata.conf (describes the bio data to be imported/integrated);
+- metadata.json (describes the bio data to be imported/integrated);
 - data/ directory (where original and intermediate data are stored);
 - index/ (Lucene index directory for the final BioPAX model);
 - downloads/ (where blacklist.txt and output data archives are created);
@@ -67,12 +67,7 @@ script as follows:
 
 ### Metadata
 
-A cPath2 metadata configuration file is a plain text file (the default is `metadata.conf`) 
-having the following format:
- - one data source definition per line;
- - blank lines and lines that begin with "#" are ignored (remarks);
- - there are exactly 11 columns; values are separated with tab (so each line has exactly 10 '\t' chars; 
-   empty values (\t\t) are sometimes ok, e.g., when there is no Converter/Cleaner class.
+A cPath2 metadata configuration file is a JSON file (the default is `metadata.json`) 
  
 The metadata columns are, in order: 
  1. IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
@@ -99,7 +94,7 @@ The metadata columns are, in order:
  11. AVAILABILITY - values: 'free', 'academic', 'purchase'
 
 A Converter or Cleaner implementation is not required to be implemented in the main cpath2 project sources. 
-It's also possible to configure (metadata.conf) and plug into --premerge stage external 
+It's also possible to configure (metadata.json) and plug into --premerge stage external 
 cleaner/converter classes after the cpath2-cli.jar is released:
 simply include to the cpath2-cli.sh Java options like:
  `-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class` 
@@ -117,7 +112,7 @@ Download UniProt, ChEBI, id-mapping tables into the data/ directory, e.g.:
  - etc...
 
 Re-pack/rename the data, i.e., make uniprot_human.zip, chebi.zip, etc.  
-Filenames must be the corresponding metadata identifier, as in metadata.conf; 
+Filenames must be the corresponding metadata identifier, as in metadata.json; 
 only ZIP archive (can contain multiple files) is currently supported by cPath2 data importer 
 (not .zip or no extension means the data will be read as is).
 
@@ -138,11 +133,9 @@ To see available data import/export commands and options, run:
     cpath2.sh
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
- - -metadata (bash cpath2.sh -metadata)
- - -premerge `[--buildWarehouse]`  
- - -merge
- - -index
- - -export (w/o arguments - default - generates blacklist.txt, etc., and a script to be run separately)
+ - -help
+ - -build `[--rebuild]` (bash cpath2.sh -build)
+ - -export
 
 Extras/other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 

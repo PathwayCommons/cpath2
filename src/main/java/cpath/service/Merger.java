@@ -2,7 +2,6 @@ package cpath.service;
 
 import cpath.service.api.CPathService;
 import cpath.service.api.RelTypeVocab;
-import cpath.service.jpa.Content;
 import cpath.service.jpa.Metadata;
 
 import org.biopax.paxtools.controller.PropertyEditor;
@@ -11,7 +10,6 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.ClassFilterSet;
-import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -34,13 +32,13 @@ import java.util.zip.GZIPOutputStream;
  */
 public final class Merger {
 
-    private static final Logger log = LoggerFactory.getLogger(Merger.class);
+  private static final Logger log = LoggerFactory.getLogger(Merger.class);
 
 	private final String xmlBase;
 	private final CPathService service;
 	private final Set<String> supportedTaxonomyIds;
-    private final Model warehouseModel;
-    private final Model mainModel;
+  private final Model warehouseModel;
+  private final Model mainModel;
 
 
 	/**
@@ -48,7 +46,7 @@ public final class Merger {
 	 * 
 	 * @param service cpath2 service
 	 */
-	public Merger(CPathService service)
+	Merger(CPathService service)
 	{
 		this.service = service;
 		this.xmlBase = service.settings().getXmlBase();
@@ -68,17 +66,14 @@ public final class Merger {
 	 * by-datasource models are to be (or have been already) merged.
 	 * @return the main BioPAX model
 	 */
-	public Model getMainModel() {
+	Model getMainModel() {
 		return mainModel;
 	}
 	
 	public void merge() {
-		//using a SimpleMerger with Filter (ERs,Pathways) here (to merge ent. features, xrefs, comments, etc.)
-		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
-			public boolean filter(BioPAXElement object) {
-				return true; //to copy mul. cardinality obj. props of matching by uri elements
-			}
-		});
+		//using a SimpleMerger with Filter (ERs,Pathways) here (to merge ent. features, xrefs, comments;
+		//i.e., copy mul. cardinality obj. props of matching by uri elements
+		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
 		
 		// build models and merge from dataFile.premergeData
 		Collection<Metadata> providersMetadata = new ArrayList<>();
@@ -155,23 +150,22 @@ public final class Merger {
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 			providerModel.setXmlBase(xmlBase);
 
-			for (Content pwdata : metadata.getContent()) {
-				final String description = pwdata.toString();
-				if (!new File(service.normalizedFile(pwdata)).exists()) {
-					log.warn("Skip '" + description + "' - no normalized data found (failed premerge)");
+			for (String pwdata : metadata.getFiles()) {
+				if (!new File(CPathUtils.normalizedFile(pwdata)).exists()) {
+					log.warn("Skip '" + pwdata + "' - no normalized data found (failed premerge)");
 					continue;
 				}
 
-				log.info("Merging: " + description);
+				log.info("Merging: " + pwdata);
 
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream = CPathUtils.gzipInputStream(service.normalizedFile(pwdata));
+				InputStream inputStream = CPathUtils.gzipInputStream(CPathUtils.normalizedFile(pwdata));
 				if(inputStream == null) {
-					log.error("Skipped " + description + " - " + "cannot read " + service.normalizedFile(pwdata));
+					log.error("Skipped " + pwdata + " - " + "cannot read " + CPathUtils.normalizedFile(pwdata));
 					continue;
 				}
 
-				merge(description, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
+				merge(pwdata, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
 			}
 
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
@@ -205,9 +199,8 @@ public final class Merger {
 		return providerModel;
 	}
 
-
 	//break all cyclic pathway inclusions via pathwayComponent property
-	public void breakPathwayComponentCycle(final Pathway pathway) {
+	private void breakPathwayComponentCycle(final Pathway pathway) {
 		//run recursively, though, avoiding infinite loops (KEGG pathways can cause it)
 		breakPathwayComponentCycle(new HashSet<>(), pathway, pathway);
 	}
@@ -243,7 +236,7 @@ public final class Merger {
 		}
 	}
 
-	void save(Model datasourceModel, Metadata datasource) {
+	private void save(Model datasourceModel, Metadata datasource) {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(datasourceModel, 
 				new GZIPOutputStream(new FileOutputStream(
@@ -276,7 +269,7 @@ public final class Merger {
 
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
-		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
+		final Map<EntityReference, EntityReference> replacements = new HashMap<>();
 		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
 		for (EntityReference origEr: new HashSet<>(source.getObjects(EntityReference.class)))
 		{
@@ -351,20 +344,16 @@ public final class Merger {
 		
 		log.info("Merging into the target one-datasource BioPAX model...");
 		// merge all the elements and their children from the source to target model
-		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
-			public boolean filter(BioPAXElement object) {
-				return true; //to copy mul.card. prop. from source to target obj. having same URI
-			}
-		});
+		// and copy mul. cardinality prop. from source to target obj. having same URI
+		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
 		simpleMerger.merge(target, source);
 		log.info("Merged '" + srcModelInfo + "'.");
-
 	}
 
 	private void filterOutUnwantedOrganismInteractions(Model source) {
 		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
 		miLoop: for(MolecularInteraction mi : new HashSet<>(source.getObjects(MolecularInteraction.class))) {
-			//try to find a reason to keep this MI in the model:
+			//Find a reason to keep this MI in the model:
 			// - it has a participant having one of allowed taxonomy ID;
 			// - it has a complex or process participant (at this time, we won't bother looking further...);
 			// - it has a simple sequence or gene participant with no organism specified (unknown - keep the MI)
@@ -380,6 +369,7 @@ public final class Merger {
 					}
 				}
 				else if(e instanceof SimplePhysicalEntity && !(e instanceof SmallMolecule)) {
+					//e.g., protein, dna, rna (not a chemical nor complex)
 					SequenceEntityReference er = (SequenceEntityReference)((SimplePhysicalEntity)e).getEntityReference();
 					if (er == null || er.getOrganism() == null)
 						continue miLoop; //keep this MI
@@ -388,12 +378,11 @@ public final class Merger {
 							if(supportedTaxonomyIds.contains(x.getId()))
 								continue miLoop; //found a supported taxnonomy; keep this MI
 					}
-				} else if(e instanceof SmallMolecule) {
-					continue; //next participant
-				} else {
-					//won't touch a MI with a Complex or Process participant...
+				} else if( !(e instanceof SmallMolecule) ) {
+					//keep when MI has a Complex or Process participant...
 					continue miLoop;
 				}
+				//a SmallMolecule does not help us decide; so we continue to the next participant
 			}
 
 			//unless jumped to 'miLoop:' label above, remove this MI and participants
@@ -416,22 +405,19 @@ public final class Merger {
 			if( !(bpe instanceof ProteinReference) && currUri.startsWith("http://identifiers.org/uniprot/")
 				|| !(bpe instanceof SmallMoleculeReference) && currUri.startsWith("http://identifiers.org/chebi/"))
 			{
+				//Replace URI due to potential type collision
 				String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
 				CPathUtils.replaceID(source, bpe, newUri);
 				((Level3Element) bpe).addComment("REPLACED " + currUri);
-				log.info(String.format("Replaced URI %s of %s with %s due to potential type collision",
-					currUri, bpe.getModelInterface().getSimpleName(), newUri));
 			}
 			else
 			{
 				BioPAXElement targetBpe = target.getByID(currUri);
 				if (targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface()) {
+					// Replace URI due to target model has the same URI but different type object
 					String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
 					CPathUtils.replaceID(source, bpe, newUri);
 					((Level3Element) bpe).addComment("REPLACED " + currUri);
-					log.info(String.format("Replaced URI %s of %s with %s due to type collision: " +
-						"%s in the target model has the same URI", currUri, bpe.getModelInterface().getSimpleName(),
-							newUri, targetBpe.getModelInterface().getSimpleName()));
 				}
 			}
 		}
@@ -555,9 +541,9 @@ public final class Merger {
 	 * for reasons such as no match for a ID, or no ID found, ambiguous ID, etc.
 	 * This method won't add additional xrefs if a ChEBI one (secondary id or not doesn't matter) is already there.
 	 */
-	 void chemXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
+	private void chemXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		Assert.isTrue(!(bpe instanceof Process));
+		Assert.isTrue(!(bpe instanceof Process), "An interaction or pathway is not expected here");
 		// try/prefer to use ER instead of entity -
 		if(bpe instanceof SimplePhysicalEntity) {
 			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
@@ -572,7 +558,7 @@ public final class Merger {
 			return;
 		}
 
-		if(!xrefsContainDb(bpe, "CHEBI")) { //do only if bpe does not have any CHEBI xrefs
+		if(noneXrefDbStartsWith(bpe, "CHEBI")) { //do only if bpe does not have any CHEBI xrefs
 			// map other IDs and names to the primary IDs of ERs that can be found in the Warehouse
 			Set<String> primaryIds = idMappingByXrefs(bpe, UnificationXref.class, "CHEBI");
 			if (primaryIds.isEmpty())
@@ -600,7 +586,7 @@ public final class Merger {
      * to many canonical ERs/IDs (in fact, it'd even map to hundreds (Trembl) IDs, e.g., in cases like 'ND5',
      * and cause our export to the SIF, GSEA formats fail...)
      */
-	void genomicXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
+	private void genomicXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
 		Assert.isTrue(!(bpe instanceof SmallMolecule  || bpe instanceof SmallMoleculeReference || bpe instanceof Process),
 		"A process or chemical is not allowed here"); //a seq. entity or gene kind is expected here
@@ -621,7 +607,7 @@ public final class Merger {
 
 		final String organismRemark = getOrganism(bpe); //get organism taxID/name if possible
 		final Collection<String> primaryACs = new HashSet<>();
-		if(!xrefsContainDb(bpe, "UNIPROT")) {
+		if(noneXrefDbStartsWith(bpe, "UNIPROT")) {
 			//bpe does not have any uniprot xrefs; try to map other IDs to the primary ACs of the PRs in the Warehouse
 			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT"));
 			if (primaryACs.isEmpty())
@@ -669,7 +655,7 @@ public final class Merger {
 		}
 
 		// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
-		if (!xrefsContainDb(bpe, "hgnc symbol"))
+		if (noneXrefDbStartsWith(bpe, "hgnc symbol"))
 			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
 	}
 
@@ -696,16 +682,16 @@ public final class Merger {
 			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION, false);
 	}
 
-	private static boolean xrefsContainDb(XReferrable xr, String db)
+	private static boolean noneXrefDbStartsWith(XReferrable xr, String db)
 	{
 		db = db.toLowerCase();
 		for(Xref x : xr.getXref())
 		{
 			if (!(x instanceof PublicationXref) && x.getDb().toLowerCase().startsWith(db)) {
-				return true;
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	/*
@@ -834,9 +820,9 @@ public final class Merger {
 	private static String getOrganism(BioPAXElement bpe) {
 		PropertyEditor orgEditor = SimpleEditorMap.L3.getEditorForProperty("organism", bpe.getModelInterface());
 		if(orgEditor != null) {
-			Set<?> values = orgEditor.getValueFromBean(bpe);
+			Set<BioSource> values = orgEditor.getValueFromBean(bpe);
 			if(!values.isEmpty()) { //there only can be none or one BioSource
-				BioSource bs = (BioSource) values.iterator().next();
+				BioSource bs = values.iterator().next();
 				if(!bs.getXref().isEmpty())
 					return bs.getXref().toString();
 				else if(!bs.getName().isEmpty())
@@ -941,7 +927,7 @@ public final class Merger {
 				for(String s : er.getName()) {
 					if(names.contains(s.toLowerCase())) {
 						//extract the ChEBI accession from URI, add
-						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
+						mp.add(CPathUtils.idFromNormalizedUri(er.getUri()));
 						break;
 					}
 				}

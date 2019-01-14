@@ -1,8 +1,9 @@
 package cpath.service;
 
-import java.io.FileOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -10,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.*;
 
 import cpath.service.api.Cleaner;
@@ -27,6 +29,10 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -35,15 +41,12 @@ import org.springframework.util.Assert;
 
 import cpath.service.jpa.Metadata;
 
-import static cpath.service.jpa.Metadata.*;
-
-
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
+  private static final String dataFileSuffixRegex = "\\.(.+)?\\.gz$";
 
   // LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
   public static final ResourceLoader LOADER = new DefaultResourceLoader();
-
 
   private CPathUtils() {
     throw new AssertionError("Not instantiable");
@@ -55,7 +58,7 @@ public final class CPathUtils {
    * @param path      path to the directory
    * @param createNew true/false
    */
-  public static void cleanupDirectory(String path, boolean createNew) {
+  static void cleanupDirectory(String path, boolean createNew) {
     Path dir = Paths.get(path);
     try {
       if (Files.exists(dir) && Files.isDirectory(dir)) {
@@ -74,7 +77,7 @@ public final class CPathUtils {
    * @param url String
    * @return Collection<Metadata>
    */
-  public static Collection<Metadata> readMetadata(final String url) {
+  static Collection<Metadata> readMetadata(final String url) {
     // order of lines/records in the Metadata table does matter (since 2013/03);
     // so List is used here instead of HashSet
     List<Metadata> toReturn = new ArrayList<>();
@@ -86,104 +89,23 @@ public final class CPathUtils {
 
     // get data from service
     try {
-      // we'd like to read lines at a time
-      Scanner scanner = new Scanner(LOADER.getResource(url).getInputStream(), "UTF-8");
-      // are we ready to read?
-      while (scanner.hasNextLine()) {
-        // grab a line
-        String line = scanner.nextLine();
-        if ("".equals(line.trim()))
-          continue;
-        else if (line.trim().startsWith("#")) {
-          LOGGER.info("readMetadata(), ignored line: " + line);
-          continue; //ignore/skip parsing
-        }
-
-        /* for now, assume line is delimited into 9 columns by '\t' (tab);
-         * empty strings in the middle (the result of using \t\t) and
-         * trailing empty string after the last tabulation (i.e., Converter
-         * class name, if any), will be added to the tokens array as well.
-         */
-        String[] tokens = line.split("\t", -1);
-
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("readMetadata(), token size: " + tokens.length);
-          for (String token : tokens) {
-            LOGGER.debug("readMetadata(), token: " + token);
-          }
-        }
-
-        assert tokens.length == NUMBER_METADATA_ITEMS : "readMetadata(): " +
-            "wrong number of columns, " + tokens.length + " instead of "
-            + NUMBER_METADATA_ITEMS + ", in the metadata record: " + line;
-
-        // get metadata type
-        Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
-
-        LOGGER.debug("readMetadata(): make a Metadata bean.");
-
-        // create a metadata bean
-        Metadata metadata = new Metadata(
-            tokens[METADATA_IDENTIFIER_INDEX],
-            tokens[METADATA_NAME_INDEX],
-            tokens[METADATA_DESCRIPTION_INDEX],
-            tokens[METADATA_DATA_URL_INDEX],
-            tokens[METADATA_HOMEPAGE_URL_INDEX],
-            tokens[METADATA_ICON_URL_INDEX],
-            metadataType,
-            tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-            tokens[METADATA_CONVERTER_CLASS_NAME_INDEX],
-            tokens[METADATA_PUBMEDID_INDEX],
-            tokens[METADATA_AVAILABILITY_INDEX]);
-
-        if (LOGGER.isInfoEnabled()) {
-          LOGGER.info("readMetadata(): adding Metadata: "
-              + "identifier=" + metadata.getIdentifier()
-              + "; name=" + metadata.getName()
-              + "; date/comment=" + metadata.getDescription()
-              + "; location=" + metadata.getUrlToData()
-              + "; icon=" + metadata.getIconUrl()
-              + "; type=" + metadata.getType()
-              + "; cleaner=" + metadata.getCleanerClassname()
-              + "; converter=" + metadata.getConverterClassname()
-              + "; pubmedId=" + metadata.getPubmedId()
-              + "; availability=" + metadata.getAvailability()
-          );
-        }
-
-        // add metadata object toc collection we return
+      JSONObject jo = (JSONObject) new JSONParser().parse(new InputStreamReader(LOADER.getResource(url).getInputStream()));
+      for (JSONObject ds : (Iterable<JSONObject>) jo.get("datasources")) {
+        Metadata.METADATA_TYPE type = Metadata.METADATA_TYPE.valueOf((String) ds.get("type"));
+        List<String> names = (List<String>) ((JSONArray) ds.get("name")).stream().collect(Collectors.toList());
+        Metadata metadata = new Metadata((String) ds.get("identifier"), names, (String) ds.get("description"),
+          (String) ds.get("dataUrl"), (String) ds.get("homepageUrl"), (String) ds.get("iconUrl"),
+          type, (String) ds.get("cleanerClass"), (String) ds.get("converterClass"),
+          (String) ds.get("pubmedId"), (String) ds.get("availability"));
+        LOGGER.info("readMetadata(): adding Metadata: " + metadata.getIdentifier());
         toReturn.add(metadata);
       }
-      scanner.close();
-    } catch (IOException e) {
+    } catch (ParseException | IOException e) {
       throw new RuntimeException(e);
     }
 
     return toReturn;
   }
-
-
-  /**
-   * Writes or overwrites from the array to target file.
-   *
-   * @param src
-   * @param file
-   * @throws RuntimeException when there was an IO problem
-   */
-  public static void write(byte[] src, String file) {
-    FileOutputStream os = null;
-    try {
-      os = new FileOutputStream(file);
-      os.write(src);
-      os.flush();
-    } catch (IOException e) {
-      throw new RuntimeException("write: failed writing byte[] to "
-          + " to " + file, e);
-    } finally {
-      IOUtils.closeQuietly(os);
-    }
-  }
-
 
   /**
    * Replaces the URI of a BioPAX object
@@ -210,15 +132,14 @@ public final class CPathUtils {
     model.add(el);
   }
 
-
   /**
    * Loads the BioPAX model from a Gzip archive
    * previously created by the same cpath2 instance.
    *
-   * @param archive
+   * @param archive file path
    * @return big BioPAX model
    */
-  public static Model importFromTheArchive(String archive) {
+  static Model importFromTheArchive(String archive) {
     Model model = null;
 
     try {
@@ -231,7 +152,6 @@ public final class CPathUtils {
 
     return model;
   }
-
 
   /**
    * Reads from the input and writes to the output stream
@@ -246,7 +166,6 @@ public final class CPathUtils {
     os.close();
   }
 
-
   /**
    * For a warehouse (normalized) EntityReference's or CV's URI
    * gets the corresponding identifier (e.g., UniProt or ChEBI primary ID).
@@ -256,11 +175,10 @@ public final class CPathUtils {
    * @param uri URI
    * @return local part URI - ID
    */
-  public static String idfromNormalizedUri(String uri) {
-    Assert.isTrue(uri.contains("http://identifiers.org/"));
+  static String idFromNormalizedUri(String uri) {
+    Assert.isTrue(uri.contains("http://identifiers.org/"),"Not a Identifiers.org URI");
     return uri.substring(uri.lastIndexOf('/') + 1);
   }
-
 
   /**
    * Auto-fix an ID of particular type before using it
@@ -306,28 +224,17 @@ public final class CPathUtils {
   /**
    * Whether a string starts with any of the prefixes (case insensitive).
    *
-   * @param s        to search in
-   * @param prefixes search terms
-   * @return
+   * @param s a string
+   * @param prefixes optional array of prefix terms to match
+   * @return true/false
    */
-  public static boolean startsWithAnyIgnoreCase(String s, Collection<String> prefixes) {
+  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
     for (String prefix : prefixes) {
       if (StringUtils.startsWithIgnoreCase(s, prefix)) {
         return true;
       }
     }
     return false;
-  }
-
-  /**
-   * Whether a string starts with any of the prefixes (case insensitive).
-   *
-   * @param s
-   * @param prefixes
-   * @return
-   */
-  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
-    return startsWithAnyIgnoreCase(s, Arrays.asList(prefixes));
   }
 
   /**
@@ -345,7 +252,7 @@ public final class CPathUtils {
     RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId) {
     Assert.notNull(vocab, "vocab is null");
 
-    RelationshipXref toReturn = null;
+    RelationshipXref toReturn;
 
     String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab.toString(), RelationshipXref.class);
     if (model.containsID(uri)) {
@@ -380,7 +287,7 @@ public final class CPathUtils {
     return toReturn;
   }
 
-  public static Set<String> getXrefIds(BioPAXElement bpe) {
+  static Set<String> getXrefIds(BioPAXElement bpe) {
     final Set<String> ids = new HashSet<>();
 
     //Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
@@ -411,7 +318,7 @@ public final class CPathUtils {
     return ids;
   }
 
-  public static InputStream gzipInputStream(String gzPath) {
+  static InputStream gzipInputStream(String gzPath) {
     Path path = Paths.get(gzPath);
     try {
       return new GZIPInputStream(Files.newInputStream(path));
@@ -425,9 +332,9 @@ public final class CPathUtils {
   /**
    * Generate a URI (for a Provenance instance.)
    *
-   * @return
+   * @return URI
    */
-  public static String getMetadataUri(Model model, Metadata metadata) {
+  static String getMetadataUri(Model model, Metadata metadata) {
     return model.getXmlBase() + metadata.getIdentifier();
   }
 
@@ -440,8 +347,7 @@ public final class CPathUtils {
    * @return Converter
    */
   public static Converter newConverter(String converterClassName) {
-    Converter converter = (Converter) newInstance(converterClassName);
-    return converter;
+    return (Converter) newInstance(converterClassName);
   }
 
   /**
@@ -452,7 +358,7 @@ public final class CPathUtils {
    * @param cleanerClassName canonical java class name for the Cleaner implementation
    * @return instance of the class
    */
-  public static Cleaner newCleaner(String cleanerClassName) {
+  static Cleaner newCleaner(String cleanerClassName) {
     return (Cleaner) newInstance(cleanerClassName);
   }
 
@@ -473,5 +379,21 @@ public final class CPathUtils {
     }
 
     return null;
+  }
+
+  static String normalizedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".normalized.gz");
+  }
+
+  static String validationFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".issues.gz");
+  }
+
+  static String convertedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".converted.gz");
+  }
+
+  static String cleanedFile(String inputFile) {
+    return inputFile.replaceFirst(dataFileSuffixRegex,".cleaned.gz");
   }
 }
