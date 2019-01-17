@@ -5,12 +5,12 @@
     {
       "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/chebi\/ontology\/chebi.obo",
       "identifier": "chebi",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/chebi\/",
+      "homepageUrl": "https:\/\/www.ebi.ac.uk\/chebi\/",
       "name": [
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
-      "description": "ChEBI Ontology v161, 01-Mar-2018",
+      "description": "ChEBI Ontology v171, 02-Jan-2019",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -19,14 +19,14 @@
     {
       "dataUrl": "ftp:\/\/ftp.uniprot.org\/pub\/databases\/uniprot\/current_release\/knowledgebase\/taxonomic_divisions\/uniprot_sprot_human.dat.gz",
       "identifier": "uniprot_human",
-      "homepageUrl": "http:\/\/www.uniprot.org",
+      "homepageUrl": "https:\/\/www.uniprot.org",
       "name": [
         "UniProt",
         "SwissProt",
         "UniProtKB"
       ],
       "converterClass": "cpath.converter.UniprotConverter",
-      "description": "UniProtKB\/Swiss-Prot (human), 28-Mar-2018",
+      "description": "UniProtKB\/Swiss-Prot (human), 17-Jan-2019",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/uniprot.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -35,11 +35,11 @@
     {
       "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/chembl\/UniChem\/data\/wholeSourceMapping\/",
       "identifier": "unichem_mapping",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/unichem\/",
+      "homepageUrl": "https:\/\/www.ebi.ac.uk\/unichem\/",
       "name": [
         "UniChem"
       ],
-      "description": "Selected whole-source id-mapping files (to ChEBI) from UniChem (fixed with a script), 29-Mar-2018",
+      "description": "Selected whole-source id-mapping files (to ChEBI) from UniChem (fixed with a script), 17-Jan-2019",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/UniChem_logo2_255.png",
       "availability": "free",
       "type": "MAPPING",
@@ -48,21 +48,21 @@
     {
       "dataUrl": "http:\/\/www.reactome.org\/download\/current\/biopax.zip",
       "identifier": "reactome",
-      "homepageUrl": "http:\/\/www.reactome.org",
+      "homepageUrl": "https:\/\/www.reactome.org",
       "cleanerClass": "cpath.cleaner.ReactomeCleaner",
       "name": [
         "Reactome"
       ],
-      "description": "Reactome v64 (only 'Homo_sapiens.owl') 26-Mar-2018",
+      "description": "Reactome v67 (only 'Homo_sapiens.owl') 13-Dec-2018",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/reactome.png",
       "availability": "free",
       "type": "BIOPAX",
-      "pubmedId": "24243840"
+      "pubmedId": "29145629"
     },
     {
-      "dataUrl": "https:\/\/github.com\/NCIP\/pathway-interaction-database\/blob\/master\/download\/NCI-Nature-Curated-final.bp3.owl.gz",
+      "dataUrl": "https://github.com/NCIP/pathway-interaction-database/blob/master/download/NCI-Nature-Curated-final.bp3.owl.gz",
       "identifier": "pid",
-      "homepageUrl": "http:\/\/pid.nci.nih.gov\/",
+      "homepageUrl": "https:\/\/en.wikipedia.org\/wiki\/NCI-Nature_Pathway_Interaction_Database",
       "name": [
         "pid",
         "NCI Pathway Interaction Database: Pathway"
@@ -76,12 +76,12 @@
     {
       "dataUrl": "http:\/\/www.phosphosite.org\/downloads\/Kinase_substrates.owl.gz",
       "identifier": "psp",
-      "homepageUrl": "http:\/\/www.phosphosite.org",
+      "homepageUrl": "https:\/\/www.phosphosite.org",
       "name": [
         "PhosphoSite",
         "PhosphoSitePlus"
       ],
-      "description": "PhosphoSite Kinase-substrate information; 16-Mar-2018",
+      "description": "PhosphoSite Kinase-substrate information; 15-Jan-2019",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/psp.png",
       "availability": "free",
       "type": "BIOPAX",
@@ -90,7 +90,7 @@
     {
       "dataUrl": "ftp:\/\/",
       "identifier": "humancyc",
-      "homepageUrl": "http:\/\/www.humancyc.org",
+      "homepageUrl": "https:\/\/humancyc.org",
       "cleanerClass": "cpath.cleaner.HumanCycCleaner",
       "name": [
         "HumanCyc",
@@ -119,7 +119,7 @@
       "pubmedId": "18988627"
     },
     {
-      "dataUrl": "ftp:\/\/ftp.pantherdb.org\/pathway\/3.6.1\/BioPAX.tar.gz",
+      "dataUrl": "ftp:\/\/ftp.pantherdb.org\/pathway\/3.6.2\/BioPAX.tar.gz",
       "identifier": "panther",
       "homepageUrl": "http:\/\/www.pantherdb.org",
       "cleanerClass": "cpath.cleaner.PantherCleaner",
@@ -128,16 +128,16 @@
         "PANTHER Pathway",
         "PantherDB"
       ],
-      "description": "PANTHER Pathways 3.6.1 on 25-Jan-2018 (auto-converted to human-only model)",
+      "description": "PANTHER Pathways 3.6.2 on 14-Dec-2018 (auto-converted to human-only model)",
       "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/panther.png",
       "availability": "free",
       "type": "BIOPAX",
-      "pubmedId": "23193289"
+      "pubmedId": "27899595"
     },
     {
       "dataUrl": "ftp:\/\/rodche:hbb36Bbw@dip.doe-mbi.ucla.edu\/2017\/mif25\/Hsapi20170205.mif25.gz",
       "identifier": "dip",
-      "homepageUrl": "http:\/\/dip.doe-mbi.ucla.edu",
+      "homepageUrl": "https:\/\/dip.doe-mbi.ucla.edu",
       "name": [
         "DIP",
         "Database of Interacting Proteins"
@@ -150,9 +150,9 @@
       "pubmedId": "14681454"
     },
     {
-      "dataUrl": "https:\/\/thebiogrid.org\/downloads\/archives\/Release%20Archive\/BIOGRID-3.4.158\/BIOGRID-ORGANISM-3.4.158.psi25.zip",
+      "dataUrl": "https:\/\/downloads.thebiogrid.org\/Download\/BioGRID\/Release-Archive\/BIOGRID-3.5.168\/BIOGRID-ORGANISM-3.5.168.psi25.zip",
       "identifier": "biogrid",
-      "homepageUrl": "http:\/\/thebiogrid.org\/",
+      "homepageUrl": "https:\/\/thebiogrid.org\/",
       "name": [
         "BioGRID"
       ],
@@ -166,7 +166,7 @@
     {
       "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/intact\/2018-03-21\/psi25\/species\/human.zip",
       "identifier": "intact",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/intact\/",
+      "homepageUrl": "https:\/\/www.ebi.ac.uk\/intact\/",
       "name": [
         "IntAct"
       ],
