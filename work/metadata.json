@@ -11,7 +11,7 @@
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
       "description": "ChEBI Ontology v171, 02-Jan-2019",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/chebi.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
       "pubmedId": "23180789"
@@ -27,7 +27,7 @@
       ],
       "converterClass": "cpath.converter.UniprotConverter",
       "description": "UniProtKB\/Swiss-Prot (human), 17-Jan-2019",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/uniprot.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/uniprot.png",
       "availability": "free",
       "type": "WAREHOUSE",
       "pubmedId": "24253303"
@@ -40,7 +40,7 @@
         "UniChem"
       ],
       "description": "Selected whole-source id-mapping files (to ChEBI) from UniChem (fixed with a script), 17-Jan-2019",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/UniChem_logo2_255.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/UniChem_logo2_255.png",
       "availability": "free",
       "type": "MAPPING",
       "pubmedId": "23317286"
@@ -54,7 +54,7 @@
         "Reactome"
       ],
       "description": "Reactome v67 (only 'Homo_sapiens.owl') 13-Dec-2018",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/reactome.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/reactome.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "29145629"
@@ -68,7 +68,7 @@
         "NCI Pathway Interaction Database: Pathway"
       ],
       "description": "NCI Curated Human Pathways from PID (final); 27-Jul-2015",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/nci_nature.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/nci_nature.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "18832364"
@@ -82,7 +82,7 @@
         "PhosphoSitePlus"
       ],
       "description": "PhosphoSite Kinase-substrate information; 15-Jan-2019",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/psp.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/psp.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "25514926"
@@ -98,7 +98,7 @@
         "BioCyc"
       ],
       "description": "HumanCyc 20; 2016; under license from SRI International, www.biocyc.org",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/humancyc.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/humancyc.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "15642094"
@@ -113,7 +113,7 @@
       ],
       "converterClass": "cpath.converter.PsimiConverter",
       "description": "HPRD PSI-MI Release 9; 13-Apr-2010",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/hprd.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/hprd.png",
       "availability": "academic",
       "type": "PSI_MI",
       "pubmedId": "18988627"
@@ -129,7 +129,7 @@
         "PantherDB"
       ],
       "description": "PANTHER Pathways 3.6.2 on 14-Dec-2018 (auto-converted to human-only model)",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/panther.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/panther.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "27899595"
@@ -144,7 +144,7 @@
       ],
       "converterClass": "cpath.converter.PsimiConverter",
       "description": "DIP (human), 05-02-2017",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/dip_logo.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/dip_logo.png",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "14681454"
@@ -157,36 +157,36 @@
         "BioGRID"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "BioGRID Release 3.4.158 (human and the viruses), 25-Feb-2018",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/favicon_bigger.png",
+      "description": "BioGRID Release 3.5.168 (human), 25-Dec-2018",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/favicon_bigger.png",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "16381927"
     },
     {
-      "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/intact\/2018-03-21\/psi25\/species\/human.zip",
+      "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/intact\/2018-11-30\/psi25\/species\/human.zip",
       "identifier": "intact",
       "homepageUrl": "https:\/\/www.ebi.ac.uk\/intact\/",
       "name": [
         "IntAct"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "IntAct (human only; 'negative' files removed), 21-Mar-2018",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/logo_intact_small.gif",
+      "description": "IntAct (human), except 'negative', 30-Nov-2018",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/logo_intact_small.gif",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "24234451"
     },
     {
-      "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/intact\/complex\/2018-03-21\/psi25\/Homo_sapiens.zip",
+      "dataUrl": "ftp:\/\/ftp.ebi.ac.uk\/pub\/databases\/intact\/complex\/2018-11-30\/psi25\/Homo_sapiens.zip",
       "identifier": "intact_complex",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/intact\/",
+      "homepageUrl": "https:\/\/www.ebi.ac.uk\/intact\/",
       "name": [
         "IntAct"
       ],
       "converterClass": "cpath.converter.PsimiToComplexesConverter",
-      "description": "IntAct Complex (human), 21-Mar-2018",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/logo_intact_small.gif",
+      "description": "IntAct Complex (human), 30-Nov-2018",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/logo_intact_small.gif",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "24234451"
@@ -194,7 +194,7 @@
     {
       "dataUrl": "http:\/\/download.baderlab.org\/BINDTranslation\/release1_0\/PSIMI25_XML\/taxid9606_PSIMI25.xml",
       "identifier": "bind",
-      "homepageUrl": "http:\/\/bond.unleashedinformatics.com\/",
+      "homepageUrl": "https:\/\/en.wikipedia.org\/wiki\/Biomolecular_Object_Network_Databank#Biomolecular_Interaction_Network_Database_(BIND)",
       "name": [
         "BIND",
         "BIND",
@@ -202,24 +202,24 @@
       ],
       "converterClass": "cpath.converter.PsimiConverter",
       "description": "BIND (human), 15-Dec-2010",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/bindinside_logo.jpg",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/bindinside_logo.jpg",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "12519993"
     },
     {
-      "dataUrl": "http:\/\/mips.helmholtz-muenchen.de\/genre\/proj\/corum\/ (search:species=human)",
+      "dataUrl": "https:\/\/mips.helmholtz-muenchen.de\/corum\/download\/allComplexes.xml.zip",
       "identifier": "corum",
-      "homepageUrl": "http:\/\/mips.helmholtz-muenchen.de\/genre\/proj\/corum\/",
+      "homepageUrl": "https:\/\/mips.helmholtz-muenchen.de\/genre\/proj\/corum\/",
       "name": [
         "CORUM"
       ],
       "converterClass": "cpath.converter.PsimiToComplexesConverter",
-      "description": "CORUM (human only), 17-Feb-2012",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/topright.jpg",
+      "description": "CORUM 3.0 (human complexes), 03-Sep-2018",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/topright.jpg",
       "availability": "academic",
       "type": "PSI_MI",
-      "pubmedId": "19884131"
+      "pubmedId": "30357367"
     },
     {
       "dataUrl": "http:\/\/software.broadinstitute.org\/gsea\/msigdb\/download_file.jsp?filePath=\/resources\/msigdb\/5.2\/msigdb_v5.2.xml",
@@ -231,7 +231,7 @@
         "Molecular Signatures Database"
       ],
       "description": "MSigDB v5.2 (XML), only human C3 TFT motif gene sets, 09\/2016; converted to BioPAX with http:\/\/github.com\/PathwayCommons\/msigdb-to-biopax;",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/msigdb.gif",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/msigdb.gif",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "16199517"
@@ -244,7 +244,7 @@
         "miRTarBase"
       ],
       "description": "Human miRNA-target gene relationships from MiRTarBase; v7.0, 15-SEP-2017, converted to BioPAX in Apr-2018 with http:\/\/github.com\/PathwayCommons\/mirtarbase-to-biopax tool",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/mirtarbaselogo.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/mirtarbaselogo.png",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "29126174"
@@ -256,8 +256,8 @@
       "name": [
         "DrugBank"
       ],
-      "description": "DrugBank v5.0.11, 20-Dec-2017, converted to BioPAX with our http:\/\/github.com\/PathwayCommons\/drugbank-llto-biopax tool",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/drugbanklogo.png",
+      "description": "DrugBank v5.1.2, 20-Dec-2018, converted to BioPAX with our http:\/\/github.com\/PathwayCommons\/drugbank-to-biopax tool",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/drugbanklogo.png",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "24203711"
@@ -271,7 +271,7 @@
       ],
       "converterClass": "cpath.converter.ReconxConverter",
       "description": "Recon X: Reconstruction of the Human Genome; SBML model from BioModels, Recon 2 v2.02 (2013), converted to BioPAX by us using http:\/\/github.com\/PathwayCommons\/reconx-to-biopax library.",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/reconxlogo.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/reconxlogo.png",
       "availability": "free",
       "type": "SBML",
       "pubmedId": "23455439"
@@ -285,8 +285,8 @@
         "Comparative Toxicogenomics Database",
         "ctdbase"
       ],
-      "description": "Curated chemical\u2013gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 03-Apr-2018 release; converted to BioPAX with http:\/\/github.com\/PathwayCommons\/ctd-to-biopax tool;",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/ctdlogo.png",
+      "description": "Curated chemical-gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 08-Jan-2019 release; converted to BioPAX with http:\/\/github.com\/PathwayCommons\/ctd-to-biopax tool;",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/ctdlogo.png",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "27651457"
@@ -294,14 +294,14 @@
     {
       "dataUrl": "http:\/\/www.cogsys.cs.uni-tuebingen.de\/mitarb\/draeger\/BioPAX.zip",
       "identifier": "kegg",
-      "homepageUrl": "http:\/\/www.genome.jp\/kegg\/",
+      "homepageUrl": "https:\/\/www.genome.jp\/kegg\/",
       "cleanerClass": "cpath.cleaner.KeggHsaCleaner",
       "name": [
         "KEGG",
         "KEGG Pathway"
       ],
       "description": "KEGG 07\/2011 (only human, hsa* files), converted to BioPAX by BioModels (http:\/\/www.ebi.ac.uk\/biomodels-main\/) team",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/kegg128.gif",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/kegg128.gif",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "23433509"
@@ -316,7 +316,7 @@
         "Integrating Network Objects with Hierarchies"
       ],
       "description": "INOH 4.0 (signal transduction and metabolic data), 22-MAR-2011",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/inoh_logo.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/inoh_logo.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "22120663"
@@ -330,7 +330,7 @@
         "NetPath"
       ],
       "description": "NetPath 12\/2011",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/netpath_logo.png",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/netpath_logo.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "20067622"
@@ -338,13 +338,13 @@
     {
       "dataUrl": "http:\/\/pointer.ucsf.edu\/wp\/biopax\/wikipathways-human-v20150929-biopax3.zip",
       "identifier": "wp",
-      "homepageUrl": "http:\/\/www.wikipathways.org",
+      "homepageUrl": "https:\/\/www.wikipathways.org",
       "cleanerClass": "cpath.cleaner.WikipathwaysCleaner",
       "name": [
         "WikiPathways"
       ],
-      "description": "WikiPathways - Community Curated Human Pathways; 29\/09\/2015 (human)",
-      "iconUrl": "http:\/\/pathwaycommons.github.io\/cpath2\/logos\/wikipathways.png",
+      "description": "WikiPathways - Community Curated Human Pathways; 29\/09\/2015 (some of human data)",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/wikipathways.png",
       "availability": "free",
       "type": "BIOPAX",
       "pubmedId": "18651794"
@@ -352,12 +352,12 @@
     {
       "dataUrl": "http:\/\/www.innatedb.com\/download\/interactions\/innatedb_all.mitab.gz",
       "identifier": "innatedb",
-      "homepageUrl": "http:\/\/www.innatedb.ca",
+      "homepageUrl": "https:\/\/www.innatedb.ca",
       "name": [
         "InnateDB"
       ],
       "converterClass": "cpath.converter.PsimiTabConverter",
-      "description": "InnateDB Curated Interactions (human), 2018-04-01",
+      "description": "InnateDB Curated Interactions (human), 2019-01-21",
       "iconUrl": "http:\/\/www.innatedb.com\/images\/Innatedb-2010-large.png",
       "availability": "free",
       "type": "PSI_MITAB",
