@@ -88,7 +88,7 @@
       "pubmedId": "25514926"
     },
     {
-      "dataUrl": "ftp:\/\/",
+      "dataUrl": "https:\/\/humancyc.org\/download.shtml",
       "identifier": "humancyc",
       "homepageUrl": "https:\/\/humancyc.org",
       "cleanerClass": "cpath.cleaner.HumanCycCleaner",
@@ -99,7 +99,7 @@
       ],
       "description": "HumanCyc 20; 2016; under license from SRI International, www.biocyc.org",
       "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/humancyc.png",
-      "availability": "free",
+      "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "15642094"
     },
@@ -135,7 +135,7 @@
       "pubmedId": "27899595"
     },
     {
-      "dataUrl": "ftp:\/\/rodche:hbb36Bbw@dip.doe-mbi.ucla.edu\/2017\/mif25\/Hsapi20170205.mif25.gz",
+      "dataUrl": "https:\/\/dip.doe-mbi.ucla.edu\/dip\/Download.cgi",
       "identifier": "dip",
       "homepageUrl": "https:\/\/dip.doe-mbi.ucla.edu",
       "name": [
@@ -143,7 +143,7 @@
         "Database of Interacting Proteins"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "DIP (human), 05-02-2017",
+      "description": "DIP (human - converted Hsapi20170205.mif25.gz to BioPAX), 05-02-2017",
       "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/dip_logo.png",
       "availability": "free",
       "type": "PSI_MI",
@@ -230,7 +230,7 @@
         "MSigDB",
         "Molecular Signatures Database"
       ],
-      "description": "MSigDB v5.2 (XML), only human C3 TFT motif gene sets, 09\/2016; converted to BioPAX with http:\/\/github.com\/PathwayCommons\/msigdb-to-biopax;",
+      "description": "MSigDB v5.2 (XML), human C3 TFT motif gene sets, 09-2016; converted with http:\/\/github.com\/PathwayCommons\/msigdb-to-biopax",
       "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/msigdb.gif",
       "availability": "academic",
       "type": "BIOPAX",
@@ -243,24 +243,24 @@
       "name": [
         "miRTarBase"
       ],
-      "description": "Human miRNA-target gene relationships from MiRTarBase; v7.0, 15-SEP-2017, converted to BioPAX in Apr-2018 with http:\/\/github.com\/PathwayCommons\/mirtarbase-to-biopax tool",
+      "description": "Human miRNA-target gene relationships from MiRTarBase; v7.0, 15-SEP-2017, converted in Apr-2018 with http:\/\/github.com\/PathwayCommons\/mirtarbase-to-biopax",
       "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/mirtarbaselogo.png",
       "availability": "academic",
       "type": "BIOPAX",
       "pubmedId": "29126174"
     },
     {
-      "dataUrl": "https:\/\/www.drugbank.ca\/releases\/latest",
+      "dataUrl": "https:\/\/www.drugbank.ca\/releases\/5-1-2\/downloads\/all-full-database",
       "identifier": "drugbank",
       "homepageUrl": "http:\/\/www.drugbank.ca\/",
       "name": [
         "DrugBank"
       ],
-      "description": "DrugBank v5.1.2, 20-Dec-2018, converted to BioPAX with our http:\/\/github.com\/PathwayCommons\/drugbank-to-biopax tool",
+      "description": "DrugBank v5.1.2, 20-Dec-2018, converted to BioPAX with our http:\/\/github.com\/PathwayCommons\/drugbank-to-biopax",
       "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/drugbanklogo.png",
       "availability": "academic",
       "type": "BIOPAX",
-      "pubmedId": "24203711"
+      "pubmedId": "29126136"
     },
     {
       "dataUrl": "http:\/\/www.ebi.ac.uk\/biomodels-main\/MODEL1109130000",
@@ -350,7 +350,7 @@
       "pubmedId": "18651794"
     },
     {
-      "dataUrl": "http:\/\/www.innatedb.com\/download\/interactions\/innatedb_all.mitab.gz",
+      "dataUrl": "https:\/\/www.innatedb.ca\/download\/interactions\/innatedb_all.mitab.gz",
       "identifier": "innatedb",
       "homepageUrl": "https:\/\/www.innatedb.ca",
       "name": [
