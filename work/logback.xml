@@ -16,8 +16,6 @@
   </appender>
  
   <logger name="cpath" level="info" />
-  <logger name="org.biopax" level="info" />
-  <logger name="org.biopax.obo" level="warn" />
   <logger name="org.springframework" level="info" />
 
   <root level="warn">

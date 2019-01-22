@@ -113,4 +113,21 @@ public class CPathUtilsTest {
 		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot isoform", "Q8TD86-1"));
 		assertEquals("NP_619650", CPathUtils.fixSourceIdForMapping("refseq", "NP_619650.1"));
 	}
+
+	@Test
+	public void testGenerateFileNames() {
+		assertEquals("foo.normalized.gz", CPathUtils.normalizedFile("foo.some.gz"));
+		assertEquals("/foo/bar.normalized.gz", CPathUtils.normalizedFile("/foo/bar.some.gz"));
+		assertEquals("./foo/bar.normalized.gz", CPathUtils.normalizedFile("./foo/bar.some.gz"));
+		assertEquals("foo.cleaned.gz", CPathUtils.cleanedFile("foo.some.gz"));
+		assertEquals("/foo/bar.cleaned.gz", CPathUtils.cleanedFile("/foo/bar.some.gz"));
+		assertEquals("./foo/bar.cleaned.gz", CPathUtils.cleanedFile("./foo/bar.some.gz"));
+		assertEquals("foo.converted.gz", CPathUtils.convertedFile("foo.some.gz"));
+		assertEquals("/foo/bar.converted.gz", CPathUtils.convertedFile("/foo/bar.some.gz"));
+		assertEquals("./foo/bar.converted.gz", CPathUtils.convertedFile("./foo/bar.some.gz"));
+		assertEquals("foo.issues.gz", CPathUtils.validationFile("foo.normalized.gz"));
+		assertEquals("/foo/bar.issues.gz", CPathUtils.validationFile("/foo/bar.normalized.gz"));
+		assertEquals("./foo/bar.issues.gz", CPathUtils.validationFile("./foo/bar.normalized.gz"));
+	}
+
 }

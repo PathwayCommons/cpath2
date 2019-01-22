@@ -112,9 +112,9 @@ public class ServiceAndJpaTest {
     Metadata md = new Metadata(
       "TEST", Collections.singletonList("test"), "test", "", "",
       "", METADATA_TYPE.BIOPAX, null, null, null, "free");
-
+    //mock unzip, save data entries -
     service.clear(md);
-    String origfile = Paths.get(service.intermediateDataDir(md), "test_1.gz").toString();
+    String origfile = CPathUtils.originalFile(service.intermediateDataDir(md), "test_1.gz");
     md.addFile(origfile);
     service.metadata().save(md);
 

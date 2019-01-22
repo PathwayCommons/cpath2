@@ -316,6 +316,12 @@ final class PreMerger {
     File inputFile = new File(inputDataFile);
     log.info("pipeline(), do " + inputFile.getPath());
 
+    //shortcut
+    if(Files.exists(Paths.get(CPathUtils.normalizedFile(inputDataFile)))) {
+      log.info("pipeline(), re-use previously normalized data file");
+      return;
+    }
+
     //Clean the data, i.e., apply data-specific "quick fixes".
     if(cleaner != null) {
       String cleanerClassName = cleaner.getClass().getSimpleName();
@@ -337,36 +343,31 @@ final class PreMerger {
       inputFile = outputFile;
     }
 
-    if(metadata.getType() == METADATA_TYPE.MAPPING) {
-      return; //for id-mapping data - no need to convert, normalize
-    }
-
-    //Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
-    if (converter != null) {
-      String converterClassName = converter.getClass().getSimpleName();
-      File outputFile = new File(CPathUtils.convertedFile(inputDataFile));
-      if(outputFile.exists()) {
-        log.info("pipeline(), re-use " + outputFile.getName());
-      } else {
-        try {
-          InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
-          OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
-          converter.convert(is, os);
-          IOUtils.closeQuietly(is);
-          IOUtils.closeQuietly(os);
-        } catch (Exception e) {
-          log.warn("pipeline(), failed due to " + converterClassName + " failed: " + e);
-          return;
+    //for id-mapping data, no need to convert, normalize
+    if(metadata.getType() != METADATA_TYPE.MAPPING) {
+      //Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
+      if (converter != null) {
+        String converterClassName = converter.getClass().getSimpleName();
+        File outputFile = new File(CPathUtils.convertedFile(inputDataFile));
+        if (outputFile.exists()) {
+          log.info("pipeline(), re-use " + outputFile.getName());
+        } else {
+          try {
+            InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
+            OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
+            converter.convert(is, os);
+            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(os);
+          } catch (Exception e) {
+            log.warn("pipeline(), failed due to " + converterClassName + " failed: " + e);
+            return;
+          }
         }
+        inputFile = outputFile;
       }
-      inputFile = outputFile;
-    }
 
-    // Validate & auto-fix and normalize: e.g., synonyms in xref.db may be replaced
-    // with the primary db name, as in Miriam, some URIs get normalized, etc.
-    if(Files.exists(Paths.get(CPathUtils.normalizedFile(inputDataFile)))) {
-      log.warn("checkAndNormalize, skip validation/normalization - use existing data files.");
-    } else {
+      // Validate & auto-fix and normalize: synonyms in xref.db may be replaced
+      // with the primary db names (as in Miriam), some URIs get normalized, etc.
       checkAndNormalize(metadata, inputFile);
     }
   }

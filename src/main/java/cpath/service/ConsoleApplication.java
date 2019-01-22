@@ -108,7 +108,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
       premerge(force);
 
-      merge();
+      new Merger(service).merge();
 
       index();
 
@@ -228,18 +228,6 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   /*
-   * Performs cpath2 Merge stage.
-   */
-  private void merge() {
-    //disable 2nd level hibernate cache (ehcache)
-    // otherwise the merger eventually fails with a weird exception
-    // (this probably depends on the cache config. parameters)
-    System.setProperty("net.sf.ehcache.disabled", "true");
-    Merger merger = new Merger(service);
-    merger.merge();
-  }
-
-  /*
    * Executes the premerge stage:
    * organize, clean, convert, validate, normalize pathway/interaction data,
    * and create BioPAX utility class objects warehouse and id-mapping.
@@ -258,7 +246,7 @@ public class ConsoleApplication implements CommandLineRunner {
     premerger.premerge();
 
     // create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
-    if (rebuild)
+    if (!Files.exists(Paths.get(service.settings().warehouseModelFile())) || rebuild)
       premerger.buildWarehouse();
 
     //back to read-only schema mode (useful when called from the web Main page)

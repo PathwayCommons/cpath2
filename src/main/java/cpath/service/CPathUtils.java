@@ -43,7 +43,7 @@ import cpath.service.jpa.Metadata;
 
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
-  private static final String dataFileSuffixRegex = "\\.(.+)?\\.gz$";
+  private static final String dataFileSuffixRegex = "[^.]+\\.gz$";
 
   // LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
   public static final ResourceLoader LOADER = new DefaultResourceLoader();
@@ -381,19 +381,30 @@ public final class CPathUtils {
     return null;
   }
 
+  /*
+   * Generate a sanitized file name for an original source zip entry;
+   * this path will be stored in the corresponding Metadata.files collection and
+   * and then processed during premerge (clean, convert, normalize) and merge steps (ETL).
+   */
+  static String originalFile(String dataSubDir, String zipEntryName) {
+    return Paths.get(dataSubDir,zipEntryName.replaceAll("[^a-zA-Z0-9.-]", "_")
+      + ".orig.gz").toString(); //important
+  }
+
   static String normalizedFile(String inputFile) {
-    return inputFile.replaceFirst(dataFileSuffixRegex,".normalized.gz");
+    return inputFile.replaceFirst(dataFileSuffixRegex,"normalized.gz");
   }
 
   static String validationFile(String inputFile) {
-    return inputFile.replaceFirst(dataFileSuffixRegex,".issues.gz");
+    return inputFile.replaceFirst(dataFileSuffixRegex,"issues.gz");
   }
 
   static String convertedFile(String inputFile) {
-    return inputFile.replaceFirst(dataFileSuffixRegex,".converted.gz");
+    return inputFile.replaceFirst(dataFileSuffixRegex,"converted.gz");
   }
 
   static String cleanedFile(String inputFile) {
-    return inputFile.replaceFirst(dataFileSuffixRegex,".cleaned.gz");
+    return inputFile.replaceFirst(dataFileSuffixRegex,"cleaned.gz");
   }
+
 }

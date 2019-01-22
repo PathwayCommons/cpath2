@@ -862,7 +862,7 @@ public class CPathServiceImpl implements CPathService {
         // create pathway data object
         log.info("unzipData(), adding " + entryName + " of " + metadata.getIdentifier());
         //create the original data file path/name, replacing all unsafe symbols with underscores
-        String datafile = mapDataEntryToFile(metadata.getIdentifier(), entryName);
+        String datafile = CPathUtils.originalFile(intermediateDataDir(metadata), entryName);
         metadata.addFile(datafile);
         // expand original contend and save to the gzip output file
         Path out = Paths.get(datafile);
@@ -879,11 +879,6 @@ public class CPathServiceImpl implements CPathService {
 
     if(metadata.getFiles().isEmpty())
       log.warn("unzipData(), no data found for " + metadata);
-  }
-
-  private String mapDataEntryToFile(String metadataIdentifier, String zipEntryName) {
-    return Paths.get(settings.dataDir(),metadataIdentifier,
-      zipEntryName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".gz").toString();
   }
 
   public void saveValidationReport(Validation v, String reportFile) {

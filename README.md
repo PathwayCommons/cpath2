@@ -47,16 +47,17 @@ The directory may contain:
 - metadata.json (describes the bio data to be imported/integrated);
 - data/ directory (where original and intermediate data are stored);
 - index/ (Lucene index directory for the final BioPAX model);
-- downloads/ (where blacklist.txt and output data archives are created);
-- logback.xml (can be enabled by -Dlogback.configurationFile=logback.xml JVM option);
+- downloads/ (where blacklist.txt and all the output data archives are created);
+- logback.xml (custom logging can be enabled by -Dlogback.configurationFile=logback.xml JVM option);
 
-In order to create a new cpath2 instance, run 
+In order to create a new cpath2 instance, define or update the metadata.json, 
+prepare input data archives (see below how), and run 
 
-    cpath2.sh
+    cpath2.sh -build
 
-
-to execute one of the data integration stages: import metadata, 
-clean, convert, normalize data, build the warehouse, the main BioPAX model, Lucene index, and downloads.
+, which normally takes a day or two - executes the following data integration steps: 
+import the metadata, clean data, convert to BioPAX, normalize, build the data warehouse, 
+then - main BioPAX model, Lucene index, and create downloads.
 
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
@@ -67,36 +68,12 @@ script as follows:
 
 ### Metadata
 
-A cPath2 metadata configuration file is a JSON file (the default is `metadata.json`) 
+The cPath2 metadata configuration file is a JSON file (default is `metadata.json`).
  
-The metadata columns are, in order: 
- 1. IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
- 2. NAME - can contain one (must) or multiple provider names, separated 
- by semicolon, i.e.: `[displayName;]standardName[;name1;name2;..]`;
- BIOPAX, PSI_MI, PSI_MITAB metadata entries should have at least the standard 
- official name, if possible (it is used for filtering in search/graph queries and by the data exporter);
- 3. DESCRIPTION - free text: organization name, release date, web site, comments;
- 4. URL to the Data - can be any URI (file://, http://, ftp://, classpath:). 
- It's just a memo, because original data usually needs re-packing.
- The cPath2 data fetcher looks for the `data/<IDENTIFIER>.zip` 
- input files (multi-entry zip archives are ok). How the data are then processed depends 
- on its TYPE (see below) and cleaner/converter implementations (if specified).
- So, as described above, a cPath2 Data Manager (a person) should  
- download, re-package, and save the required archives to data/
- (following `<IDENTIFIER>.zip` file name style) in advance.
- 5. URL to the Data Provider's Homepage (optional, good to have)
- 6. IMAGE URL (optional) - can be pointing to a resource logo;
- 7. TYPE - one of: BIOPAX, PSI_MI, PSI_MITAB, WAREHOUSE, MAPPING;
- 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like `cpath.cleaner.internal.UniProtCleanerImpl`);
- 9. CONVERTER_CLASS - leave empty or use a specific converter class, 
- e.g., `cpath.converter.internal.UniprotConverterImpl`, `cpath.converter.internal.PsimiConverterImpl`;
- 10. PUBMED ID - PubMed record ID (only number) of the main publication
- 11. AVAILABILITY - values: 'free', 'academic', 'purchase'
-
-A Converter or Cleaner implementation is not required to be implemented in the main cpath2 project sources. 
-It's also possible to configure (metadata.json) and plug into --premerge stage external 
-cleaner/converter classes after the cpath2-cli.jar is released:
-simply include to the cpath2-cli.sh Java options like:
+The data Converter and Cleaner classes are not required to be implemented in the cpath2 project sources. 
+It's possible to plug into the data build stage external 
+cleaner/converter classes after the cpath2 JAR is released:
+simply include to the cpath2.sh Java options like:
  `-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class` 
 
 ### Data
@@ -127,15 +104,15 @@ Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder 
 
 ### Run 
 
-Set `spring.profiles.active=admin` in the properties configuration file (or java `-Dspring.profiles.active=admin` option).
 To see available data import/export commands and options, run: 
 
-    cpath2.sh
+    cpath2.sh -help
 
 The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
  - -help
  - -build `[--rebuild]` (bash cpath2.sh -build)
  - -export
+ - -server (starts the web service)
 
 Extras/other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
@@ -143,4 +120,3 @@ Extras/other steps (optional):
   if it does modify the model though, i.e. not a read-only analysis, 
   you are to run -dbindex and following steps again.)
  - -export (to get a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
- - -pack (TODO; creates a tarball containing all the data to be uploaded somewhere on a file server)
