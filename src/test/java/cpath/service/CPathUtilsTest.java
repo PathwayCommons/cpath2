@@ -51,8 +51,7 @@ public class CPathUtilsTest {
         assertNotNull(read);
         assertTrue(Arrays.equals(testData, read)); 	
 	}
-	
-	
+
 	@Test
 	public void testCopy() throws IOException {
 		Path f = Paths.get(getClass().getClassLoader()
@@ -68,7 +67,6 @@ public class CPathUtilsTest {
         assertTrue(Arrays.equals(testData, read)); 	
 	}
 
-	
 	@Test
 	public void testReadMetadata() throws IOException {
 		String url = "classpath:metadata.json";
@@ -85,18 +83,6 @@ public class CPathUtilsTest {
 		assertNotNull(metadata);
 		assertEquals(METADATA_TYPE.WAREHOUSE, metadata.getType());
 	}
-
-	@Test
-	public final void testReplaceID() {
-		
-		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
-		UnificationXref xref = m.addNew(UnificationXref.class, "one");
-		CPathUtils.replaceID(m, xref, "two");
-		
-		assertTrue(xref.getUri().equals("two"));
-		assertTrue(m.containsID("two"));
-	}
-	
 	
 	@Test
 	public void testChebiOboXrefLinesPattern() {
@@ -105,7 +91,6 @@ public class CPathUtilsTest {
 		assertTrue(m.find());		
 		System.out.println("ID="+m.group(1)+"; DB="+m.group(2));		
 	}
-
 
 	@Test
 	public void testFixSourceIdForMapping() {

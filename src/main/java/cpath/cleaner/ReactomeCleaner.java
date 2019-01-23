@@ -79,7 +79,7 @@ final class ReactomeCleaner implements Cleaner {
 
 		// set standard URIs for selected entities;
 		for(String uri : newUriToEntityMap.keySet())
-			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
+			CPathUtils.replaceUri(model, newUriToEntityMap.get(uri), uri);
 		
 		// All Conversions in Reactome are LEFT-TO-RIGH, 
 		// unless otherwise was specified (confirmed with Guanming Wu, 2013/12)

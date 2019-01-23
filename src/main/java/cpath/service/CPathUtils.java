@@ -111,22 +111,34 @@ public final class CPathUtils {
    * Replaces the URI of a BioPAX object
    * using java reflection. Normally, one should avoid this;
    * please use when absolutely necessary and with great care.
-   *
-   * @param model  model
-   * @param el     biopax object
-   * @param newUri URI
+   * @param bpe biopax object from the model
+   * @param model model
+   * @param xmlBase xml:base for the new URI to be generated
    */
-  public static void replaceID(Model model, BioPAXElement el, String newUri) {
+  static void changeUri(BioPAXElement bpe, Model model, String xmlBase) {
+    replaceUri(model, bpe, Normalizer
+      .uri(xmlBase, null, UUID.randomUUID() + bpe.getUri(), bpe.getModelInterface()));
+  }
+
+  /**
+   * Replaces the URI of a BioPAX object
+   * using java reflection. Normally, one should avoid this;
+   * please use when absolutely necessary and with great care.
+   *
+   * @param model model
+   * @param el biopax object from the model
+   * @param newUri new URI
+   */
+  public static void replaceUri(Model model, BioPAXElement el, String newUri) {
     if (el.getUri().equals(newUri))
       return; // no action required
-
     model.remove(el);
     try {
       Method m = BioPAXElementImpl.class.getDeclaredMethod("setUri", String.class);
       m.setAccessible(true);
       m.invoke(el, newUri);
+      ((Level3Element)el).addComment("REPLACED " + el.getUri());
     } catch (Exception e) {
-      e.printStackTrace();
       throw new RuntimeException(e);
     }
     model.add(el);

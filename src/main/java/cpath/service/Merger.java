@@ -8,7 +8,6 @@ import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -144,28 +143,27 @@ public final class Merger {
 	}
 
 	private Model merge(Metadata metadata) {
+		log.info("Begin merging " + metadata.getIdentifier());
 		Model providerModel = service.loadBiopaxModelByDatasource(metadata);
 		if(providerModel == null)
 		{
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 			providerModel.setXmlBase(xmlBase);
 
-			for (String pwdata : metadata.getFiles()) {
-				if (!new File(CPathUtils.normalizedFile(pwdata)).exists()) {
-					log.warn("Skip '" + pwdata + "' - no normalized data found (failed premerge)");
+			for (String origFile : metadata.getFiles()) {
+				final String normalizedFile = CPathUtils.normalizedFile(origFile);
+				if (!new File(normalizedFile).exists()) {
+					log.warn("Skipped " + metadata.getIdentifier() + " - no normalized data found.");
 					continue;
 				}
-
-				log.info("Merging: " + pwdata);
-
+				log.info("Processing: " + normalizedFile);
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream = CPathUtils.gzipInputStream(CPathUtils.normalizedFile(pwdata));
+				InputStream inputStream = CPathUtils.gzipInputStream(normalizedFile);
 				if(inputStream == null) {
-					log.error("Skipped " + pwdata + " - " + "cannot read " + CPathUtils.normalizedFile(pwdata));
+					log.error("Skipped " + normalizedFile + " - " + "cannot read.");
 					continue;
 				}
-
-				merge(pwdata, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
+				merge(normalizedFile, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
 			}
 
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
@@ -173,15 +171,9 @@ public final class Merger {
 			log.info("Normalizing generics (" + metadata.getIdentifier() + ")...");
 			ModelUtils.normalizeGenerics(providerModel);
 
-//			//merge some Entities within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
-//			log.info("Merging equivalent physical entities...");
-//			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
-//			log.info("Merging equivalent interactions...");
-//			ModelUtils.mergeEquivalentInteractions(providerModel);
-
 			log.info("Done merging " + metadata);
 		} else {
-			log.info("Loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
+			log.info("- existing BioPAX model from " + service.settings().biopaxFileNameFull(metadata.getIdentifier()));
 		}
 
 		//quick-fix BioSource : set name if not set
@@ -347,7 +339,7 @@ public final class Merger {
 		// and copy mul. cardinality prop. from source to target obj. having same URI
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
 		simpleMerger.merge(target, source);
-		log.info("Merged '" + srcModelInfo + "'.");
+		log.info("Merged " + srcModelInfo + ".");
 	}
 
 	private void filterOutUnwantedOrganismInteractions(Model source) {
@@ -403,33 +395,26 @@ public final class Merger {
 		{
 			String currUri = bpe.getUri();
 			if( !(bpe instanceof ProteinReference) && currUri.startsWith("http://identifiers.org/uniprot/")
-				|| !(bpe instanceof SmallMoleculeReference) && currUri.startsWith("http://identifiers.org/chebi/"))
-			{
+				|| !(bpe instanceof SmallMoleculeReference) && currUri.startsWith("http://identifiers.org/chebi/")) {
 				//Replace URI due to potential type collision
-				String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
-				CPathUtils.replaceID(source, bpe, newUri);
-				((Level3Element) bpe).addComment("REPLACED " + currUri);
-			}
-			else
-			{
+				CPathUtils.changeUri(bpe, source, xmlBase);
+			} else {
 				BioPAXElement targetBpe = target.getByID(currUri);
 				if (targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface()) {
 					// Replace URI due to target model has the same URI but different type object
-					String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
-					CPathUtils.replaceID(source, bpe, newUri);
-					((Level3Element) bpe).addComment("REPLACED " + currUri);
+					CPathUtils.changeUri(bpe, source, xmlBase);
 				}
 			}
 		}
 	}
 
 	/*
-     * Replaces not normalized original URIs
-     * in the one-datasource (merged) source model
-     * with auto-generated new ones (using the xml:base);
-     * adds the original URIs to bp:comment property.
-     */
-	private void replaceOriginalUris(Model source, String metadataId) {
+	 * Replaces not normalized original URIs
+	 * in the one-datasource (merged) source model
+	 * with auto-generated new ones (using the xml:base);
+	 * adds the original URIs to bp:comment property.
+	 */
+	private void replaceOriginalUris(Model source, String prefix) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<>(source.getObjects())) {
 			String currUri = bpe.getUri();
@@ -437,9 +422,7 @@ public final class Merger {
 				// Generate a new URI (using Md5hex);
 				// we use metadataId part here to avoid merging/messing up Evidence, SequenceSite, Stoichiometry,
 				// etc. (usually not equivalent) annotation class things from different data providers...
-				String newUri = Normalizer.uri(xmlBase, null, metadataId + currUri, bpe.getModelInterface());
-				CPathUtils.replaceID(source, bpe, newUri);
-				((Level3Element) bpe).addComment("REPLACED " + currUri);
+				CPathUtils.changeUri(bpe, source, xmlBase);
 			}
 		}
 	}

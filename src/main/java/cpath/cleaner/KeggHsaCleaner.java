@@ -38,9 +38,9 @@ final class KeggHsaCleaner implements Cleaner {
 
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> pathways = new HashSet<>(model.getObjects(Pathway.class));
-		Map<String, Pathway> newUriToEntityMap = new HashMap<String, Pathway>();
+		Map<String, Pathway> newUriToEntityMap = new HashMap<>();
 		for(Pathway pw : pathways) {
-			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
+			Set<UnificationXref> uxrefs = new ClassFilterSet<>(
 					new HashSet<>(pw.getXref()), UnificationXref.class);
 			//normally there is only one such xref
 			if(!uxrefs.isEmpty()) {
@@ -116,7 +116,7 @@ final class KeggHsaCleaner implements Cleaner {
 
 		// set standard URIs for selected entities
 		for(String uri : newUriToEntityMap.keySet())
-			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
+			CPathUtils.replaceUri(model, newUriToEntityMap.get(uri), uri);
 			
 		ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
 		
