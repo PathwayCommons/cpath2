@@ -42,8 +42,6 @@ import org.springframework.util.Assert;
 import cpath.service.jpa.*;
 import cpath.service.jaxb.*;
 
-import javax.annotation.PostConstruct;
-
 import static cpath.service.api.Status.*;
 
 

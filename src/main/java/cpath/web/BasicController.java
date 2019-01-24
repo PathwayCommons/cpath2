@@ -1,6 +1,5 @@
 package cpath.web;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -51,15 +50,10 @@ public abstract class BasicController
   }
 
 
-  /**
+  /*
    * Http error response with more details and specific access log events.
-   *
-   * @param args
-   * @param error
-   * @param request
-   * @param response
    */
-  protected final void errorResponse(ServiceQuery args,
+  final void errorResponse(ServiceQuery args,
                                      ErrorResponse error,
                                      HttpServletRequest request,
                                      HttpServletResponse response)
@@ -76,15 +70,12 @@ public abstract class BasicController
   }
 
 
-  /**
+  /*
    * Builds an error message from
    * the web parameters binding result
    * if there're errors.
-   *
-   * @param bindingResult
-   * @return
    */
-  protected final String errorFromBindingResult(BindingResult bindingResult)
+  final String errorFromBindingResult(BindingResult bindingResult)
   {
     StringBuilder sb = new StringBuilder();
     for (FieldError fe : bindingResult.getFieldErrors()) {
@@ -96,24 +87,19 @@ public abstract class BasicController
           rejectedVal = "empty array";
         }
       }
-      sb.append(fe.getField() + " was '" + rejectedVal + "'; "
-        + fe.getDefaultMessage() + ". ");
+      sb.append(fe.getField()).append(" was '").append(rejectedVal).append("'; ")
+        .append(fe.getDefaultMessage()).append(". ");
     }
 
     return sb.toString();
   }
 
 
-  /**
+  /*
    * Writes the query results to the HTTP response
    * output stream.
-   *
-   * @param command     query command
-   * @param result
-   * @param request
-   * @param response
    */
-  protected final void stringResponse(ServiceQuery command,
+  final void stringResponse(ServiceQuery command,
                                       ServiceResponse result,
                                       HttpServletRequest request,
                                       HttpServletResponse response)
@@ -157,10 +143,8 @@ public abstract class BasicController
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             new SimpleIOHandler().convertToOWL(emptyModel, bos);
             response.getWriter().print(bos.toString("UTF-8"));
-          } else {
-            //SIF, GSEA formats do not allow for comment lines
-//						response.getWriter().print(""); //nothing
           }
+          //else - SIF, GSEA formats do not allow for comment lines anyway
         } catch (IOException e) {
           String msg = String.format("Failed writing a trivial response: %s.", e.toString());
           errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
@@ -178,16 +162,10 @@ public abstract class BasicController
   }
 
 
-  /**
+  /*
    * Resizes the image.
-   *
-   * @param img
-   * @param width
-   * @param height
-   * @param background
-   * @return
    */
-  public final BufferedImage scaleImage(BufferedImage img, int width, int height, Color background)
+  final BufferedImage scaleImage(BufferedImage img, int width, int height)
   {
     int imgWidth = img.getWidth();
     int imgHeight = img.getHeight();
@@ -202,8 +180,6 @@ public abstract class BasicController
     try {
       g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
         RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-      if (background != null)
-        g.setBackground(background);
       g.clearRect(0, 0, width, height);
       g.drawImage(img, 0, 0, width, height, null);
     } finally {
@@ -213,13 +189,10 @@ public abstract class BasicController
   }
 
 
-  /**
+  /*
    * Extracts the client's IP from the request headers.
-   *
-   * @param request
-   * @return
    */
-  public static final String clientIpAddress(HttpServletRequest request)
+  private static String clientIpAddress(HttpServletRequest request)
   {
     String ip = request.getHeader("X-Forwarded-For");
     if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {

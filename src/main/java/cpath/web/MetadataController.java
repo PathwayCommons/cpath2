@@ -43,7 +43,7 @@ public class MetadataController extends BasicController {
         .read(CPathUtils.LOADER.getResource(ds.getIconUrl()).getInputStream());
 
       //resize (originals are around 125X60)
-      bufferedImage = scaleImage(bufferedImage, 100, 50, null);
+      bufferedImage = scaleImage(bufferedImage, 100, 50);
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
       ImageIO.write(bufferedImage, "gif", byteArrayOutputStream);

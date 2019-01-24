@@ -49,7 +49,7 @@ public class PagesController extends BasicController {
 
     BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
     if (image != null) {
-      image = scaleImage(image, 16, 16, null);
+      image = scaleImage(image, 16, 16);
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ImageIO.write(image, "gif", baos);
       baos.flush();
