@@ -105,7 +105,12 @@ public class ConsoleApplication implements CommandLineRunner {
 
     // process command line args and do smth.
     if (cmd.hasOption("build")) {
-      Stage stage = (Stage) cmd.getParsedOptionValue("build");
+      Stage stage;
+      try {
+        stage = Stage.valueOf(cmd.getOptionValue("build").toUpperCase());
+      } catch (Exception e) {
+        stage = Stage.PREMERGE;
+      }
       switch ((stage != null) ? stage : Stage.PREMERGE) {
         case PREMERGE:
           premerge();
