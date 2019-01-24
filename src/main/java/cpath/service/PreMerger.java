@@ -41,7 +41,6 @@ final class PreMerger {
 
   private final String xmlBase;
   private final Validator validator;
-  private final boolean overwrite;
 
   private CPathService service;
 
@@ -49,13 +48,11 @@ final class PreMerger {
    * Constructor.
    * @param service   cpath2 service (provides data query methods)
    * @param validator Biopax Validator
-   * @param overwrite whether to re-input content files or continue (default: false).
    */
-  PreMerger(CPathService service, Validator validator, boolean overwrite) {
+  PreMerger(CPathService service, Validator validator) {
     this.service = service;
     this.validator = validator;
     this.xmlBase = service.settings().getXmlBase();
-    this.overwrite = overwrite;
   }
 
   /**
@@ -69,7 +66,7 @@ final class PreMerger {
     // Iterate over all metadata
     for (Metadata metadata : service.metadata().findAll())
     {
-      if(overwrite || !Files.isDirectory(Paths.get(service.intermediateDataDir(metadata)))) {
+      if(!Files.isDirectory(Paths.get(service.intermediateDataDir(metadata)))) {
         service.clear(metadata); //empties the corresponding directory and db entries
       } else {
         //just clear the list of input files (content of the archive)

@@ -859,8 +859,6 @@ public class CPathServiceImpl implements CPathService {
           log.info("unzipData(), skipped " + entryName);
           continue;
         }
-        // create pathway data object
-        log.info("unzipData(), adding " + entryName + " of " + metadata.getIdentifier());
         //create the original data file path/name, replacing all unsafe symbols with underscores
         String datafile = CPathUtils.originalFile(intermediateDataDir(metadata), entryName);
         metadata.addFile(datafile);

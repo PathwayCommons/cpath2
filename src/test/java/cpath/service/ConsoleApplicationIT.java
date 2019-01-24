@@ -193,7 +193,7 @@ public class ConsoleApplicationIT
     ds = service.metadata().findByIdentifier("TEST_MAPPING");
     assertNotNull(ds);
 
-    PreMerger premerger = new PreMerger(service, validator, true);
+    PreMerger premerger = new PreMerger(service, validator);
     premerger.premerge();
     premerger.buildWarehouse(); //- also writes Warehouse archive
 

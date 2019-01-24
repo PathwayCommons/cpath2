@@ -6,7 +6,7 @@ CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss32m -Xmx60g -Dpaxtools.CollectionProvider
 # CPATH2_DEBUG_OPTS="-Dlogback.configurationFile=logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 
 for arg in "$@"; do
-  if [ "$arg" == "-build" ] ; then
+  if [ "$arg" = "--build" ] || [ "$arg" = "-b" ] ; then
     echo "enabled load time weaving"
     CPATH2_OPTS="$CPATH2_OPTS -server -javaagent:../target/spring-instrument.jar"
     break

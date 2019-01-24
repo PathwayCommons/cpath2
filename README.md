@@ -50,19 +50,24 @@ The directory may contain:
 - downloads/ (where blacklist.txt and all the output data archives are created);
 - logback.xml (custom logging can be enabled by -Dlogback.configurationFile=logback.xml JVM option);
 
+To see available commands and options, run: 
+
+    bash cpath2.sh
+
 In order to create a new cpath2 instance, define or update the metadata.json, 
 prepare input data archives (see below how), and run 
 
-    cpath2.sh -build
+    bash cpath2.sh --build
 
 , which normally takes a day or two - executes the following data integration steps: 
-import the metadata, clean data, convert to BioPAX, normalize, build the data warehouse, 
-then - main BioPAX model, Lucene index, and create downloads.
+import the metadata, clean, convert to BioPAX, normalize the data, build the BioPAX warehouse, 
+merge into the main BioPAX model, create Lucene index, several summary files and a script to convert 
+the final BioPAX models to SIF, GMT, TXT formats.
 
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
 
-    nohup bash cpath2.sh -server 2>&1 &
+    nohup bash cpath2.sh --server 2>&1 &
 
 (watch the `nohup.out` and `cpath2.log`)
 
@@ -101,22 +106,3 @@ Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder 
  - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
  - extract what you need (e.g. some species data only)
  - create a new zip archive using name like `<IDENTIFIER>.zip` (datasource identifier, e.g., `reactome_human.zip`).
-
-### Run 
-
-To see available data import/export commands and options, run: 
-
-    cpath2.sh -help
-
-The following sequence of the cpath2 tasks is normally required to build a new cPath2 instance from scratch: 
- - -help
- - -build `[--rebuild]` (bash cpath2.sh -build)
- - -export
- - -server (starts the web service)
-
-Extras/other steps (optional):
- - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
-  e.g., to post-fix something in the merged biopax model/db or to produce some output; 
-  if it does modify the model though, i.e. not a read-only analysis, 
-  you are to run -dbindex and following steps again.)
- - -export (to get a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)

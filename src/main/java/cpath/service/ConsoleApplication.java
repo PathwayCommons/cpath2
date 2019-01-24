@@ -8,6 +8,7 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
 
+import org.apache.commons.cli.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -44,125 +45,109 @@ import java.util.zip.GZIPOutputStream;
 @Profile({"admin"})
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
-  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
+  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx60g -jar paxtools.jar";
 
   @Autowired
   private CPathService service;
 
   /**
    * Validator bean is available when "premerge" profile is activated;
-   * Used in {@link #premerge(boolean)}
+   * Used in {@link #premerge()}
    */
   @Autowired(required = false)
   private Validator validator;
 
-  public enum Cmd {
-    // commands
-    HELP("-help"),
-    BUILD("-build"),
-    EXPORT("-export"),
-    ANALYSIS("-run-analysis"),
-    SERVER("-server");
-
-    //name to use as the application's command line argument
-    private String command;
-
-    Cmd(String command) {
-      this.command = command;
-    }
-
-    @Override
-    public String toString() {
-      return command;
-    }
+  enum Stage {
+    PREMERGE,
+    MERGE,
+    POSTMERGE
   }
 
   @Override
-  public void run(String... params) throws Exception
-  {
+  public void run(String... args) throws Exception {
     if (!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
       LOG.error("Default Charset, " + Charset.defaultCharset() +
-          " (is NOT 'UTF-8'); problems with input data are possible...");
+        " (is NOT 'UTF-8'); problems with input data are possible...");
 
-    // Cleanup arguments - remove empty/null strings from the end, which were
-    // possibly the result of calling this method from a shell script
-    final List<String> filteredArguments = new ArrayList<>();
-    for (String a : params)
-      if (a != null && !a.isEmpty() && !a.equalsIgnoreCase("null"))
-        filteredArguments.add(a);
-    final String[] args = filteredArguments.toArray(new String[]{});
+    Options options = new Options();
+    Option o = Option.builder("b").longOpt("build")
+      .desc("PREMERGE: parse metadata.json, expand input archives, clean, convert, normalize the data, create the " +
+        "Warehouse model; MERGE: merge the warehouse with all the normalized files into by-provider and main models, " +
+        "build the full-text index of the main BioPAX model, generate blacklist.txt; POSTMERGE: creates a couple of " +
+        "summary files and a script for converting the main BioPAX model to SIF, GMT, TXT formats.")
+      .hasArg().argName("from-stage").optionalArg(true).type(Stage.class).build();
+    options.addOption(o);
+    o = Option.builder("a").longOpt("analyze")
+      .desc("use a class that implements cpath.service.api.Analysis<Model> interface to analyse the integrated " +
+        "BioPAX model (the class and its dependencies are expected to be found on the classpath)")
+      .hasArg().argName("class").build();
+    options.addOption(o);
+    o = Option.builder("e").longOpt("export")
+      .desc("export the main BioPAX model or sub-model defined by additional filters (see: -F)")
+      .hasArg().argName("filename").build();
+    options.addOption(o);
+    o = Option.builder("F").longOpt("F")
+      .desc("filters for the export option, e.g., -Furis=<uri,..> -Fdatasources=<nameOrUri,..> -Ftypes=<interface,..> " +
+        "(when 'uris' is defined, other options are ignored)")
+      .argName("property=value").hasArgs().valueSeparator().numberOfArgs(2).build();
+    options.addOption(o);
+    o = Option.builder("s").longOpt("server")
+      .desc("run as web (service) app").build();
+    options.addOption(o);
 
-    // process command line args and do smth.
-    if (args.length == 0) {
-      System.out.println("Use -help to see command line options");
-    } else if (args[0].equals(Cmd.BUILD.toString())) {
-      boolean force = false;
-      if (args.length > 1) {
-        for (int i = 1; i < args.length; i++) {
-          if (args[i].equalsIgnoreCase("--rebuild"))
-            force = true;
-        }
-      }
-
-      fetchMetadata();
-
-      premerge(force);
-
-      new Merger(service).merge();
-
-      index();
-
-      createDownloads();
-
-    } else if (args[0].equals(Cmd.EXPORT.toString())) {
-      //args[0] is the command name
-      if(args.length < 2) {
-        LOG.error("Output file is not specified.");
-      } else {
-        String[] uris = new String[]{};
-        String[] datasources = new String[]{};
-        String[] types = new String[]{};
-        boolean absoluteUris = false;
-        for (int i = 2; i < args.length; i++) {
-          if (args[i].equalsIgnoreCase("--output-absolute-uris"))
-            absoluteUris = true;
-          else if (args[i].toLowerCase().startsWith("--datasources="))
-            datasources = args[i].substring(14).split(",");
-          else if (args[i].toLowerCase().startsWith("--types="))
-            types = args[i].substring(8).split(",");
-          else if (args[i].toLowerCase().startsWith("--uris="))
-            uris = args[i].substring(7).split(",");
-          else
-            LOG.error("Skipped unrecognized argument: " + args[i]);
-        }
-
-        exportData(args[1], uris, absoluteUris, datasources, types);
-      }
-    } else if (args[0].equals(Cmd.ANALYSIS.toString())) {
-      if (args.length < 2)
-        LOG.error("No Analysis<Model> class provided.");
-      else if (args.length == 2)
-        executeAnalysis(args[1], true);
-      else if ("--update".equalsIgnoreCase(args[2]))
-        executeAnalysis(args[1], false);
-    } else if(args[0].equals(Cmd.HELP.toString()))  {
-      System.out.println(usage());
-    } else {
-      System.err.println(usage());
+    CommandLine cmd;
+    try {
+      cmd = new DefaultParser().parse(options, args);
+    } catch (ParseException e) {
+      new HelpFormatter().printHelp("cPath2", options);
+      return;
     }
 
+    // process command line args and do smth.
+    if (cmd.hasOption("build")) {
+      Stage stage = (Stage) cmd.getParsedOptionValue("build");
+      switch ((stage != null) ? stage : Stage.PREMERGE) {
+        case PREMERGE:
+          premerge();
+        case MERGE:
+          new Merger(service).merge();
+          index();
+        case POSTMERGE:
+          postmerge();
+      }
+    } else if (cmd.hasOption("export")) {
+      String[] uris = new String[]{};
+      String[] datasources = new String[]{};
+      String[] types = new String[]{};
+
+      if (cmd.hasOption("F")) {
+        Properties properties = cmd.getOptionProperties("F");
+        if (properties.contains("uris")) {
+          uris = properties.getProperty("uris").split(",");
+        }
+        if (uris.length == 0) { //use filters iif no uris
+          datasources = properties.getProperty("datasources", "").split(",");
+          types = properties.getProperty("types", "").split(",");
+        }
+      }
+      exportData(cmd.getOptionValue("export"), uris, datasources, types);
+    } else if (cmd.hasOption("analyze")) {
+      executeAnalysis(cmd.getOptionValue("analyze"), true);
+    } else {
+      new HelpFormatter().printHelp("cPath2", options);
+    }
   }
 
   /**
    * Runs a class that analyses or modifies the main BioPAX model.
    *
    * @param analysisClass a class that implements {@link Analysis}
-   * @param readOnly whether this is to modify and replace the BioPAX Model or not
+   * @param readOnly      whether this is to modify and replace the BioPAX Model or not
    */
   private void executeAnalysis(String analysisClass, boolean readOnly) {
     Analysis<Model> analysis;
     try {
-      Class c =  Class.forName(analysisClass);
+      Class c = Class.forName(analysisClass);
       analysis = (Analysis<Model>) c.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -174,13 +159,13 @@ public class ConsoleApplication implements CommandLineRunner {
     if (!readOnly) { //replace the main BioPAX model archive
       try {
         new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model,
-            new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
+          new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
       } catch (Exception e) {
         throw new RuntimeException("Failed updating the main BioPAX archive!", e);
       }
 
       LOG.warn("The main BioPAX model was modified; "
-          + "do not forget to re-index, update counts, re-export other files, etc.");
+        + "do not forget to re-index, update counts, re-export other files, etc.");
     }
 
   }
@@ -232,21 +217,24 @@ public class ConsoleApplication implements CommandLineRunner {
    * organize, clean, convert, validate, normalize pathway/interaction data,
    * and create BioPAX utility class objects warehouse and id-mapping.
    */
-  private void premerge(boolean rebuild) {
-    LOG.info("runPremerge: initializing (DAO, validator, premerger)...");
+  private void premerge() {
+
+    fetchMetadata();
+
+    LOG.info("premerge: initializing DAO, validator, etc...");
     //test that officially supported organisms are specified (throws a runtime exception otherwise)
     service.settings().getOrganismTaxonomyIds();
-    LOG.info("runPremerge: this instance is configured to integrate and query " +
-        " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
+    LOG.info("premerge: this instance is configured to integrate and query " +
+      " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
 
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     System.setProperty("net.sf.ehcache.disabled", "true");
 
-    PreMerger premerger = new PreMerger(service, validator, rebuild);
+    PreMerger premerger = new PreMerger(service, validator);
     premerger.premerge();
 
     // create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
-    if (!Files.exists(Paths.get(service.settings().warehouseModelFile())) || rebuild)
+    if (!Files.exists(Paths.get(service.settings().warehouseModelFile())))
       premerger.buildWarehouse();
 
     //back to read-only schema mode (useful when called from the web Main page)
@@ -256,7 +244,7 @@ public class ConsoleApplication implements CommandLineRunner {
   /*
    * Loads data providers' metadata.
    */
-  private void fetchMetadata()  {
+  private void fetchMetadata() {
     System.setProperty("hibernate.hbm2ddl.auto", "update");
     // grab the data
     // load the test metadata and create warehouse
@@ -270,17 +258,13 @@ public class ConsoleApplication implements CommandLineRunner {
   /**
    * Exports a cpath2 BioPAX sub-model or full model to the specified file.
    *
-   * @param output             - output BioPAX file name (path)
-   * @param uris               - optional, the list of valid (existing) URIs to extract a sub-model
-   * @param outputAbsoluteUris - if true, all URIs in the BioPAX elements
-   *                           and properties will be absolute (i.e., no local relative URIs,
-   *                           such as rdf:ID="..." or rdf:resource="#...", will be there in the output file.)
-   * @param datasources        filter by data source if 'uris' is not empty
-   * @param types              filter by biopax type if 'uris' is not empty
+   * @param output      - output BioPAX file name (path)
+   * @param uris        - optional, the list of valid (existing) URIs to extract a sub-model
+   * @param datasources filter by data source if 'uris' is not empty
+   * @param types       filter by biopax type if 'uris' is not empty
    * @throws IOException, IllegalStateException (in maintenance mode)
    */
-  private void exportData(final String output, String[] uris, boolean outputAbsoluteUris,
-                         String[] datasources, String[] types) throws IOException {
+  private void exportData(final String output, String[] uris, String[] datasources, String[] types) throws IOException {
     if (uris == null)
       uris = new String[]{};
     if (datasources == null)
@@ -304,7 +288,7 @@ public class ConsoleApplication implements CommandLineRunner {
         //(child biopax elements will be auto-included during the export to OWL)
         for (String bpInterfaceName : types) {
           selectedUris.addAll(findAllUris(searcher,
-              biopaxTypeFromSimpleName(bpInterfaceName), datasources, null));
+            biopaxTypeFromSimpleName(bpInterfaceName), datasources, null));
         }
       } else {
         //collect all Entity URIs filtered by the not empty data sources list
@@ -321,7 +305,7 @@ public class ConsoleApplication implements CommandLineRunner {
     OutputStream os = new FileOutputStream(output);
     // export a sub-model from the main biopax database
     SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
-    sio.absoluteUris(outputAbsoluteUris);
+    sio.absoluteUris(true); // write full URIs
     sio.convertToOWL(model, os, uris);
     IOUtils.closeQuietly(os);//though, convertToOWL must have done this already
   }
@@ -329,7 +313,7 @@ public class ConsoleApplication implements CommandLineRunner {
   private Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type) {
     // 'type' (a BioPAX L3 interface class name) is case insensitive
     for (Class<? extends BioPAXElement> c : SimpleEditorMap.L3
-        .getKnownSubClassesOf(BioPAXElement.class)) {
+      .getKnownSubClassesOf(BioPAXElement.class)) {
       if (c.getSimpleName().equalsIgnoreCase(type)) {
         if (c.isInterface() && BioPAXLevel.L3.getDefaultFactory().getImplClass(c) != null)
           return c; // interface
@@ -338,45 +322,8 @@ public class ConsoleApplication implements CommandLineRunner {
     throw new IllegalArgumentException("Illegal BioPAX class name '" + type);
   }
 
-  private String usage() {
-    final String NEWLINE = System.getProperty("line.separator");
-    return "Usage: <-command_name> [<command_args...>] (parameters within the square braces are optional)" +
-      NEWLINE +
-      "Commands:" +
-      NEWLINE + NEWLINE +
-      Cmd.BUILD.toString() +
-      " [--rebuild] (using metadata.json and input data archives, it will" +
-      " clean, convert, normalize pathway data files; (re-)create the BioPAX Warehouse model;" +
-      " merge all the above BioPAX models into the main one;" +
-      " build the full-text index of the merged BioPAX model; generate blacklist.txt; etc.)" +
-      NEWLINE + NEWLINE +
-      Cmd.EXPORT.toString() +
-      " [filename] [--uris=<uri,uri,..>] [--output-absolute-uris] [--datasources=<nameOrUri,..>] [--types=<interface,..>]" +
-      " (when no arguments, it generates the default detailed pathway data and organism-specific " +
-      "BioPAX archives and datasources.txt in the downloads sub-directory; plus, " +
-      "summary.txt, and convert.sh script (for exporting the BioPAX files to various formats with Paxtools). " +
-      "If [filename] is provided, it only exports the main BioPAX model or a sub-model " +
-      "(if the list of URIs or filter option is provided): " +
-      "when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
-      "when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
-      "will contain BioPAX elements that pass the filter by data source and/or type)" +
-      NEWLINE + NEWLINE +
-      Cmd.ANALYSIS.toString() +
-      " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
-      "if --update is set, one then should re-index and generate new 'downloads')" +
-      NEWLINE + NEWLINE +
-      Cmd.SERVER.toString() +
-      " [options...] (start the web service using extra configuration, such as Spring application properties)" +
-      NEWLINE + NEWLINE +
-      Cmd.HELP.toString() + " (print these information)" + NEWLINE;
-  }
-
-  /*
-   * Create cpath2 downloads
-   * (exports the db to various formats)
-   */
-  private void createDownloads() throws IOException {
-    LOG.info("createDownloads(), started...");
+  private void postmerge() throws IOException {
+    LOG.info("postmerge(), started...");
 
     //load the main model
     LOG.info("loading the Main BioPAX Model...");
@@ -391,13 +338,13 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println(String.join(" ", Arrays
       .asList("#CPATH2:", service.settings().getName(), "version", service.settings().getVersion(), date)));
     writer.println("#Columns:\t" + String.join("\t", Arrays.asList(
-        "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS")));
+      "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS")));
     Iterable<Metadata> allMetadata = service.metadata().findAll();
     for (Metadata m : allMetadata) {
       //we use StringUtils.join instead String.join as there are only only char sequence objects
       writer.println(StringUtils.join(Arrays.asList(
-          CPathUtils.getMetadataUri(model, m), m.getDescription(), m.getType(), m.getUrlToHomepage(),
-          m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t")
+        CPathUtils.getMetadataUri(model, m), m.getDescription(), m.getType(), m.getUrlToHomepage(),
+        m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t")
       );
     }
     writer.flush();
@@ -414,7 +361,7 @@ public class ConsoleApplication implements CommandLineRunner {
     for (Xref x : xrefs) {
       String id = x.getId();
       if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "uniprot")
-          && id != null && !acs.contains(id))
+        && id != null && !acs.contains(id))
         acs.addAll(service.map(id, "UNIPROT"));
       if (--left % 10000 == 0)
         LOG.info(left + " xrefs to map...");
@@ -423,7 +370,7 @@ public class ConsoleApplication implements CommandLineRunner {
       Paths.get(service.settings().downloadsDir(), "uniprot.txt")), StandardCharsets.UTF_8)
     );
     writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
-        service.settings().getVersion()));
+      service.settings().getVersion()));
     for (String ac : acs)
       writer.println(ac);
     writer.close();
@@ -459,20 +406,20 @@ public class ConsoleApplication implements CommandLineRunner {
     //rename properly those SIF files that were cut from corresponding extended SIF (.txt) ones
     writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
     writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
-        commonPrefix, commonPrefix, commonPrefix, commonPrefix));
+      commonPrefix, commonPrefix, commonPrefix, commonPrefix));
 
     //generate pathways.txt (parent-child) and physical_entities.json (URI-to-IDs mapping) files
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
-        service.settings().biopaxFileName("All"), "pathways.txt", "--pathways"));
+      service.settings().biopaxFileName("All"), "pathways.txt", "--pathways"));
     writer.println("wait");
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
-        service.settings().biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
+      service.settings().biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
     writer.println("wait");
     writer.println("gzip pathways.txt *.json");
     writer.println("echo \"All done.\"");
     writer.close();
 
-    LOG.info("createDownloads: done.");
+    LOG.info("postmerge: done.");
   }
 
   private void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
@@ -482,15 +429,15 @@ public class ConsoleApplication implements CommandLineRunner {
 
     if (exportToGSEA) {
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-          prefix + "hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
+        prefix + "hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-          prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
+        prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
       writer.println("wait"); //important
       writer.println("echo \"Done converting " + bpFilename + " to GSEA.\"");
     }
 
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
-        prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
+      prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
 
     //TODO: UniProt based extended SIF can be huge and takes too long to generate... won't make it now
 
@@ -512,7 +459,7 @@ public class ConsoleApplication implements CommandLineRunner {
     }
 
     LOG.info("findAllUris(in " + type.getSimpleName() + ", ds: " + Arrays.toString(ds) + ", org: " + Arrays.toString(org) + ") "
-        + "collected " + uris.size());
+      + "collected " + uris.size());
 
     return uris;
   }
@@ -544,9 +491,9 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   private void exportBiopax(
-      final Model mainModel, final Searcher searcher,
-      final String biopaxArchive, final String[] datasources,
-      final String[] organisms) {
+    final Model mainModel, final Searcher searcher,
+    final String biopaxArchive, final String[] datasources,
+    final String[] organisms) {
     // check file exists
     if (!(new File(biopaxArchive)).exists()) {
       LOG.info("creating new " + biopaxArchive);
