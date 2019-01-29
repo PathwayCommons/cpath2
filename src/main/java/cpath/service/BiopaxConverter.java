@@ -47,7 +47,8 @@ public class BiopaxConverter {
    * @param blacklist of ubiquitous molecules to exclude (in some algorithms)
    */
   public BiopaxConverter(Blacklist blacklist) {
-    this.blacklist = blacklist;
+    //set an empty one if null
+    this.blacklist = (blacklist != null) ? blacklist : new Blacklist();
   }
 
 
@@ -159,10 +160,8 @@ public class BiopaxConverter {
    * @throws IOException when there is an output stream writing error
    */
   private void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout) {
-
-    L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
-      new ListUbiqueDetector(blackList.getListed()), null, doLayout);
-
+    L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(new ListUbiqueDetector(
+      (blackList != null) ? blackList.getListed() : Collections.emptySet()), null, doLayout);
     converter.writeSBGN(m, stream);
   }
 

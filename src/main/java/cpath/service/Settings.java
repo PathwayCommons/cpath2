@@ -75,6 +75,7 @@ public class Settings
     LOG.info("Working ('home') directory: " + homeDir());
     subDir(""); //creates if not exists
     subDir(DATA_SUBDIR);
+    sbgnLayoutEnabled = Boolean.FALSE;
   }
 
   public String getXmlBase() {
@@ -165,7 +166,6 @@ public class Settings
     this.downloads = downloads;
   }
 
-  //backward compatibility methods
   public boolean isSbgnLayoutEnabled() {
     return (getSbgnLayoutEnabled()==null)? false : getSbgnLayoutEnabled().booleanValue();
   }

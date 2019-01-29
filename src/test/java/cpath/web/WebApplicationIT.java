@@ -11,8 +11,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.io.UnsupportedEncodingException;
-
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
@@ -51,13 +49,20 @@ public class WebApplicationIT {
 
 	//HTTP GET
 	@Test
-	public void testGetQueryById() throws UnsupportedEncodingException {
+	public void testGetQueryById() {
 		String result = template.getForObject("/get?uri={uri}",
 				String.class, "http://identifiers.org/uniprot/P27797");
     assertNotNull(result);
 		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
 	}
 
+	@Test
+	public void testGetNetworkToSbgn()  {
+		String result = template.getForObject("/get?uri={uri}&format=sbgn",
+			String.class, "http://www.biopax.org/examples/myExample#Pathway50");
+		assertNotNull(result);
+		assertTrue(result.contains("<glyph class=\"process\""));
+	}
 
 	@Test //if POST isn't disabled
 	public void testPostQueryById() {
