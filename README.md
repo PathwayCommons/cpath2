@@ -42,6 +42,8 @@ representation and pathway analysis by collaboration and training.
 
 Directory 'work' is where the configuration, data files and indices are saved.  
 
+    cd work
+
 The directory may contain: 
 - application.properties (to configure various server and model options);
 - metadata.json (describes the bio data to be imported/integrated);
@@ -61,8 +63,17 @@ prepare input data archives (see below how), and run
 
 , which normally takes a day or two - executes the following data integration steps: 
 import the metadata, clean, convert to BioPAX, normalize the data, build the BioPAX warehouse, 
-merge into the main BioPAX model, create Lucene index, several summary files and a script to convert 
-the final BioPAX models to SIF, GMT, TXT formats.
+merge into the main BioPAX model, create Lucene index, several summary files and `export.sh` script to convert 
+the final BioPAX models to SIF, GMT, TXT formats. 
+
+    cd downloads
+    
+Copy the latest paxtools.jar into this current directory and run -
+
+    sh export.sh 2>&1 >console.out & 
+    
+(- which takes overnight or a day and night); upload/copy/move (but keep at least blacklist.txt, *All.BIOPAX.owl.gz)
+all the files from this here and ../data/ directories to the file server, or configure so that they can be downloaded from e.g. `http://www.pathwaycommons.org/archives/PC2/v{version_number}` (or else).
 
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
