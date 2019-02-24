@@ -358,7 +358,7 @@
       ],
       "converterClass": "cpath.converter.PsimiTabConverter",
       "description": "InnateDB Curated Interactions (human), 2019-01-21",
-      "iconUrl": "http:\/\/www.innatedb.com\/images\/Innatedb-2010-large.png",
+      "iconUrl": "https:\/\/www.innatedb.com\/images\/Innatedb-2010-large.png",
       "availability": "free",
       "type": "PSI_MITAB",
       "pubmedId": "23180781"

@@ -20,7 +20,7 @@ The GET and GRAPH web service commands return data in several formats explained 
 
 <h3>BioPAX (RDF/XML)</h3>
 <p>
-<a target="_blank" href="http://www.biopax.org">BioPAX</a> is the default 
+<a target="_blank" href="https://www.biopax.org">BioPAX</a> is the default
 and most complete output format of ${cpath.name} that offers
 access to all the details of the biological network model stored in the system. 
 This format is ideal for users wishing to to access specific data not
@@ -31,13 +31,13 @@ the database are available in BioPAX Level 3.  Due to the richness
 of representation in BioPAX, reading and using such a large BioPAX
 document requires knowledge of the format and software development
 tools available for processing it, such as 
-<a target="_blank" href="http://www.biopax.org/paxtools">Paxtools</a>, 
+<a target="_blank" href="https://www.biopax.org/paxtools">Paxtools</a>,
 a Java library for working with BioPAX as object model, or Jena, SPARQL.
 </p>
 
 <h3 id="jsonld">JSON-LD</h3>
 <p>
-    <a target="_blank" href="http://json-ld.org/">JSON-LD</a> is a lightweight Linked Data format.
+    <a target="_blank" href="https://json-ld.org/">JSON-LD</a> is a lightweight Linked Data format.
     It is easy for humans to read and write. It is based on the already successful JSON format and provides a way
     to help JSON data interoperate at Web-scale. JSON-LD is an ideal data format for programming environments,
     REST Web services, and unstructured databases such as CouchDB and MongoDB.
@@ -231,7 +231,7 @@ interactions within Pathway Commons.
 
 <h3 id="sbgn">SBGN</h3>
 <p>
-The Systems Biology Graphical Notation (<a target="_blank" href="http://www.sbgn.org">SBGN</a>) 
+The Systems Biology Graphical Notation (<a target="_blank" href="http://www.sbgn.org">SBGN</a>)
 is a standard visual notation for network diagrams in biology. 
 SBGN markup language (SBGN-ML) is an associated standard XML format that can be loaded into available 
 software to visualize a diagram of a pathway. BioPAX can be converted to SBGN-ML format, following the 

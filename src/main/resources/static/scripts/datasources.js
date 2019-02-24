@@ -4,7 +4,7 @@ var dsApp = angular.module('dsApp', ['ngRoute']);
 
 dsApp.service('MyPubmed', ['$http', function ($http) {
 	
-	var euroPmcUrlPrefix = "http://www.ebi.ac.uk/europepmc/webservices/rest/search/query=EXT_ID:";
+	var euroPmcUrlPrefix = "https://www.ebi.ac.uk/europepmc/webservices/rest/search/query=EXT_ID:";
 	var euroPmcUrlSuffix = "&format=json&callback=JSON_CALLBACK";
 	
 	/* get the publication summary from the Europe PubMed web service 
@@ -32,9 +32,9 @@ dsApp.service('MyPubmed', ['$http', function ($http) {
 dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyPubmed) {
 // data for a quick off-line test	
 //	$scope.datasources = [
-//	  {"identifier" : "pid", "iconUrl" : "http://pathwaycommons.github.io/cpath2/logos/nci_nature.png", "description" : "NCI_Nature"},
-//	  {"identifier" : "psp", "iconUrl" : "http://pathwaycommons.github.io/cpath2/logos/psp.png", "description" : "PhosphoSitePlus"},
-//	  {"identifier" : "chebi", "iconUrl" : "http://pathwaycommons.github.io/cpath2/logos/chebi.png", "description" : "ChEBI SDF"},
+//	  {"identifier" : "pid", "iconUrl" : "https://pathwaycommons.github.io/cpath2/logos/nci_nature.png", "description" : "NCI_Nature"},
+//	  {"identifier" : "psp", "iconUrl" : "https://pathwaycommons.github.io/cpath2/logos/psp.png", "description" : "PhosphoSitePlus"},
+//	  {"identifier" : "chebi", "iconUrl" : "https://pathwaycommons.github.io/cpath2/logos/chebi.png", "description" : "ChEBI SDF"},
 //	];
 	
 	$http.get('metadata/datasources').success(function(datasources) {

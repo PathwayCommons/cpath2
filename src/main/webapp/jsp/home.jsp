@@ -289,17 +289,17 @@
         Optional <em>classRestriction</em> allows to limit the returned property values to a certain subclass of the
         property's range.
         In the first example above, this is used to get only the unification xrefs.
-        <a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
+        <a href="https://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
             Path accessors</a> can use all the official BioPAX properties as well as additional derived classes
         and parameters, such as inverse parameters and interfaces that represent anonymous union classes in BioPAX OWL.
-        (See <a href="http://www.biopax.org/paxtools/">Paxtools documentation</a> for more details).
+        (See <a href="https://www.biopax.org/paxtools/">Paxtools documentation</a> for more details).
     </p></blockquote>
     <h4>Parameters:</h4>
     <ul>
         <li><em>path=</em> [Required] a BioPAX property path in the form of
             type0/property1[:type1]/property2[:type2]; see <a href="#biopax_properties">properties</a>,
-            <a href="#biopax_inverse_properties">inverse properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
-            <a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
+            <a href="#biopax_inverse_properties">inverse properties</a>, <a href="https://www.biopax.org/paxtools">Paxtools</a>,
+            <a href="https://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
                 org.biopax.paxtools.controller.PathAccessor</a>.
         </li>
         <li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
@@ -409,7 +409,7 @@
         <div class="parameters col-sm-6" id="biopax_types">
             <h3>BioPAX class ('type'):</h3>
             <p><a href="#" class="hider" hide-id="types">Click here</a> to show/hide the list
-                (see also: <a href="http://www.biopax.org/webprotege/">BioPAX Classes</a>).
+                (see also: <a href="https://www.biopax.org/webprotege/">BioPAX Classes</a>).
             </p>
             <!-- items are to be added here by a javascript -->
             <ul class="dropdown hidden" id="types"></ul>
