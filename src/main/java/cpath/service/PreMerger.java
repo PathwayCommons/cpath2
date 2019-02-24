@@ -46,8 +46,8 @@ final class PreMerger {
 
   /**
    * Constructor.
-   * @param service   cpath2 service (provides data query methods)
-   * @param validator Biopax Validator
+   * @param service   cpath2 service
+   * @param validator BioPAX Validator
    */
   PreMerger(CPathService service, Validator validator) {
     this.service = service;
@@ -373,10 +373,8 @@ final class PreMerger {
   /*
    * Validates, fixes, and normalizes given pathway data.
    *
-   * @param title short description
-   * @param biopaxStream BioPAX OWL stream
    * @param metadata data provider's metadata
-   * @param content current chunk of data from the data source
+   * @param file one of data files from the provider
    */
   private void checkAndNormalize(Metadata metadata, File file) throws IOException
   {
@@ -401,7 +399,8 @@ final class PreMerger {
       try {
         log.info("checkAndNormalize, validating "	+ filename);
         // create a new empty validation (options: auto-fix=true, report all) and associate with the model
-        Validation validation = new Validation(new BiopaxIdentifier(), filename, true, Behavior.WARNING, 0, null);
+        Validation validation = new Validation(new BiopaxIdentifier(), filename, true, Behavior.WARNING,
+          0, null);
         // errors are also reported during the data are being read (e.g., syntax errors)
         validator.importModel(validation, biopaxStream);
         IOUtils.closeQuietly(biopaxStream);
@@ -413,12 +412,13 @@ final class PreMerger {
         // get the updated model
         model = (Model) validation.getModel();
         // update dataSource property (force new Provenance) for all entities
-        metadata.setProvenanceFor(model);
+        metadata.setProvenanceFor(model, xmlBase);
 
         service.saveValidationReport(validation, CPathUtils.validationFile(filename));
 
         // count critical not fixed error cases (ignore warnings and fixed ones)
-        int noErrors = validation.countErrors(null, null, null, null, true, true);
+        int noErrors = validation.countErrors(null, null, null, null,
+          true, true);
         log.info("pipeline(), summary for " + filename + ". Critical errors found:" + noErrors + ". "
           + validation.getComment().toString() + "; " + validation.toString());
 

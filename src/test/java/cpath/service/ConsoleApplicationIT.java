@@ -288,7 +288,7 @@ public class ConsoleApplicationIT
       "", METADATA_TYPE.BIOPAX, "", "", null, "free");
     service.metadata().save(md);
     // normally, setProvenanceFor gets called during Premerge stage
-    md.setProvenanceFor(m);
+    md.setProvenanceFor(m, service.settings().getXmlBase());
     // which EXPLICITLY removes all other Provenance values from dataSource properties;
     assertEquals(1, m.getObjects(Provenance.class).size());
 

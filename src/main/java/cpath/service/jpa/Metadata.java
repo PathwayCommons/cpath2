@@ -1,7 +1,6 @@
 package cpath.service.jpa;
 
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,25 +23,15 @@ import org.hibernate.annotations.DynamicUpdate;
 
 /**
  * Data provider/source metadata.
+ *
+ * Node: some public getters and setters below, despite java warnings, are in fact called from the
+ * web view layer (e.g., JSP) or when a web controller returns JSON/XML object.
  */
 @Entity
 @DynamicUpdate
 @DynamicInsert
 @Table(name = "metadata")
 public final class Metadata {
-
-  // for metadata reading from a configuration file
-  public static final int METADATA_IDENTIFIER_INDEX = 0;
-  public static final int METADATA_NAME_INDEX = 1;
-  public static final int METADATA_DESCRIPTION_INDEX = 2;
-  public static final int METADATA_DATA_URL_INDEX = 3;
-  public static final int METADATA_HOMEPAGE_URL_INDEX = 4;
-  public static final int METADATA_ICON_URL_INDEX = 5;
-  public static final int METADATA_TYPE_INDEX = 6;
-  public static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
-  public static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
-  public static final int METADATA_PUBMEDID_INDEX = 9;
-  public static final int METADATA_AVAILABILITY_INDEX = 10;
 
   private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
 
@@ -113,7 +102,7 @@ public final class Metadata {
   /**
    * Default Constructor.
    */
-  Metadata() {
+  private Metadata() {
     files = new HashSet<>();
   }
 
@@ -164,8 +153,8 @@ public final class Metadata {
     return files;
   }
 
-  public boolean addFile(String path) {
-    return files.add(path);
+  public void addFile(String path) {
+    files.add(path);
   }
 
   /**
@@ -303,12 +292,13 @@ public final class Metadata {
    * from the model.
    *
    * @param model BioPAX model to update
+   * @param xmlBase xml:base to use for the Provenance
    */
-  public void setProvenanceFor(Model model) {
+  public void setProvenanceFor(Model model, String xmlBase) {
     Provenance pro;
 
     // we create URI from the Metadata identifier and version.
-    final String uri = model.getXmlBase() + identifier;
+    final String uri = xmlBase + identifier;
     pro = (model.containsID(uri))
         ? (Provenance) model.getByID(uri)
         : model.addNew(Provenance.class, uri);
