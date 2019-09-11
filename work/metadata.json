@@ -336,18 +336,18 @@
       "pubmedId": "20067622"
     },
     {
-      "dataUrl": "http:\/\/pointer.ucsf.edu\/wp\/biopax\/wikipathways-human-v20150929-biopax3.zip",
-      "identifier": "wp",
-      "homepageUrl": "https:\/\/www.wikipathways.org",
-      "cleanerClass": "cpath.cleaner.WikipathwaysCleaner",
+      "dataUrl": "http:\/\/pathbank.org\/downloads\/pathbank_primary_biopax.zip",
+      "identifier": "pathbank",
+      "homepageUrl": "http:\/\/pathbank.org",
+      "cleanerClass": "cpath.cleaner.SmpdbCleaner",
       "name": [
-        "WikiPathways"
+        "Pathbank"
       ],
-      "description": "WikiPathways - Community Curated Human Pathways; 29\/09\/2015 (some of human data)",
-      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/wikipathways.png",
+      "description": "Pathbank BioPAX data (primary, human pathway data only)",
+      "iconUrl": "https:\/\/pathwaycommons.github.io\/cpath2\/logos\/pathbank.png",
       "availability": "free",
       "type": "BIOPAX",
-      "pubmedId": "18651794"
+      "pubmedId": ""
     },
     {
       "dataUrl": "https:\/\/www.innatedb.ca\/download\/interactions\/innatedb_all.mitab.gz",
