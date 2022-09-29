@@ -1,6 +1,6 @@
 package cpath.cleaner;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +14,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import cpath.service.api.Cleaner;
 

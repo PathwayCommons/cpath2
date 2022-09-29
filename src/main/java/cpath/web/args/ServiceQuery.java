@@ -1,15 +1,14 @@
 package cpath.web.args;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 
 /**
  * Created by igor on 23/06/16.
  */
 public abstract class ServiceQuery {
 
-  @ApiParam(
-    value = "User or app name (for service analytics)",
-    required = false
+  @Parameter(
+    description = "User or app name (for service analytics)"
   )
   private String user;
 

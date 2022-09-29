@@ -34,7 +34,8 @@ representation and pathway analysis by collaboration and training.
 
 **Thanks**: to many open source projects and groups, such as Apache, Eclipse, Spring, etc., and, of course, - to GitHub.
 
-**Funding**: "Pathway Commons: Research Resource for Biological Pathways"; Chris Sander, Gary Bader; 1U41HG006623 (formerly NIH P41HG04118)
+**Funding**: "Pathway Commons: Research Resource for Biological Pathways"; Chris Sander, 
+Gary Bader; 1U41HG006623 (formerly NIH P41HG04118)
 
 ## Build and try the demo app
 
@@ -42,11 +43,20 @@ Check out this project and switch to the project directory (cpath2) and build wi
 
     mvn clean install
 
-which takes some time (minutes, due to the ontology files get parsed and integration tests are run) and results in a new cpath2.jar created in the target folder and demo data in the target/work folder (`mvn package` would not do). Once complete, start the default (CPATH2_HOME="target/work") test/demo cpath2 server from the cpath2 project directory and go to `http://localhost:8080`:
+which takes some time (minutes, due to the ontology files get parsed and integration tests are run) 
+and results in a new cpath2.jar created in the target folder and demo data in the target/work folder 
+(`mvn package` would not do). Once complete, start the default (CPATH2_HOME="target/work") test/demo 
+cpath2 server from the cpath2 project directory and go to `http://localhost:8080`:
 
     java -jar target/cpath2.war -s
     
-and watch the cpath2.log to see the app starts and prints "Working ('home') directory: target/work", then "Loading the BioPAX Model from target/work/downloads/PathwayCommonsDemo11.All.BIOPAX.owl.gz", and that the "model is ready", etc. Ignore the warnings for now, e.g., about blacklist.txt was not found, for it's not needed for demo and normally generated during the cpath2 "premerge" step, after index gets created.) Expect that most queries or example links won't return any result as there are not much data in the default instance; try to find e.g. all the pathways there with `http://localhost:8080/search.json?q=*&type=pathway` (remove `type` parameter to list all the objects; remove `.json` to get XML back).
+and watch the cpath2.log to see the app starts and prints "Working ('home') directory: target/work", 
+then "Loading the BioPAX Model from target/work/downloads/PathwayCommonsDemo11.All.BIOPAX.owl.gz", 
+and that the "model is ready", etc. Ignore the warnings for now, e.g., about blacklist.txt was not found, 
+for it's not needed for demo and normally generated during the cpath2 "premerge" step, after index gets created.) 
+Expect that most queries or example links won't return any result as there are not much data in the default 
+instance; try to find e.g. all the pathways there with `http://localhost:8080/search?q=*&type=pathway` 
+(remove `type` parameter to list all the objects; use "Accept:application/xml" header to get XML instead of JSON result).
 
 ## Configuration
 

@@ -15,7 +15,7 @@ public enum Cmd {
 		"object's RDF ID) can be used with other webservice commands to " +
 		"extract the corresponding sub-model to BioPAX or another supported format. ",
 		"/search?q=brca*&organism=9606",
-		"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search.json?')",
+		"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search?')",
 		q, page, type, organism, datasource, user),
 	GET("Gets a BioPAX element or sub-model by ID(s).",
         "/get?uri=http://identifiers.org/uniprot/P38398",
@@ -28,11 +28,11 @@ public enum Cmd {
         kind, source, target, format, limit, direction, organism, datasource, user, pattern, subpw, layout),
     TOP_PATHWAYS("Gets Top Pathways. This command accepts optional filter by organism and by datasource values",
     	"/top_pathways",
-        "Search Response - XML (JSON, when called as '/top_pathways.json?') contains the list of all top pathways.", 
+        "Search Response - XML (JSON, when called as '/top_pathways?') contains the list of all top pathways.",
         organism, datasource, q, user),
     TRAVERSE("Gets data property values (or elements's URIs) at the end of the property path.",
     	"/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName",
-    	"Traverse Response - XML (or JSON, when called as '/traverse.json?').", 
+    	"Traverse Response - XML (or JSON, when called as '/traverse?').",
     	path, uri, user)
     ;
 	

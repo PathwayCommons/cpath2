@@ -1,19 +1,18 @@
 package cpath.web;
 
 import cpath.service.api.CPathService;
-import org.junit.*;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
 @ActiveProfiles({"web"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class WebApplicationIT {
@@ -24,7 +23,7 @@ public class WebApplicationIT {
   @Autowired
 	private CPathService service;
 
-  @Before
+  @BeforeEach
 	public void init() {
   	if(service.getModel()==null)
   		service.init();

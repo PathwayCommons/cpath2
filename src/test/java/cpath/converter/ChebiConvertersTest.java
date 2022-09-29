@@ -10,13 +10,13 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,7 +31,7 @@ import java.util.zip.ZipFile;
 /**
  * Test ChEBI to BioPAX converter.
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties(Settings.class)
 public class ChebiConvertersTest {	
 

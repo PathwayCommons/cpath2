@@ -91,10 +91,8 @@
     <h4>Returns:</h4>
     <p>ordered list of BioPAX individuals that match the search criteria
         (the page size, 'maxHitsPerpage' is configured on the server).
-        The results (hits) are returned either as JSON or XML (<a href="help/schema">Search Response XML Schema</a>)
-        document,
-        which can be requested by using '.json' (e.g. '/search.json') or '.xml' extension/suffix or via
-        HTTP request header 'Accept: application/json' (or application/json).
+        The results (hits) are returned either as JSON or XML document (<a href="help/schema">Search Response XML Schema</a>),
+        requested by using HTTP request header, either 'Accept: application/json' or 'Accept: application/xml'.
     </p>
     <h4 id="search_parameters">Parameters:</h4>
     <ul>
@@ -123,7 +121,7 @@
     </ul>
     <h4>Examples:</h4> <br/>
     <ol>
-        <li><a rel="nofollow" href="search.xml?q=FGFR2">Find things that contain "FGFR2" keyword; request XML format</a>
+        <li><a rel="nofollow" href="search?q=FGFR2" >Find things that contain "FGFR2" keyword</a>
         </li>
         <li><a rel="nofollow"
                href='search?q=FGFR2&type=pathway'>Find pathways by FGFR2 keyword in any index field</a></li>
@@ -360,7 +358,7 @@
     <ol>
         <li><a rel="nofollow" href="top_pathways?q=TP53">
             get top pathways related to 'TP53'</a></li>
-        <li><a rel="nofollow" href="top_pathways.json?q=insulin&datasource=reactome">
+        <li><a rel="nofollow" href="top_pathways?q=insulin&datasource=reactome">
             get top pathways from Reactome, matching 'insulin'; request JSON format</a></li>
     </ol>
 </div>

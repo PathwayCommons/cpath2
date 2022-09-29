@@ -4,7 +4,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 import org.biopax.paxtools.query.algorithm.Direction;
 
@@ -17,73 +17,67 @@ import java.util.Set;
 
 public class Graph extends ServiceQuery {
   @NotNull(message = "Parameter 'kind' is required.")
-  @ApiParam(
-    value = "BioPAX graph traversal type.",
+  @Parameter(
+    description = "BioPAX graph traversal type.",
     required = true,
     example = "PATHSBETWEEN"
   )
   private GraphType kind; //required!
 
   @NotEmpty(message = "Provide at least one source URI.")
-  @ApiParam(
-    value = "Source BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
+  @Parameter(
+    description = "Source BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
     example = "TP53"
   )
   private String[] source;
 
-  @ApiParam(
-    value = "Target BioPAX entity URIs or standard identifiers (e.g., gene symbols);this parameter works only with kind=PATHSFROMTO graph queries.",
-    required = false,
+  @Parameter(
+    description = "Target BioPAX entity URIs or standard identifiers (e.g., gene symbols); " +
+      "this parameter works only with kind=PATHSFROMTO graph queries.",
     example = "TP53"
   )
   private String[] target;
 
   @Min(1) //note: this allows for null
-  @ApiParam(
-    value = "Graph search distance limit",
-    required = false,
-    defaultValue = "1"
+  @Parameter(
+    description = "Graph search distance limit (default: 1)"
   )
   private Integer limit;
 
-  @ApiParam(
-    value = "Graph search direction.",
-    required = false,
-    defaultValue = "UNDIRECTED",
+  @Parameter(
+    description = "Graph search direction (default: UNDIRECTED)",
     example = "BOTHSTREAM"
   )
   private Direction direction;
 
   @NotNull(message = "Illegal Output Format")
-  @ApiParam(
-    value = "Output format name.",
-    required = false,
-    defaultValue = "BIOPAX"
+  @Parameter(
+    description = "Output format name (default: BIOPAX)"
   )
   private OutputFormat format;
 
-  @ApiParam(
-    value = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+  @Parameter(
+    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
     example = "9606"
   )
   private String[] organism;
 
-  @ApiParam(
-    value = "Filter by data source name, id or uri.",
+  @Parameter(
+    description = "Filter by data source name, id or uri.",
     example = "reactome"
   )
   private String[] datasource;
 
-  @ApiParam(
-    value = "If format is SIF or TXT, one can specify interaction types to apply",
+  @Parameter(
+    description = "If format is SIF or TXT, one can specify interaction types to apply",
     example = "interacts-with"
   )
   private SIFEnum[] pattern;
 
-  @ApiParam(
-    value = "For the 'get' and 'graph' queries, whether to skip or not traversing into sub-pathways in the result BioPAX sub-model.",
-    defaultValue = "false"
+  @Parameter(
+    description = "For the 'get' and 'graph' queries, whether to skip or not traversing " +
+      "into sub-pathways in the result BioPAX sub-model."
   )
   private boolean subpw;
 

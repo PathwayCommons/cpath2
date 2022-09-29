@@ -3,41 +3,41 @@ package cpath.web.args;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.biopax.paxtools.model.BioPAXElement;
 
 import java.util.Arrays;
 
 public class Search extends ServiceQuery {
   @NotBlank(message = "Parameter 'q' (a Lucene query string) is blank (not specified).")
-  @ApiParam(
-    value = "Query string (full-text search supports Lucene query syntax).",
+  @Parameter(
+    description = "Query string (full-text search supports Lucene query syntax).",
     required = true,
     example = "xrefid:FGF*"
   )
   private String q;
 
-  @ApiParam(
-    value = "Filter by BioPAX L3 class name (case-insensitive).",
+  @Parameter(
+    description = "Filter by BioPAX L3 class name (case-insensitive).",
     example = "pathway"
   )
   private Class<? extends BioPAXElement> type;
 
-  @ApiParam(
-    value = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+  @Parameter(
+    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
     example = "9606"
   )
   private String[] organism;
 
-  @ApiParam(
-    value = "Filter by data source name, id or uri.",
+  @Parameter(
+    description = "Filter by data source name, id or uri.",
     example = "reactome"
   )
   private String[] datasource;
 
   @Min(0)
-  @ApiParam(
-    value = "Pagination: page number (>=0) of the full-text search results.",
+  @Parameter(
+    description = "Pagination: page number (>=0) of the full-text search results.",
     example = "0",
     required = false
   )

@@ -10,12 +10,12 @@ page=0
 while [ $page -lt 63 ]
 do
   echo "\nSEARCH PAGE $page"
-  curl -sS "$PC2/search.json?q=*&type=pathway&page=$page" | jq -r '.searchHit[].uri' | while read uri ; do 
+  curl -sS -H "accept: application/json" "$PC2/search?q=*&type=pathway&page=$page" | jq -r '.searchHit[].uri' | while read uri ; do
     name=$(echo "$uri" | sed -e 's/[^A-Za-z0-9._-]/_/g')
     # skip trivial pathways
-    EMPTY=$(curl -sS "$PC2/traverse.json?path=Pathway/pathwayComponent:Interaction&uri=$uri" | jq -r '.empty')
+    EMPTY=$(curl -sS -H "accept: application/json" "$PC2/traverse?path=Pathway/pathwayComponent:Interaction&uri=$uri" | jq -r '.empty')
     if [ "$EMPTY" = "true" ] ; then
-        EMPTY=$(curl -sS "$PC2/traverse.json?path=Pathway/pathwayOrder/stepProcess:Interaction&uri=$uri" | jq -r '.empty')
+        EMPTY=$(curl -sS -H "accept: application/json" "$PC2/traverse?path=Pathway/pathwayOrder/stepProcess:Interaction&uri=$uri" | jq -r '.empty')
         if [ "$EMPTY" = "true" ] ; then
     	    echo "SKIPPED $uri (no Interactions)"
         fi

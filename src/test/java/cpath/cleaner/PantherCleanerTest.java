@@ -1,6 +1,6 @@
 package cpath.cleaner;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,7 +13,7 @@ import java.util.zip.ZipFile;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BioSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PantherCleanerTest {
 

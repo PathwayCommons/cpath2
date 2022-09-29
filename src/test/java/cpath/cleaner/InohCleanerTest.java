@@ -3,8 +3,6 @@
  */
 package cpath.cleaner;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -20,7 +18,9 @@ import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import cpath.service.api.Cleaner;
 

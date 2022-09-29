@@ -22,7 +22,6 @@ import static org.springframework.http.MediaType.*;
 @Profile("web")
 @RestController
 @RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
-//@CrossOrigin //enabled, allowed *, get/post/head by default for a spring-boot app
 public class MetadataController extends BasicController {
 
   private static final Logger log = LoggerFactory.getLogger(MetadataController.class);
@@ -52,7 +51,6 @@ public class MetadataController extends BasicController {
 
     return bytes;
   }
-
 
   @RequestMapping(value = "/metadata", produces = {APPLICATION_JSON_VALUE})
   public Map<String, Object> queryForMetadata() {

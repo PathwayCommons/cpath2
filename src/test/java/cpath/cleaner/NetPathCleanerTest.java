@@ -3,7 +3,7 @@
  */
 package cpath.cleaner;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +20,7 @@ import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import cpath.service.api.Cleaner;
 

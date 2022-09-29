@@ -1,6 +1,6 @@
 {
   "description": "Pathway Commons data sources (metadata)",
-  "version": 11,
+  "version": 0,
   "datasources": [
     {
       "dataUrl": "classpath:test_uniprot_data.dat.zip",

@@ -10,7 +10,7 @@ import cpath.web.args.*;
 import cpath.service.jaxb.*;
 import cpath.web.args.binding.*;
 
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.pattern.miner.SIFType;
@@ -56,9 +56,9 @@ public class BiopaxModelController extends BasicController {
 
   // Get by ID (URI) command
   @RequestMapping("/get")
-  @ApiOperation(
-    value = "Get BioPAX elements (as sub-model) by URIs.",
-    notes = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
+  @Operation(
+    summary = "Get BioPAX elements (as sub-model) by URIs.",
+    description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
       "optionally, convert the result to other <a href='formats'>output formats</a>."
   )
   public void elementById(@Valid Get args, BindingResult bindingResult,
@@ -81,9 +81,9 @@ public class BiopaxModelController extends BasicController {
 
 
   @RequestMapping("/top_pathways")
-  @ApiOperation(
-    value = "Search for top pathways.",
-    notes = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
+  @Operation(
+    summary = "Search for top pathways.",
+    description = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
       "nor a 'pathwayComponent' of another biological process; trivial pathways are excluded from the results;" +
       " can filter by <a href='datasources'>datasource</a> and organism."
   )
@@ -112,9 +112,9 @@ public class BiopaxModelController extends BasicController {
 
 
   @RequestMapping("/traverse")
-  @ApiOperation(
-    value = "Access properties of BioPAX elements using graph path expressions",
-    notes = "To collect specific BioPAX property values, use the following path accessor format: " +
+  @Operation(
+    summary = "Access properties of BioPAX elements using graph path expressions",
+    description = "To collect specific BioPAX property values, use the following path accessor format: " +
       "InitialClass/property[:filterClass]/[property][:filterClass]... A \"*\" sign after the property " +
       "instructs the path accessor to transitively traverse that property. For example, the following " +
       "path accessor will traverse through all physical entity components a complex, including components " +
@@ -149,9 +149,9 @@ public class BiopaxModelController extends BasicController {
   }
 
   @RequestMapping("/graph")
-  @ApiOperation(
-    value = "BioPAX graph query.",
-    notes = "Find connections of bio network elements, such as the shortest path between " +
+  @Operation(
+    summary = "BioPAX graph query.",
+    description = "Find connections of bio network elements, such as the shortest path between " +
       "two proteins or the neighborhood for a particular protein state or all states. " +
       "Optionally, convert the result to other <a href='formats'>output formats</a>." +
       "Graph searches consider detailed BioPAX semantics, such as generics, nested complexes, " +
@@ -207,9 +207,9 @@ public class BiopaxModelController extends BasicController {
   }
 
   @RequestMapping(value="/search")
-  @ApiOperation(
-    value = "A full-text search in the BioPAX database using Lucene query syntax",
-    notes = "Index fields (case-sensitive): uri, keyword, name, pathway, xrefid, datasource, " +
+  @Operation(
+    summary = "A full-text search in the BioPAX database using Lucene query syntax",
+    description = "Index fields (case-sensitive): uri, keyword, name, pathway, xrefid, datasource, " +
       "and organism can be optionally used in a query string. For example, the 'pathway' field " +
       "helps find entities and interactions by keywords or uris matching their parent pathways'; " +
       "'xrefid' helps find objects by direct or nested Xref; 'keyword' (default search field) " +

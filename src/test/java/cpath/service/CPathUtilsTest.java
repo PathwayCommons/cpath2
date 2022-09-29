@@ -1,7 +1,7 @@
 package cpath.service;
 
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -17,11 +17,10 @@ import java.util.zip.GZIPOutputStream;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.junit.*;
 
 import cpath.service.jpa.Metadata;
 import cpath.service.jpa.Metadata.METADATA_TYPE;
+import org.junit.jupiter.api.Test;
 
 public class CPathUtilsTest {
 	

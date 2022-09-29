@@ -9,43 +9,28 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.1.0.RELEASE</version>
+    <version>2.7.3</version>
   </parent>
 
   <name>Pathway Commons builder and server</name>
   <groupId>pathwaycommons</groupId>
   <artifactId>cpath2</artifactId>
-  <version>11.0.0-SNAPSHOT</version>
+  <version>13.0.0-SNAPSHOT</version>
   <description>Biological pathways/interactions data integration and services</description>
   <url>https://pathwaycommons.github.io/cpath2</url>
   <inceptionYear>2009</inceptionYear>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring.version>5.3.22</spring.version>
     <start-class>cpath.Application</start-class>
     <license.licenseName>MIT</license.licenseName>
-    <lucene.version>7.5.0</lucene.version>
-    <h2.version>1.4.197</h2.version>
-    <paxtools.version>5.2.1-SNAPSHOT</paxtools.version>
-    <apache-jena-libs.version>3.2.0</apache-jena-libs.version>
-    <jena.version>2.6.4</jena.version>
-    <validator.version>5.0.0-SNAPSHOT</validator.version>
-    <junit.version>4.12</junit.version>
-    <commons-lang3.version>3.8.1</commons-lang3.version>
-    <commons-text.version>1.6</commons-text.version>
-    <commons-collections.version>3.2.2</commons-collections.version>
     <github.global.server>github</github.global.server>
-    <swagger2.version>2.7.0</swagger2.version>
-    <docker.image.prefix>pathwaycommons</docker.image.prefix>
-    <dockerfile-maven-plugin.version>1.4.4</dockerfile-maven-plugin.version>
-    <javax.transaction-api.version>1.3</javax.transaction-api.version>
-    <javax.activation.version>1.2.0</javax.activation.version>
-    <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-    <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-    <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
-    <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea</jvm.options>
+    <paxtools.version>5.3.0-SNAPSHOT</paxtools.version>
+    <validator.version>5.1.0-SNAPSHOT</validator.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <lucene.version>7.5.0</lucene.version>
+    <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvm.options>
     <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring.version}/spring-instrument-${spring.version}.jar</agent>
-    <java.version>8</java.version>
   </properties>
 
   <issueManagement>
@@ -160,11 +145,9 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
+        <version>3.8.1</version>
         <configuration>
-          <!--<release>${java.version}</release>-->
-          <target>${java.version}</target>
-          <source>${java.version}</source>
+          <release>17</release>
         </configuration>
       </plugin>
       <plugin>
@@ -197,18 +180,11 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>versions-maven-plugin</artifactId>
-        <configuration>
-          <generateBackupPoms>false</generateBackupPoms>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
         <version>1.4.4</version>
         <configuration>
-          <repository>${docker.image.prefix}/cpath2</repository>
+          <repository>pathwaycommons/cpath2</repository>
           <buildArgs>
             <JAR_FILE>target/${project.build.finalName}.war</JAR_FILE>
           </buildArgs>
@@ -241,21 +217,15 @@
         <configuration>
           <mainClass>${start-class}</mainClass>
           <jvmArguments>${jvm.options}</jvmArguments>
-          <agent>${agent}</agent>
+          <agents>
+            <agent>${agent}</agent>
+          </agents>
         </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>3.1.7</version>
-        <configuration>
-          <onlyAnalyze>cpath.-</onlyAnalyze>
         </configuration>
       </plugin>
       <plugin>
@@ -276,7 +246,6 @@
             <artifactItem>
               <groupId>org.springframework</groupId>
               <artifactId>spring-instrument</artifactId>
-              <!--<version>${spring.version}</version>-->
               <type>jar</type>
               <overWrite>false</overWrite>
               <outputDirectory>${project.build.directory}</outputDirectory>
@@ -288,291 +257,192 @@
     </plugins>
   </build>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>paxtools-core</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.annotation</groupId>
-        <artifactId>javax.annotation-api</artifactId>
-        <version>${javax.annotation-api.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.sun.activation</groupId>
-        <artifactId>javax.activation</artifactId>
-        <version>${javax.activation.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.transaction</groupId>
-        <artifactId>javax.transaction-api</artifactId>
-        <version>${javax.transaction-api.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.xml.bind</groupId>
-        <artifactId>jaxb-api</artifactId>
-        <version>${jaxb-api.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.glassfish.jaxb</groupId>
-        <artifactId>jaxb-runtime</artifactId>
-        <version>${jaxb-runtime.version}</version>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>paxtools-trove</artifactId>
-        <version>${paxtools.version}</version>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>sif-converter</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>psimi-converter</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>sbgn-converter</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>gsea-converter</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>paxtools-query</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>pattern</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>normalizer</artifactId>
-        <version>${paxtools.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.validator</groupId>
-        <artifactId>biopax-validator</artifactId>
-        <version>${validator.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
-          <!--old servlet-api prevents newer embedded tomcat from starting (in spring boot 2.x app)-->
-          <exclusion>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.biopax.paxtools</groupId>
-        <artifactId>json-converter</artifactId>
-        <version>${paxtools.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.jena</groupId>
-        <artifactId>apache-jena-libs</artifactId>
-        <type>pom</type>
-        <version>${apache-jena-libs.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.fasterxml.staxmate</groupId>
-            <artifactId>staxmate</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>com.hp.hpl.jena</groupId>
-        <artifactId>jena</artifactId>
-        <version>${jena.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>stax</groupId>
-            <artifactId>stax-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.fasterxml.staxmate</groupId>
-            <artifactId>staxmate</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>commons-collections</groupId>
-        <artifactId>commons-collections</artifactId>
-        <version>${commons-collections.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-text</artifactId>
-        <version>${commons-text.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>${h2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-core</artifactId>
-        <version>${lucene.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-highlighter</artifactId>
-        <version>${lucene.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-analyzers-common</artifactId>
-        <version>${lucene.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-queryparser</artifactId>
-        <version>${lucene.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>javax.validation</groupId>
       <artifactId>validation-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-highlighter</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-analyzers-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-queryparser</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.validator</groupId>
-      <artifactId>biopax-validator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.paxtools</groupId>
-      <artifactId>normalizer</artifactId>
+      <version>2.0.1.Final</version>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>paxtools-core</artifactId>
+      <version>${paxtools.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.annotation</groupId>
       <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.2</version>
     </dependency>
     <dependency>
       <groupId>com.sun.activation</groupId>
       <artifactId>javax.activation</artifactId>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>javax.transaction</groupId>
       <artifactId>javax.transaction-api</artifactId>
+      <version>1.3</version>
     </dependency>
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
+      <version>2.4.0-b180830.0359</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.paxtools</groupId>
-      <artifactId>paxtools-trove</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.paxtools</groupId>
-      <artifactId>sbgn-converter</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.paxtools</groupId>
-      <artifactId>gsea-converter</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.biopax.paxtools</groupId>
-      <artifactId>paxtools-query</artifactId>
+      <version>2.4.0-b180830.0438</version>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>psimi-converter</artifactId>
+      <version>${paxtools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>sbgn-converter</artifactId>
+      <version>${paxtools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>gsea-converter</artifactId>
+      <version>${paxtools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>paxtools-query</artifactId>
+      <version>${paxtools.version}</version>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>pattern</artifactId>
+      <version>${paxtools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>normalizer</artifactId>
+      <version>${paxtools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.validator</groupId>
+      <artifactId>biopax-validator</artifactId>
+      <version>${validator.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+        <!--old servlet-api prevents newer embedded tomcat from starting (in spring boot 2.x app)-->
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>json-converter</artifactId>
+      <version>${paxtools.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.jena</groupId>
       <artifactId>apache-jena-libs</artifactId>
       <type>pom</type>
+      <version>3.2.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.staxmate</groupId>
+          <artifactId>staxmate</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.hp.hpl.jena</groupId>
       <artifactId>jena</artifactId>
+      <version>2.6.4</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>stax</groupId>
+          <artifactId>stax-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.staxmate</groupId>
+          <artifactId>staxmate</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.8.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.4.197</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-highlighter</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-analyzers-common</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-queryparser</artifactId>
+      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>pathwaycommons</groupId>
       <artifactId>reconx-to-biopax</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.2.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>junit</groupId>
@@ -581,8 +451,19 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
+      <groupId>org.sbml.jsbml</groupId>
+      <artifactId>jsbml-core</artifactId>
+      <version>1.3.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- Logging -->
     <dependency>
@@ -611,11 +492,6 @@
       <scope>runtime</scope>
     </dependency>
     <!--Spring Boot, JPA, Validation API, Jackson, etc.-->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>runtime</scope>
-    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
@@ -677,19 +553,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.springfox</groupId>
-      <artifactId>springfox-swagger2</artifactId>
-      <version>${swagger2.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.springfox</groupId>
-      <artifactId>springfox-swagger-ui</artifactId>
-      <version>${swagger2.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.springfox</groupId>
-      <artifactId>springfox-bean-validators</artifactId>
-      <version>${swagger2.version}</version>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-ui</artifactId>
+      <version>1.6.11</version>
     </dependency>
   </dependencies>
 

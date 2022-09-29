@@ -1,7 +1,7 @@
 package cpath.web.args;
 
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Arrays;
@@ -10,21 +10,21 @@ public class TopPathways extends ServiceQuery {
   @NotBlank(
     message = "Parameter 'q' (a Lucene query string) is blank (not specified)."
   )
-  @ApiParam(
-    value = "Query string (supports Lucene query syntax).",
+  @Parameter(
+    description = "Query string (supports Lucene query syntax).",
     required = true,
     example = "*"
   )
   private String q;
 
-  @ApiParam(
-    value = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+  @Parameter(
+    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
     example = "9606"
   )
   private String[] organism;
 
-  @ApiParam(
-    value = "Filter by data source name, id or uri.",
+  @Parameter(
+    description = "Filter by data source name, id or uri.",
     example = "reactome"
   )
   private String[] datasource;

@@ -6,12 +6,12 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.util.EquivalenceGrouper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class QuickTest {
 

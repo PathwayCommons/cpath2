@@ -2,7 +2,7 @@
 
 export CPATH2_HOME="."
 
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss32m -Xmx60g -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss32m -Xmx60g --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
 # CPATH2_DEBUG_OPTS="-Dlogback.configurationFile=logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 
 for arg in "$@"; do

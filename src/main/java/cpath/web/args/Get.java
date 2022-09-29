@@ -3,7 +3,7 @@ package cpath.web.args;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 
 import cpath.service.api.OutputFormat;
@@ -14,35 +14,31 @@ import java.util.Set;
 
 public class Get extends ServiceQuery {
   @NotNull(message = "Illegal Output Format")
-  @ApiParam(
-    value = "Output format name.",
-    required = false,
-    example = "JSONLD",
-    defaultValue = "BIOPAX"
+  @Parameter(
+    description = "Output format name (default: BIOPAX)",
+    example = "JSONLD"
   )
   private OutputFormat format;
 
   // required at least one value
   @NotEmpty(message = "Provide at least one URI.")
-  @ApiParam(
-    value = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
+  @Parameter(
+    description = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
     example = "TP53"
   )
   private String[] uri;
 
-  @ApiParam(
-    value = "If format is SIF or TXT, one can specify interaction types to apply " +
+  @Parameter(
+    description = "If format is SIF or TXT, one can specify interaction types to apply " +
       "(by default it uses all the build-in patterns but 'neighbor-of')",
-    required = false,
     example = "interacts-with"
   )
   private SIFEnum[] pattern;
 
-  @ApiParam(
-    value = "For the 'get' and 'graph' queries, whether to skip or not traversing into " +
-      "sub-pathways in the result BioPAX sub-model.",
-    defaultValue = "false"
+  @Parameter(
+    description =  "For the 'get' and 'graph' queries, whether to skip or not traversing into " +
+      "sub-pathways in the result BioPAX sub-model."
   )
   private boolean subpw;
 

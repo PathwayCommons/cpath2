@@ -20,9 +20,8 @@ import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.rules.ProteinModificationFeatureCvRule;
 import org.biopax.validator.rules.XrefRule;
 
-import org.junit.*;
-import org.junit.runner.RunWith;
-
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,20 +30,19 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Console app - data integration tests (using test metadata, data, index).
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ActiveProfiles({"admin", "premerge"})
 @SpringBootTest
 public class ConsoleApplicationIT
@@ -166,8 +164,8 @@ public class ConsoleApplicationIT
    */
   @Test
   public void testRulesProfile() {
-    assertThat(utils.getRuleBehavior("org.biopax.validator.rules.AcyclicPathwayRule", null),
-      is(equalTo(Behavior.IGNORE)));
+    assertEquals(Behavior.IGNORE,
+      utils.getRuleBehavior("org.biopax.validator.rules.AcyclicPathwayRule", null));
   }
 
 
@@ -175,7 +173,7 @@ public class ConsoleApplicationIT
   @DirtiesContext
   public void testPremergeAndMerge() throws IOException {
     //test env. sanity quick-test
-    assertEquals("PathwayCommonsDemo11", service.settings().exportArchivePrefix());
+    assertEquals("PathwayCommonsDemo0", service.settings().exportArchivePrefix());
 
     //should not fail:
     service.settings().getOrganismTaxonomyIds();

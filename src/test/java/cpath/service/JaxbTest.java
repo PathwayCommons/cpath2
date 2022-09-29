@@ -1,6 +1,6 @@
 package cpath.service;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringWriter;
 import java.util.List;
@@ -9,7 +9,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
 import cpath.service.api.Status;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseEntry;

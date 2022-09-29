@@ -1,6 +1,6 @@
 package cpath.converter;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +22,7 @@ import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.normalizer.Normalizer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import cpath.service.api.Converter;
 

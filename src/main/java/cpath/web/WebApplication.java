@@ -13,12 +13,10 @@ import org.springframework.web.servlet.view.JstlView;
 public class WebApplication implements WebMvcConfigurer
 {
   // Enable content negotiation via
-  // content-type (application/json, application/xml) or path extension (.json or .xml)
+  // content-type (application/json, application/xml)
   @Override
   public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
     configurer
-      .favorPathExtension(true)
-      .ignoreUnknownPathExtensions(true)
       .favorParameter(false)
       .ignoreAcceptHeader(false)
       .useRegisteredExtensionsOnly(true)
