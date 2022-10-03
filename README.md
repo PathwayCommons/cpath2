@@ -1,5 +1,6 @@
 # cPath2: pathway data builder and server.
 
+[![Java CI with Maven](https://github.com/PathwayCommons/cpath2/actions/workflows/maven.yml/badge.svg)](https://github.com/PathwayCommons/cpath2/actions/workflows/maven.yml)
 
 cPath2 is a biological pathway data integration and query platform 
 for [Pathway Commons](http://www.pathwaycommons.org) (PC) projects.
