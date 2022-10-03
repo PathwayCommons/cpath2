@@ -138,6 +138,20 @@
       <name>OSSRH Repository</name>
       <url>https://oss.sonatype.org/content/groups/public/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>ebi-repo</id>
+      <name>The EBI internal repository</name>
+      <url>https://www.ebi.ac.uk/~maven/m2repo</url>
+    </repository>
+    <repository>
+      <id>intact.nexus</id>
+      <name>IntAct Nexus</name>
+      <url>https://www.ebi.ac.uk/intact/maven/nexus/content/groups/public/</url>
+    </repository>
   </repositories>
 
   <build>
