@@ -278,8 +278,6 @@ public final class Merger {
 			if (replacement != null) {
 				//save in the map to replace the source bpe later 
 				replacements.put(origEr, replacement);
-				if(!replacement.getUri().equals(origEr.getUri()))
-					replacement.addComment("REPLACED " + origEr.getUri());
 			} else {
 				//i.e., no matching ER found in the Warehouse (the ER is from unwanted organism or unknown/no id).
 				// Remove the PR/Dna*R/Rna*R if entityReferenceOf() is empty (member of a generic ER, or dangling)

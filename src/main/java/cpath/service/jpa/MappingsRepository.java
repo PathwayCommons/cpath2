@@ -26,16 +26,6 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 
 
 	/**
-	 * Mappings 'From' the given id (any kind) 'To' the target type of ID.
-	 * 
-	 * @param srcId
-	 * @param dest to map to
-	 * @return
-	 */
-	List<Mapping> findBySrcIdAndDestIgnoreCase(String srcId, String dest);
-
-
-	/**
 	 * Mappings 'From' any of given ids (any kind) 'To' the target type of ID.
 	 *
 	 * @param srcIds

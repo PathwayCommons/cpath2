@@ -242,16 +242,14 @@ public class ConsoleApplicationIT
     assertTrue(ids.contains("P01116"));
     List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
     assertTrue(mps.size() > 2);
-    mps = service.mapping().findBySrcIdAndDestIgnoreCase("P01118", "UniProt");
-    assertEquals(1, mps.size());
-    assertEquals("P01116", mps.iterator().next().getDestId());
     mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
     assertEquals(1, mps.size());
     assertEquals("P01116", mps.iterator().next().getDestId());
-    mps = service.mapping().findBySrcIdAndDestIgnoreCase("1J7P", "UNIPROT");//PDB to UniProt
-    assertFalse(mps.isEmpty());
-    assertEquals(1, mps.size());
-    assertEquals("P62158", mps.iterator().next().getDestId());
+
+    List<String> srcids = Arrays.asList("P01118","1J7P"); //UniProt, PDB
+    mps = service.mapping().findBySrcIdInAndDestIgnoreCase(srcids, "UniProt"); //to UniProt
+    assertEquals(2, mps.size());
+    assertArrayEquals(new String[]{"P01116","P62158"}, mps.stream().map(Mapping::getDestId).sorted().toArray());
 
     // **** MERGE ***
     Merger merger = new Merger(service);

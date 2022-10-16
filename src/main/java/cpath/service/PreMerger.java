@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
@@ -59,31 +60,34 @@ final class PreMerger {
    * Pre-process (import, clean, normalize) all data from all configured data sources.
    */
   void premerge() {
-    // if this has been run before, there're some output files left
-    // in the corresponding output folder, which will stay unless overwrite==true
-    // (we'd continue instead of re-doing all input data; can also cleanup a sub-directory under /data manually).
-
-    // Iterate over all metadata
+    // if this has been run before, there are some intermediate files left
+    // in the corresponding output folder (can continue without processing the data from scratch)
+    // which will be kept unless overwrite=true option is used
+    // (one can also manually clean up a particular datasource sub-directory in /data to start over on re-run)
     for (Metadata metadata : service.metadata().findAll())
     {
+      final String mid = metadata.getIdentifier();
+
       if(!Files.isDirectory(Paths.get(service.intermediateDataDir(metadata)))) {
-        service.clear(metadata); //empties the corresponding directory and db entries
+        service.clear(metadata); //empty the sub-directory and db entries
       } else {
-        //just clear the list of input files (content of the archive)
-        metadata.getFiles().clear();
+        metadata.getFiles().clear();  //clear the list of input file names
       }
 
       //read and analyze the input data archive
-      log.info("premerge(), " + metadata.getIdentifier());
+      log.info("premerge(), processing: " + mid);
       service.unzipData(metadata);
-      metadata = service.metadata().save(metadata); //inserts content file names into the db table
-      log.debug("premerge(), " + metadata.getIdentifier() + " contains "
-        + metadata.getFiles().size() + " files");
+      metadata = service.metadata().save(metadata); //persist data file names
+      log.debug("premerge(), " + mid + " contains " + metadata.getFiles().size() + " files");
+
+      if (metadata.getType() == METADATA_TYPE.MAPPING) {
+        log.info("premerge(), done (mapping type data)");
+        return;
+      }
 
       try {
-        log.info("premerge(), processing " + metadata.getIdentifier());
         // Try to instantiate the Cleaner now, and exit if it fails!
-        Cleaner cleaner = null; //reset to null!
+        Cleaner cleaner = null;
         String cl = metadata.getCleanerClassname();
         if (cl != null && cl.length() > 0) {
           cleaner = CPathUtils.newCleaner(cl);
@@ -93,7 +97,7 @@ final class PreMerger {
             return; // skip this data entirely due to the error
           }
         } else {
-          log.info("premerge(), no Cleaner class was specified; continue...");
+          log.info("premerge(), Cleaner class is not defined for " + mid);
         }
 
         Converter converter = null;
@@ -107,7 +111,7 @@ final class PreMerger {
           }
           converter.setXmlBase(xmlBase);
         } else {
-          log.info("premerge(), no Converter class was specified; continue...");
+          log.info("premerge(), Converter class is not defined for " + mid);
         }
 
         // Premerge for each pathway data: clean, convert, validate.
@@ -116,7 +120,7 @@ final class PreMerger {
         }
 
       } catch (Exception e) {
-        log.error("premerge(), failed to do " + metadata.getIdentifier(), e);
+        log.error("premerge(), failed for datasource: " + mid, e);
       }
     }
   }
@@ -132,12 +136,12 @@ final class PreMerger {
     Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
     warehouse.setXmlBase(xmlBase);
 
-    // iterate over all metadata
+    // process "warehouse" type metadata
     for (Metadata metadata : service.metadata().findAll()) {
-      //skip for not warehouse data
-      if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
+      //skip for not "warehouse" type data
+      if (metadata.getType() != METADATA_TYPE.WAREHOUSE) {
         continue;
-
+      }
       log.info("buildWarehouse(), adding data: " + metadata.getIdentifier());
       InputStream inputStream;
       for (String datafile : metadata.getFiles()) {
@@ -161,12 +165,12 @@ final class PreMerger {
     // Using the just built Warehouse BioPAX model, generate the id-mapping tables:
     buildIdMappingFromWarehouse(warehouse);
 
-    // Next, process all extra MAPPING data files, build, save in the id-mapping db repository.
+    // Process all MAPPING data - save in the id-mapping repository
     for (Metadata metadata : service.metadata().findAll()) {
-      //skip not id-mapping data
-      if (metadata.getType() != METADATA_TYPE.MAPPING)
+      //skip not "mapping" data
+      if (metadata.getType() != METADATA_TYPE.MAPPING) {
         continue;
-
+      }
       log.info("buildWarehouse(), adding id-mapping: " + metadata.getIdentifier());
       for (String content : metadata.getFiles()) {
         Set<Mapping> mappings;
@@ -310,63 +314,73 @@ final class PreMerger {
   private void pipeline(final Metadata metadata, final String inputDataFile,
                         Cleaner cleaner, Converter converter) throws IOException
   {
-    File inputFile = new File(inputDataFile);
-    log.info("pipeline(), do " + inputFile.getPath());
+    Path originalDataPath = Paths.get(inputDataFile);
+    if (metadata.getType() == METADATA_TYPE.MAPPING) {
+      log.info("pipeline(), skip for id-mapping data: " + originalDataPath);
+      return;
+    } else {
+      log.info("pipeline(), process " + originalDataPath);
+    }
 
-    //shortcut
-    if(Files.exists(Paths.get(CPathUtils.normalizedFile(inputDataFile)))) {
-      log.info("pipeline(), re-use previously normalized data file");
+    File inputFile = originalDataPath.toFile(); // will be a different file at different steps
+    final File cleaned = Paths.get(CPathUtils.cleanedFile(inputDataFile)).toFile();
+    final File converted = Paths.get(CPathUtils.convertedFile(inputDataFile)).toFile();
+    final File normalized = Paths.get(CPathUtils.normalizedFile(inputDataFile)).toFile();
+
+    //an important shortcut
+    if(normalized.exists()) {
+      log.info("pipeline(), already normalized, done.");
       return;
     }
 
-    //Clean the data, i.e., apply data-specific "quick fixes".
-    if(cleaner != null) {
-      String cleanerClassName = cleaner.getClass().getSimpleName();
-      File outputFile = new File(CPathUtils.cleanedFile(inputDataFile));
-      if(outputFile.exists()) {
-        log.info("pipeline(), re-use " + outputFile.getName());
-      } else {
+    // "clean" the data if needed
+    if(cleaned.exists() || converted.exists()) {
+      log.info("pipeline(), already cleaned");
+      inputFile = cleaned;
+    } else {
+      //Clean the original data (apply data-specific "quick fixes" as needed)
+      if (cleaner != null) {
+        String cleanerClassName = cleaner.getClass().getSimpleName();
         try {
           InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
-          OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
+          OutputStream os = new GZIPOutputStream(new FileOutputStream(cleaned));
           cleaner.clean(is, os);
           IOUtils.closeQuietly(is);
           IOUtils.closeQuietly(os);
         } catch (Exception e) {
-          log.warn("pipeline(), failed due to " + cleanerClassName + " failed: " + e);
+          log.warn("pipeline(), failed to run " + cleanerClassName + "; " + e);
           return;
         }
+        inputFile = cleaned;
       }
-      inputFile = outputFile;
     }
 
-    //for id-mapping data, no need to convert, normalize
-    if(metadata.getType() != METADATA_TYPE.MAPPING) {
+    // convert to BioPAX Level3 if needed
+    if(converted.exists()) {
+      log.info("pipeline(), already converted");
+      inputFile = converted;
+    } else {
       //Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
       if (converter != null) {
         String converterClassName = converter.getClass().getSimpleName();
-        File outputFile = new File(CPathUtils.convertedFile(inputDataFile));
-        if (outputFile.exists()) {
-          log.info("pipeline(), re-use " + outputFile.getName());
-        } else {
-          try {
-            InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
-            OutputStream os = new GZIPOutputStream(new FileOutputStream(outputFile));
-            converter.convert(is, os);
-            IOUtils.closeQuietly(is);
-            IOUtils.closeQuietly(os);
-          } catch (Exception e) {
-            log.warn("pipeline(), failed due to " + converterClassName + " failed: " + e);
-            return;
-          }
+        try {
+          InputStream is = new GZIPInputStream(new FileInputStream(inputFile));
+          OutputStream os = new GZIPOutputStream(new FileOutputStream(converted));
+          converter.convert(is, os);
+          IOUtils.closeQuietly(is);
+          IOUtils.closeQuietly(os);
+        } catch (Exception e) {
+          log.warn("pipeline(), failed to run " + converterClassName + "; " + e);
+          return;
         }
-        inputFile = outputFile;
+        inputFile = converted;
       }
-
-      // Validate & auto-fix and normalize: synonyms in xref.db may be replaced
-      // with the primary db names (as in Miriam), some URIs get normalized, etc.
-      checkAndNormalize(metadata, inputFile);
     }
+
+    // Validate & normalize the BioPAX model:
+    // synonyms in xref.db property values may be replaced
+    // with the primary db names (based on Miriam db); some URIs get normalized
+    checkAndNormalize(metadata, inputFile);
   }
 
 
@@ -389,13 +403,14 @@ final class PreMerger {
 
     Model model;
     //validate or just normalize
-    if(metadata.getType() == METADATA_TYPE.MAPPING) {
-      throw new IllegalArgumentException("checkAndNormalize, unsupported Metadata type (MAPPING)");
-    } else if(metadata.isNotPathwayData()) { //that's Warehouse data
-      //get the cleaned/converted model; skip validation
+    if(metadata.isNotPathwayData()) { //when "warehouse" or "mapping" data type
+      if(metadata.getType() == METADATA_TYPE.MAPPING) {
+        throw new IllegalArgumentException("Unsupported data type: MAPPING");
+      }
+      //just load the model and skip validation
       model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
       IOUtils.closeQuietly(biopaxStream);
-    } else { //validate/normalize cleaned, converted biopax data
+    } else { // validate and normalize the cleaned/converted BioPAX data
       try {
         log.info("checkAndNormalize, validating "	+ filename);
         // create a new empty validation (options: auto-fix=true, report all) and associate with the model

@@ -130,9 +130,7 @@ final class PantherCleaner implements Cleaner {
 			EntityReference member = generic.getMemberEntityReference().iterator().next();
 			
 			//PANTHER contains DnaRegionReferences having ProteinRefrence members (wrong BioPAX model)
-			if(generic.getModelInterface().isInstance(member)) { //correct classes, then -
-//				member.getComment().addAll(generic.getComment()); //skip misleading/old comments
-				member.getComment().add("REPLACED generic " + generic.getUri());
+			if(generic.getModelInterface().isInstance(member)) {
 				member.getXref().addAll(generic.getXref());
 				member.getName().addAll(generic.getName());
 				if(member.getDisplayName() == null)

@@ -691,9 +691,7 @@ public class CPathServiceImpl implements CPathService {
       sourceIds.add(fromId); //collect
     }
 
-    final List<Mapping> mappings = (sourceIds.size()==1)
-      ? mappingsRepository.findBySrcIdAndDestIgnoreCase(sourceIds.get(0), toDb)
-      : mappingsRepository.findBySrcIdInAndDestIgnoreCase(sourceIds, toDb);
+    final List<Mapping> mappings = mappingsRepository.findBySrcIdInAndDestIgnoreCase(sourceIds, toDb);
 
     final Set<String> results = new TreeSet<>();
     for(Mapping m : mappings) {

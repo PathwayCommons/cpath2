@@ -137,7 +137,6 @@ public final class CPathUtils {
       Method m = BioPAXElementImpl.class.getDeclaredMethod("setUri", String.class);
       m.setAccessible(true);
       m.invoke(el, newUri);
-      ((Level3Element)el).addComment("REPLACED " + el.getUri());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

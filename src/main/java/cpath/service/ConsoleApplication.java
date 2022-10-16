@@ -444,7 +444,7 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
       prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
 
-    //TODO: UniProt based extended SIF can be huge and takes too long to generate... won't make it now
+    //UniProt ID based extended SIF files can be huge, take too long to generate; skip for now.
 
     writer.println("wait"); //important
     writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");
