@@ -12,10 +12,8 @@
     </encoder>
   </appender>
 
-  <logger name="cpath" level="info"/>
-  <!--<logger name="org.biopax" level="warn"/>-->
-  <logger name="org.springframework" level="info"/>
-  <root level="error">
+  <logger name="org.bbop" level="error"/>
+  <root level="info">
     <appender-ref ref="console"/>
   </root>
 

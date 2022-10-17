@@ -17,7 +17,6 @@
     </appender>
 
     <logger name="cpath" level="debug" />
-    <logger name="org.biopax" level="warn"/>
     <logger name="org.apache" level="error"/>
     <logger name="org.bbop" level="error"/>
     <root level="info">
