@@ -111,27 +111,15 @@ public final class CPathUtils {
    * Replaces the URI of a BioPAX object
    * using java reflection. Normally, one should avoid this;
    * please use when absolutely necessary and with great care.
-   * @param bpe biopax object from the model
-   * @param model model
-   * @param xmlBase xml:base for the new URI to be generated
-   */
-  static void changeUri(BioPAXElement bpe, Model model, String xmlBase) {
-    replaceUri(model, bpe, Normalizer
-      .uri(xmlBase, null, UUID.randomUUID() + bpe.getUri(), bpe.getModelInterface()));
-  }
-
-  /**
-   * Replaces the URI of a BioPAX object
-   * using java reflection. Normally, one should avoid this;
-   * please use when absolutely necessary and with great care.
    *
    * @param model model
    * @param el biopax object from the model
    * @param newUri new URI
    */
   public static void replaceUri(Model model, BioPAXElement el, String newUri) {
-    if (el.getUri().equals(newUri))
+    if (el.getUri().equals(newUri)) {
       return; // no action required
+    }
     model.remove(el);
     try {
       Method m = BioPAXElementImpl.class.getDeclaredMethod("setUri", String.class);
@@ -178,10 +166,10 @@ public final class CPathUtils {
   }
 
   /**
-   * For a warehouse (normalized) EntityReference's or CV's URI
-   * gets the corresponding identifier (e.g., UniProt or ChEBI primary ID).
-   * (this depends on current biopax normalizer and cpath2 premerge
-   * that make/consume 'http://identifiers.org/*' URIs for those utility class biopax objects.)
+   * From a warehouse (normalized) ER or CV URI,
+   * extract the identifier (e.g., UniProt or ChEBI).
+   * It depends on Normalizer and cPath2 Premerge
+   * using 'http://identifiers.org/*' URIs for such objects.
    *
    * @param uri URI
    * @return local part URI - ID
@@ -193,7 +181,7 @@ public final class CPathUtils {
 
   /**
    * Auto-fix an ID of particular type before using it
-   * for id-mapping. This helps mapping e.g., RefSeq versions ID and
+   * for id-mapping. This helps to map e.g., RefSeq versions ID and
    * UniProt isoforms to primary UniProt accessions despite our id-mapping db
    * does not have such records as e.g. "NP_12345.1 maps to P01234".
    *
@@ -394,7 +382,7 @@ public final class CPathUtils {
 
   /*
    * Generate a sanitized file name for an original source zip entry;
-   * this path will be stored in the corresponding Metadata.files collection and
+   * this path will be stored in the corresponding Metadata.files collection
    * and then processed during premerge (clean, convert, normalize) and merge steps (ETL).
    */
   static String originalFile(String dataSubDir, String zipEntryName) {

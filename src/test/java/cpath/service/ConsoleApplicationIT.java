@@ -254,8 +254,7 @@ public class ConsoleApplicationIT
     // **** MERGE ***
     Merger merger = new Merger(service);
 
-    /* In this test, for simplicity, we don't use Metadata
-     * and thus bypass some of Merger methods
+    /* For simplicity, we don't use Metadata and thus bypass some Merger methods
      * (in production, we'd simply run as merger.merge())
      */
     //Load test models from files

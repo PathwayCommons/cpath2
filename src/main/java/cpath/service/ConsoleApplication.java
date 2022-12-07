@@ -356,8 +356,7 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.close();
     LOG.info("generated datasources.txt");
 
-    //export the list of unique UniProt primary accession numbers
-    LOG.info("creating the list of primary uniprot IDs...");
+    LOG.info("Creating the list of primary uniprot IDs...");
     Set<String> acs = new TreeSet<>();
     //exclude publication xrefs
     Set<Xref> xrefs = new HashSet<>(model.getObjects(UnificationXref.class));
@@ -366,32 +365,32 @@ public class ConsoleApplication implements CommandLineRunner {
     for (Xref x : xrefs) {
       String id = x.getId();
       if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "uniprot")
-        && id != null && !acs.contains(id))
+        && id != null && !acs.contains(id)) {
         acs.addAll(service.map(id, "UNIPROT"));
-      if (--left % 10000 == 0)
-        LOG.info(left + " xrefs to map...");
+      }
     }
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
       Paths.get(service.settings().downloadsDir(), "uniprot.txt")), StandardCharsets.UTF_8)
     );
     writer.println(String.format("#PathwayCommons v%s - primary UniProt accession numbers:",
       service.settings().getVersion()));
-    for (String ac : acs)
+    for (String ac : acs) {
       writer.println(ac);
+    }
     writer.close();
     LOG.info("generated uniprot.txt");
 
-    LOG.info("init the full-text search engine...");
+    LOG.info("Init the full-text search engine...");
     final Searcher searcher = new SearchEngine(model, service.settings().indexDir());
-    // generate/find special BioPAX archives:
-    // by-organism (if many),
-    createBySpeciesBiopax(model, searcher);
-    // and - detailed pathway data (exclude all PSI-MI sources):
+
+//    createBySpeciesBiopax(model, searcher);
+
+    // generate the "Detailed" pathway data file:
     createDetailedBiopax(model, searcher, allMetadata);
 
-    //auto-generate export.sh script (to run Paxtools commands for exporting BioPAX to other formats)
+    // generate the export.sh script (to run Paxtools commands for exporting the BioPAX files to other formats)
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
-    final String commonPrefix = service.settings().exportArchivePrefix(); //e.g., PathwayCommons8
+    final String commonPrefix = service.settings().exportArchivePrefix(); //e.g., PathwayCommons13
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
       Paths.get(service.settings().exportScriptFile())), StandardCharsets.UTF_8));
     writer.println("#!/bin/sh");
@@ -401,14 +400,11 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println("# Change to the downloads/ and run as:");
     writer.println("# sh export.sh &");
 
-    for (Metadata md : allMetadata) {
-      if (!md.isNotPathwayData()) //skip warehouse metadata
-        writeScriptCommands(service.settings().biopaxFileName(md.getIdentifier()), writer, md.getNumPathways() > 0);
-    }
-    //write commands to the script file for 'All'(main) and 'Detailed' BioPAX input files:
+    //write commands to the script file for 'All' and 'Detailed' BioPAX input files:
     writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
     writeScriptCommands(service.settings().biopaxFileName("All"), writer, true);
-    //rename properly those SIF files that were cut from corresponding extended SIF (.txt) ones
+
+    //rename SIF files that were cut from corresponding extended SIF (.txt) ones
     writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
     writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
       commonPrefix, commonPrefix, commonPrefix, commonPrefix));

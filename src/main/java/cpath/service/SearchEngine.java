@@ -135,7 +135,6 @@ public class SearchEngine implements Indexer, Searcher {
 			String[] organisms) 
 	{
 		SearchResponse response;
-		
 		LOG.debug("search: '" + query + "', page: " + page
 			+ ", filterBy: " + ((filterByType!=null)?filterByType.getSimpleName():"N/A")
 			+ "; extra filters: ds in (" + Arrays.toString(datasources)
@@ -153,8 +152,6 @@ public class SearchEngine implements Indexer, Searcher {
 			if(!query.trim().equals("*")) { //if not "*" query, which is not supported out-of-the-box, then
 				//create the lucene query
 				Query userQuery = queryParser.parse(query);
-				//do NOT rewrite (Lucene 4.1), or scoring/highlighting won't work for wildcard queries...
-				//luceneQuery = searcher.rewrite(luceneQuery);
 				LOG.debug("parsed lucene query is " + userQuery.getClass().getSimpleName());
 				//create filter: type AND (d OR d...) AND (o OR o...)
 				Query filter = createFilter(filterByType, datasources, organisms);
@@ -410,22 +407,24 @@ public class SearchEngine implements Indexer, Searcher {
 						if(s.startsWith("REPLACED") || s.contains("ADDED"))
 							keywords.remove(s);
 					}
-					
-					bpe.getAnnotations().put(FIELD_KEYWORD, keywords);
-					bpe.getAnnotations().put(FIELD_DATASOURCE, ModelUtils.getDatasources(bpe));
-					bpe.getAnnotations().put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
-					bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
+
+					Map<String, Object> annotations = bpe.getAnnotations();
+
+					annotations.put(FIELD_KEYWORD, keywords);
+					annotations.put(FIELD_DATASOURCE, ModelUtils.getDatasources(bpe));
+					annotations.put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
+					annotations.put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
 					
 					//set <numparticipants> (PEs/Genes), <numprocesses> (interactions/pathways), <size> index fields:
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
 						int numProc = fetcher.fetch(bpe, Process.class).size(); //except itself
 						int numPeAndG = fetcher.fetch(bpe, PhysicalEntity.class).size()
 								+ fetcher.fetch(bpe, Gene.class).size();
-						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPeAndG));
-						bpe.getAnnotations().put(FIELD_N_PROCESSES, Integer.toString(numProc));
+						annotations.put(FIELD_N_PARTICIPANTS, Integer.toString(numPeAndG));
+						annotations.put(FIELD_N_PROCESSES, Integer.toString(numProc));
 					} else if(bpe instanceof Complex) {
 						int numPEs = fetcher.fetch(bpe, PhysicalEntity.class).size();
-						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPEs));
+						annotations.put(FIELD_N_PARTICIPANTS, Integer.toString(numPEs));
 					}
 
 					index(bpe, indexWriter);
@@ -506,41 +505,42 @@ public class SearchEngine implements Indexer, Searcher {
 		doc.add(new StringField(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), Field.Store.YES));
 		
 		// make index fields from the annotations map (of pre-calculated/inferred values)
-		if(!bpe.getAnnotations().isEmpty())
+		Map<String,Object> annotations = bpe.getAnnotations();
+		if(!annotations.isEmpty())
 		{
-			if(bpe.getAnnotations().containsKey(FIELD_PATHWAY)) {
-				addPathways((Set<Pathway>)bpe.getAnnotations().get(FIELD_PATHWAY), doc);
+			if(annotations.containsKey(FIELD_PATHWAY)) {
+				addPathways((Set<Pathway>)annotations.get(FIELD_PATHWAY), doc);
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_ORGANISM)) {
-				addOrganisms((Set<BioSource>)bpe.getAnnotations().get(FIELD_ORGANISM), doc);
+			if(annotations.containsKey(FIELD_ORGANISM)) {
+				addOrganisms((Set<BioSource>)annotations.get(FIELD_ORGANISM), doc);
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_DATASOURCE)) {
-				addDatasources((Set<Provenance>)bpe.getAnnotations().get(FIELD_DATASOURCE), doc);
+			if(annotations.containsKey(FIELD_DATASOURCE)) {
+				addDatasources((Set<Provenance>)annotations.get(FIELD_DATASOURCE), doc);
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_KEYWORD)) {
-				for (String keyword : (Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD)) {
+			if(annotations.containsKey(FIELD_KEYWORD)) {
+				for (String keyword : (Set<String>)annotations.get(FIELD_KEYWORD)) {
 					Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.NO);
 					doc.add(f);
 				}
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_N_PARTICIPANTS)) {
+			if(annotations.containsKey(FIELD_N_PARTICIPANTS)) {
 				doc.add(new StoredField(FIELD_N_PARTICIPANTS,
-                    Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS))));
+                    Integer.parseInt((String)annotations.get(FIELD_N_PARTICIPANTS))));
 			}
 
-			if(bpe.getAnnotations().containsKey(FIELD_N_PROCESSES)) {
+			if(annotations.containsKey(FIELD_N_PROCESSES)) {
 				doc.add(new StoredField(FIELD_N_PROCESSES,
-                    Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES))));
+                    Integer.parseInt((String)annotations.get(FIELD_N_PROCESSES))));
 			}
 
 			// Add xref IDs to the index (IDs are prepared and stored in advance
 			// in the annotations map, under FIELD_XREFID key)
-			Set<String> ids = (bpe.getAnnotations().containsKey(FIELD_XREFID))
-				? (Set<String>)bpe.getAnnotations().get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
+			Set<String> ids = (annotations.containsKey(FIELD_XREFID))
+				? (Set<String>)annotations.get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
 			for (String id : ids) {
 				//index as not analyzed, not tokenized
 				doc.add(new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO));
@@ -548,13 +548,13 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 
-		bpe.getAnnotations().remove(FIELD_KEYWORD);
-		bpe.getAnnotations().remove(FIELD_DATASOURCE);
-		bpe.getAnnotations().remove(FIELD_ORGANISM);
-		bpe.getAnnotations().remove(FIELD_PATHWAY);
-		bpe.getAnnotations().remove(FIELD_N_PARTICIPANTS);
-		bpe.getAnnotations().remove(FIELD_N_PROCESSES);
-		bpe.getAnnotations().remove(FIELD_XREFID);
+		annotations.remove(FIELD_KEYWORD);
+		annotations.remove(FIELD_DATASOURCE);
+		annotations.remove(FIELD_ORGANISM);
+		annotations.remove(FIELD_PATHWAY);
+		annotations.remove(FIELD_N_PARTICIPANTS);
+		annotations.remove(FIELD_N_PROCESSES);
+		annotations.remove(FIELD_XREFID);
 
 		// name (we store both original and lowercased names due to use of StringField and KeywordAnalyser)
 		if(bpe instanceof Named) {
