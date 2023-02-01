@@ -3,39 +3,31 @@ package cpath.service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-import cpath.service.api.CPathService;
-import cpath.service.jpa.*;
+import cpath.service.api.Service;
+import cpath.service.metadata.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.validator.api.beans.Behavior;
-import org.biopax.validator.api.beans.Validation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-
-import cpath.service.jpa.Metadata.METADATA_TYPE;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
+@SpringBootTest
 @ActiveProfiles("admin")
-@DataJpaTest(includeFilters = @ComponentScan.Filter(Component.class))
-public class ServiceAndJpaTest {
+public class ServiceIT {
 
   @Autowired
-  private CPathService service;
+  private Service service;
 
   @Test
   public final void testSettings() {
@@ -48,56 +40,48 @@ public class ServiceAndJpaTest {
   }
 
   @Test
-  public final void testLogGa() {
-    service.track("172.20.10.3", "command", "search");
-    service.track("172.20.10.3", "provider", "Reactome");
-    service.track("172.20.10.3", "error", "bad request");
-    service.track("172.20.10.3", "client", null);
-  }
-
-  @Test
   @DirtiesContext
   public void testIdMapping() {
     //capitalization is important in 99% of identifier types (we should not ignore it)
     // we should be able to save it and not get 'duplicate key' exception here
+    final String indexDir = "target/work/idx";
+    CPathUtils.cleanupDirectory(indexDir, false);
+    service.initIndex(null, indexDir, false);
+    //save(Mapping) in fact updates/overwrites, preventing duplicate id-mapping records in the index
     service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
     service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
     service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
-    assertEquals(1, service.mapping()
-        .findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+    service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+    service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
+    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
+    assertEquals("SID:14438", m.getSrcId()); //already auto-fixed src ID
+    service.mapping().save(m);
+    service.mapping().commit(); //all the above
+    service.mapping().refresh(); //required to acquire an up-to-date index searcher used in service.map(..) etc.
 
     //check it's saved
     assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
     assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
-
     // repeat (should successfully update)- add a Mapping
-    service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
     assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
-
     Set<String> mapsTo = service.map("FooBar", "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next());
     mapsTo = service.map("FooBar", "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next());
-
     //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
-    service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
-    assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
+    Set<String> map = service.map("A2A2M3-1", "UNIPROT");
+    assertEquals(1, map.size());
     assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
-
-    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
-    service.mapping().save(m);
-    assertEquals("SID:14438", m.getSrcId());
     assertEquals(1, service.map("SID:14438", "CHEBI").size());
-
     //map from a list of IDs to target ID type (UNIPROT)
     List<String> srcIds = new ArrayList<>();
     //add IDs - both map to the same uniprot ID ()
     srcIds.add("ZHX1");
     srcIds.add("A2A2M3");
     //currently, mapping().find* methods cannot map uniprot isoform IDs (service.map(..) - can do by removing the suffix)
-    List<Mapping> mappings = service.mapping().findBySrcIdInAndDestIgnoreCase(srcIds, "UNIPROT");
+    List<Mapping> mappings = service.mapping().findBySrcIdInAndDstDbIgnoreCase(srcIds, "uNIPROT");
     assertEquals(2, mappings.size());
     //test new service.map(null, srcIds, "UNIPROT"), which must also support isoform IDs
     srcIds.remove("A2A2M3");
@@ -107,61 +91,30 @@ public class ServiceAndJpaTest {
 
   @Test
   @DirtiesContext
-  public void testImportContent() {
-    // mock metadata and pathway data
-    Metadata md = new Metadata(
-      "TEST", Collections.singletonList("test"), "test", "", "",
-      "", METADATA_TYPE.BIOPAX, null, null, null, "free");
-    //mock unzip, save data entries -
-    service.clear(md);
-    String origfile = CPathUtils.originalFile(service.intermediateDataDir(md), "test_1.gz");
-    md.addFile(origfile);
-    service.metadata().save(md);
-
-    //even if we update from the db, data must not be empty
-    md = service.metadata().findByIdentifier(md.getIdentifier());
-    assertNotNull(md);
-    assertEquals("TEST", md.getIdentifier());
-    assertEquals(1, md.getFiles().size());
-    String datafile = md.getFiles().iterator().next();
-    assertEquals(origfile, datafile);
-
-    String out = CPathUtils.validationFile(datafile);
-    service.saveValidationReport(
-      new Validation(null, datafile, false, Behavior.WARNING, 0, null), out);
-    assertTrue(Files.exists(Paths.get(out)));
-
-    //cleanup
-    service.clear(md);
-    assertTrue(md.getFiles().isEmpty());
-    md = service.metadata().findByIdentifier("TEST");
-    assertTrue(md.getFiles().isEmpty());
-  }
-
-  @Test
-  @DirtiesContext
   public void testReadContent() throws IOException {
-    // in case there's no "metadata page" prepared -
-    Metadata metadata = new Metadata("TEST",
+    // in case there's no "datasource page" prepared -
+    Datasource datasource = new Datasource("TEST",
       Arrays.asList("Test", "testReadContent"),
       "N/A",
       "classpath:test2.owl.zip",
       "",
       "",
-      Metadata.METADATA_TYPE.BIOPAX,
+      Datasource.METADATA_TYPE.BIOPAX,
       null, // no cleaner (same as using "")
       "", // no converter
       null,
-      "free"
+      "",
+      "free",
+      0, 0, 0
     );
 
-    CPathUtils.cleanupDirectory(service.intermediateDataDir(metadata), true);
-    assertTrue(metadata.getFiles().isEmpty());
+    CPathUtils.cleanupDirectory(service.intermediateDataDir(datasource), true);
+    assertTrue(datasource.getFiles().isEmpty());
 
-    service.unzipData(metadata);
-    assertFalse(metadata.getFiles().isEmpty());
+    service.unzipData(datasource);
+    assertFalse(datasource.getFiles().isEmpty());
 
-    String pd = metadata.getFiles().iterator().next();
+    String pd = datasource.getFiles().iterator().next();
     SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
     reader.mergeDuplicates(true);
     InputStream is = new GZIPInputStream(new FileInputStream(pd));

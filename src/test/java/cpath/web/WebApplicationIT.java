@@ -1,7 +1,6 @@
 package cpath.web;
 
-import cpath.service.api.CPathService;
-
+import cpath.service.api.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,20 +12,22 @@ import org.springframework.util.MultiValueMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
 @ActiveProfiles({"web"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class WebApplicationIT {
 
-  @Autowired
-  private TestRestTemplate template;
+	@Autowired
+	private TestRestTemplate template;
 
-  @Autowired
-	private CPathService service;
+	@Autowired
+	private Service service;
 
-  @BeforeEach
-	public void init() {
-  	if(service.getModel()==null)
-  		service.init();
+	@BeforeEach
+	public synchronized void init() {
+		if(service.getModel() == null) {
+			service.init();
+		}
 	}
 
 	@Test
@@ -39,8 +40,7 @@ public class WebApplicationIT {
 
 	@Test
 	public void testSearchPathway() {
-		String result;
-		result = template.getForObject("/search?type={t}&q={q}", String.class, "Pathway", "Gly*");
+		String result = template.getForObject("/search?type={t}&q={q}", String.class, "Pathway", "Gly*");
 		//note: pathway and Pathway both works (both converted to L3 Pathway class)
 		assertNotNull(result);
 		assertTrue(result.contains("Pathway50"));
@@ -51,14 +51,14 @@ public class WebApplicationIT {
 	public void testGetQueryById() {
 		String result = template.getForObject("/get?uri={uri}",
 				String.class, "http://identifiers.org/uniprot/P27797");
-    assertNotNull(result);
+		assertNotNull(result);
 		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
 	}
 
 	@Test
 	public void testGetNetworkToSbgn()  {
 		String result = template.getForObject("/get?uri={uri}&format=sbgn",
-			String.class, "http://www.biopax.org/examples/myExample#Pathway50");
+				String.class, "http://www.biopax.org/examples/myExample#Pathway50");
 		assertNotNull(result);
 		assertTrue(result.contains("<glyph class=\"process\""));
 	}
@@ -68,8 +68,8 @@ public class WebApplicationIT {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		map.add("uri", "http://identifiers.org/uniprot/P27797");
 		String result = template.postForObject("/get", map, String.class);
-    assertNotNull(result);
-    assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
+		assertNotNull(result);
+		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
 //		assertTrue(result.contains("Method Not Allowed"));
 	}
 

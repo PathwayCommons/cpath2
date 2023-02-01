@@ -3,20 +3,19 @@ package cpath.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cpath.service.api.Cleaner;
 import cpath.service.api.Converter;
 import cpath.service.api.RelTypeVocab;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Metadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,17 +28,11 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
-
-import cpath.service.jpa.Metadata;
 
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
@@ -71,40 +64,28 @@ public final class CPathUtils {
     }
   }
 
-  /**
-   * For the given url, returns a collection of Metadata Objects.
-   *
-   * @param url String
-   * @return Collection<Metadata>
-   */
-  static Collection<Metadata> readMetadata(final String url) {
-    // order of lines/records in the Metadata table does matter (since 2013/03);
-    // so List is used here instead of HashSet
-    List<Metadata> toReturn = new ArrayList<>();
-
-    // check args
-    if (url == null) {
-      throw new IllegalArgumentException("url must not be null");
-    }
-
-    // get data from service
+  static Metadata readMetadata(String url) {
     try {
-      JSONObject jo = (JSONObject) new JSONParser().parse(new InputStreamReader(LOADER.getResource(url).getInputStream()));
-      for (JSONObject ds : (Iterable<JSONObject>) jo.get("datasources")) {
-        Metadata.METADATA_TYPE type = Metadata.METADATA_TYPE.valueOf((String) ds.get("type"));
-        List<String> names = (List<String>) ((JSONArray) ds.get("name")).stream().collect(Collectors.toList());
-        Metadata metadata = new Metadata((String) ds.get("identifier"), names, (String) ds.get("description"),
-          (String) ds.get("dataUrl"), (String) ds.get("homepageUrl"), (String) ds.get("iconUrl"),
-          type, (String) ds.get("cleanerClass"), (String) ds.get("converterClass"),
-          (String) ds.get("pubmedId"), (String) ds.get("availability"));
-        LOGGER.info("readMetadata(): adding Metadata: " + metadata.getIdentifier());
-        toReturn.add(metadata);
-      }
-    } catch (ParseException | IOException e) {
+      return new ObjectMapper().readValue(LOADER.getResource(url).getInputStream(), Metadata.class);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
 
-    return toReturn;
+  static void saveMetadata(Metadata metadata, String path) {
+    //path fix-up for metadata location property, e.g., file:metadata.json, classpath:metadata.json (test/demo)
+    if(StringUtils.startsWithIgnoreCase(path, "classpath:")) {
+      path = StringUtils.replaceIgnoreCase(path, "classpath:", "target/"); //for test/demo
+    } else if(StringUtils.startsWithIgnoreCase(path, "file:")) {
+      path = StringUtils.replaceIgnoreCase(path, "file:", "");
+    } else if (StringUtils.containsIgnoreCase(path, ":")) { //duh... to be safe
+      path = StringUtils.substringAfter(path, ":");
+    }
+    try {
+      new ObjectMapper().writeValue(Files.newOutputStream(Paths.get(path)), metadata);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -333,8 +314,8 @@ public final class CPathUtils {
    *
    * @return URI
    */
-  static String getMetadataUri(Model model, Metadata metadata) {
-    return model.getXmlBase() + metadata.getIdentifier();
+  static String getMetadataUri(Model model, Datasource datasource) {
+    return model.getXmlBase() + datasource.getIdentifier();
   }
 
   /**
@@ -382,7 +363,7 @@ public final class CPathUtils {
 
   /*
    * Generate a sanitized file name for an original source zip entry;
-   * this path will be stored in the corresponding Metadata.files collection
+   * this path will be stored in the corresponding Datasource.files collection
    * and then processed during premerge (clean, convert, normalize) and merge steps (ETL).
    */
   static String originalFile(String dataSubDir, String zipEntryName) {

@@ -5,13 +5,13 @@
     {
       "dataUrl": "classpath:test_uniprot_data.dat.zip",
       "identifier": "TEST_UNIPROT",
-      "homepageUrl": "http:\/\/www.uniprot.org",
+      "homepageUrl": "http://www.uniprot.org",
       "name": [
         "UniProt"
       ],
       "converterClass": "cpath.converter.UniprotConverter",
       "description": "Test Uniprot Data",
-      "iconUrl": "http:\/\/pathway-commons.googlecode.com\/files\/uniprot.png",
+      "iconUrl": "http://pathway-commons.googlecode.com/files/uniprot.png",
       "availability": "free",
       "type": "WAREHOUSE",
       "pubmedId": "00000000"
@@ -19,13 +19,13 @@
     {
       "dataUrl": "classpath:chebi.obo.zip",
       "identifier": "TEST_CHEBI",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/chebi\/",
+      "homepageUrl": "http://www.ebi.ac.uk/chebi/",
       "name": [
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
       "description": "Test ChEBI OBO",
-      "iconUrl": "http:\/\/pathway-commons.googlecode.com\/files\/chebi.png",
+      "iconUrl": "http://pathway-commons.googlecode.com/files/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
       "pubmedId": "00000000"
@@ -33,12 +33,12 @@
     {
       "dataUrl": "classpath:test_mapping.zip",
       "identifier": "TEST_MAPPING",
-      "homepageUrl": "http:\/\/www.ebi.ac.uk\/unichem\/wholesourcemap",
+      "homepageUrl": "http://www.ebi.ac.uk/unichem/wholesourcemap",
       "name": [
         "UniChem"
       ],
-      "description": "Test UniChem batch id-mapping (to ChEBI, manually edited\/fixed to use here)",
-      "iconUrl": "http:\/\/www.ebi.ac.uk\/unichem\/static\/images\/UniChem_logo2_255.png",
+      "description": "Test UniChem batch id-mapping (to ChEBI, manually edited/fixed to use here)",
+      "iconUrl": "http://www.ebi.ac.uk/unichem/static/images/UniChem_logo2_255.png",
       "availability": "free",
       "type": "MAPPING",
       "pubmedId": "23317286"

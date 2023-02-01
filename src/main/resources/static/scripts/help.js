@@ -1,4 +1,3 @@
-//TODO switch to Angularjs app
 $(function() {
 		getCommandParameterDetails("help/formats", "formats");
 		getCommandParameterDetails("help/kinds", "kinds");

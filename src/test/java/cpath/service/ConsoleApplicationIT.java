@@ -1,10 +1,10 @@
 package cpath.service;
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.api.OutputFormat;
-import cpath.service.jpa.Mapping;
-import cpath.service.jpa.Metadata;
-import cpath.service.jpa.Metadata.METADATA_TYPE;
+import cpath.service.metadata.Mapping;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Datasource.METADATA_TYPE;
 import cpath.service.jaxb.*;
 
 import org.biopax.paxtools.model.*;
@@ -21,7 +21,6 @@ import org.biopax.validator.rules.ProteinModificationFeatureCvRule;
 import org.biopax.validator.rules.XrefRule;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,6 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -42,18 +40,17 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Console app - data integration tests (using test metadata, data, index).
  */
-@ExtendWith(SpringExtension.class)
-@ActiveProfiles({"admin", "premerge"})
 @SpringBootTest
+@ActiveProfiles({"admin", "premerge"})
 public class ConsoleApplicationIT
 {
   private static final Logger log = LoggerFactory.getLogger(ConsoleApplicationIT.class);
   private static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
   @Autowired
-  CPathService service;
+  Service service;
 
-  @Autowired
+  @Autowired(required = false)
   Validator validator;
 
   @Autowired
@@ -71,7 +68,7 @@ public class ConsoleApplicationIT
    * This tests that the BioPAX Validator framework
    * is properly configured and usable in the current context.
    */
-  @Test //controlType
+  @Test
   public void testValidateModel() {
     Catalysis ca = level3.create(Catalysis.class, "catalysis1");
     ca.setControlType(ControlType.INHIBITION);
@@ -86,7 +83,7 @@ public class ConsoleApplicationIT
     v.setModel(m);
     validator.validate(v);
     validator.getResults().remove(v);
-    System.out.println(v.getError());
+//    System.out.println(v.getError());
     assertEquals(2, v.countErrors(null, null, "range.violated", null, false, false));
   }
 
@@ -181,10 +178,7 @@ public class ConsoleApplicationIT
     assertTrue(service.settings().getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
     assertEquals("Homo sapiens", service.settings().getOrganismsAsTaxonomyToNameMap().get("9606"));
 
-    // load the test metadata and create warehouse
-    for (Metadata mdata : CPathUtils.readMetadata("classpath:metadata.json"))
-      service.metadata().save(mdata);
-    Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
+    Datasource ds = service.metadata().findByIdentifier("TEST_UNIPROT");
     assertNotNull(ds);
     ds = service.metadata().findByIdentifier("TEST_CHEBI");
     assertNotNull(ds);
@@ -193,7 +187,7 @@ public class ConsoleApplicationIT
 
     PreMerger premerger = new PreMerger(service, validator);
     premerger.premerge();
-    premerger.buildWarehouse(); //- also writes Warehouse archive
+    premerger.buildWarehouse(); //also writes Warehouse archive
 
     //Some assertions about the initial biopax warehouse model (before the merger is run)
     Model warehouse = CPathUtils.importFromTheArchive(service.settings().warehouseModelFile());
@@ -211,12 +205,12 @@ public class ConsoleApplicationIT
     assertEquals("Homo sapiens", pr.getOrganism().getStandardName());
     assertFalse(pr.getXref().isEmpty());
 
+//    service.index().refresh();
     // test some id-mapping using different srcDb names (UniProt synonyms...)
-    assertFalse(service.map("A2A2M3", "UNIPROT").isEmpty());
-    String ac = service.map("A2A2M3", "UNIPROT").iterator().next();
-    assertEquals("Q8TD86", ac);
-
-    assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
+    Set<String> acs = service.map("A2A2M3", "UNIPROT");
+    assertFalse(acs.isEmpty());
+    assertTrue(acs.contains("Q8TD86"));
+    assertTrue(warehouse.containsID("http://identifiers.org/uniprot/Q8TD86"));
     //can map an isoform id to primary AC with or without specifying the source db name (uniprot)
     Collection<String> ids = service.map("Q8TD86-1", "UNIPROT");
     assertFalse(ids.isEmpty());
@@ -230,9 +224,9 @@ public class ConsoleApplicationIT
     // also, with the first arg. is not null, map(..)
     // calls 'suggest' method to replace NP_619650.1 with NP_619650
     // (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
-    ac = service.map("NP_619650", "UNIPROT").iterator().next();
-    assertEquals("Q8TD86", ac);
-    assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
+    acs = service.map("NP_619650", "UNIPROT");
+    assertTrue(acs.contains("Q8TD86"));
+    assertTrue(warehouse.containsID("http://identifiers.org/uniprot/Q8TD86"));
 
     ids = service.map("P01118", "UNIPROT");
     assertEquals(1, ids.size());
@@ -240,21 +234,17 @@ public class ConsoleApplicationIT
     ids = service.map("P01118-2", "UNIPROT");//also works when any isoform id is used
     assertEquals(1, ids.size());
     assertTrue(ids.contains("P01116"));
-    List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
+    List<Mapping> mps = service.mapping().findByDstDbIgnoreCaseAndDstId("UNIPROT", "P01116");
     assertTrue(mps.size() > 2);
-    mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
-    assertEquals(1, mps.size());
-    assertEquals("P01116", mps.iterator().next().getDestId());
 
     List<String> srcids = Arrays.asList("P01118","1J7P"); //UniProt, PDB
-    mps = service.mapping().findBySrcIdInAndDestIgnoreCase(srcids, "UniProt"); //to UniProt
+    mps = service.mapping().findBySrcIdInAndDstDbIgnoreCase(srcids, "UniProt"); //to UniProt
     assertEquals(2, mps.size());
-    assertArrayEquals(new String[]{"P01116","P62158"}, mps.stream().map(Mapping::getDestId).sorted().toArray());
+    assertArrayEquals(new String[]{"P01116","P62158"}, mps.stream().map(Mapping::getDstId).sorted().toArray());
 
     // **** MERGE ***
     Merger merger = new Merger(service);
-
-    /* For simplicity, we don't use Metadata and thus bypass some Merger methods
+    /* For simplicity, we don't use Datasource and thus bypass some Merger methods
      * (in production, we'd simply run as merger.merge())
      */
     //Load test models from files
@@ -264,24 +254,25 @@ public class ConsoleApplicationIT
       merger.merge("", m, target); //use empty "" description
     }
     merger.getMainModel().merge(target);
-
     //export the main model (for manual check up)
     //it's vital to save to and then read the model from file,
     //because doing so repairs inverse properties (e.g. entityReferenceOf)!
     merger.save();
     //load back the model from archive
     Model m = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
-
     //Check the all-data integrated model
     assertMerge(m);
 
-    //pid, reactome,humancyc,.. were there in the test models
+    //pid, reactome,humancyc,.. were there in the test
     assertEquals(4, m.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
-    Metadata md = new Metadata("test", Collections.singletonList("Reactome"), "Foo", "", "",
-      "", METADATA_TYPE.BIOPAX, "", "", null, "free");
-    service.metadata().save(md);
+    Datasource md = new Datasource("test", Collections.singletonList("Reactome"),
+            "Foo", "", "", "",
+            METADATA_TYPE.BIOPAX, "", "", null,
+            "", "free",
+            0, 0, 0);
+
     // normally, setProvenanceFor gets called during Premerge stage
     md.setProvenanceFor(m, service.settings().getXmlBase());
     // which EXPLICITLY removes all other Provenance values from dataSource properties;
@@ -295,19 +286,15 @@ public class ConsoleApplicationIT
       new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
 
     //index (it uses additional id-mapping service internally)
-    service.index();
+    service.setModel(m);
+    service.index().save(m);
 
     // Test FULL-TEXT SEARCH
     SearchResponse resp;
-
     // search with a secondary (RefSeq) accession number -
     // NP_619650 (primary AC = Q8TD86) occurs in the test UniProt data only, not in the model
-//Xrefs are not indexed anymore (only Entity and EntityReference type get indexed now)
-//		resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
-//		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok (such xrefs were removed from both warehouse and model)
     resp = (SearchResponse) service.search("NP_619650", 0, ProteinReference.class, null, null);
     assertTrue(resp.getSearchHit().isEmpty());
-
     //P27797 should be both in the warehouse and merged models (other IDs: NP_004334, 2CLR,..)
     resp = (SearchResponse) service.search("NP_004334", 0, RelationshipXref.class, null, null);
     assertTrue(resp.getSearchHit().isEmpty()); //no hits; the ID was used for mapping, indexing, and then xref deleted
@@ -319,12 +306,9 @@ public class ConsoleApplicationIT
     //also, it should find the PR by using its secondary ID (though, there's no such xref physically present)
     resp = (SearchResponse) service.search("NP_004334", 0, ProteinReference.class, null, null);
     assertFalse(resp.getSearchHit().isEmpty());
-
-    //also, it could previously find an Xref by some other ID that maps to its 'id' value; since 12/2015, Xrefs are not indexed anymore
+    //also, it used to find Xref by any ID that maps to its 'id' value, but not after 12/2015 (Xrefs are not indexed anymore!)
     resp = (SearchResponse) service.search("NP_004334", 0, UnificationXref.class, null, null);
     assertTrue(resp.getSearchHit().isEmpty()); //so - no result is normal here
-//		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797")); //was valid assertion until 12/2015
-
     // test search res. contains the list of data providers (standard names)
     ServiceResponse res = service.search("*", 0, PhysicalEntity.class, null, null);
     assertNotNull(res);
@@ -333,8 +317,7 @@ public class ConsoleApplicationIT
     assertFalse(((SearchResponse) res).getProviders().isEmpty());
     log.info("Providers found by second search: " + ((SearchResponse) res).getProviders().toString());
 
-
-    // Test FETCH (get an object or subnetwork by URI or ID service)
+    // Test FETCH (get an object or subnetwork by URI or ID service; uses the full-text id-mapping index too)
 
     // fetch as BIOPAX
     res = service.fetch(OutputFormat.BIOPAX, null, false, "http://identifiers.org/uniprot/P27797");
@@ -385,6 +368,8 @@ public class ConsoleApplicationIT
     assertEquals(1, ((TraverseResponse) res).getTraverseEntry().size());
     vals = ((TraverseResponse) res).getTraverseEntry().get(0).getValue();
     assertEquals(4, vals.size());
+
+    service.index().close();
   }
 
 
@@ -442,7 +427,7 @@ public class ConsoleApplicationIT
     // smr must not contain any member SMR anymore (changeed on 2015/11/26)
     // (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
     assertEquals(0, smr.getMemberEntityReference().size());
-    System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
+//    System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
     assertEquals(4, smr.getXref().size());//0 PX, 1 UX and 3 RX (ChEBI) are there!
     SmallMoleculeReference msmr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
     assertEquals("(+)-camphene", msmr.getDisplayName());
@@ -467,7 +452,7 @@ public class ConsoleApplicationIT
     assertEquals(1, bs.getXref().size());
 //		System.out.println("Organism: " + bs.getUri() + "; xrefs: " + bs.getXref());
     UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
-    System.out.println("Organism: " + bs.getUri() + "; its xrefOf: " + x.getXrefOf());
+//    System.out.println("Organism: " + bs.getUri() + "; its xrefOf: " + x.getXrefOf());
     assertEquals(1, x.getXrefOf().size());
     assertEquals(HsUri, x.getXrefOf().iterator().next().getUri());
     assertEquals(bs, x.getXrefOf().iterator().next());

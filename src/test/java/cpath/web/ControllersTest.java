@@ -1,7 +1,7 @@
 package cpath.web;
 
 import cpath.service.Settings;
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import org.biopax.paxtools.model.level3.Pathway;
@@ -27,12 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({WebApplication.class, Settings.class})
 @AutoConfigureRestDocs
 public class ControllersTest {
-
 	@Autowired
 	private MockMvc mvc;
 
 	@MockBean
-	private CPathService service;
+	private Service service;
 
 	@Autowired
   private Settings settings;

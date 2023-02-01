@@ -1,8 +1,8 @@
 package cpath.service;
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.api.RelTypeVocab;
-import cpath.service.jpa.Metadata;
+import cpath.service.metadata.Datasource;
 
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;
@@ -36,7 +36,7 @@ public final class Merger {
   private static final Logger log = LoggerFactory.getLogger(Merger.class);
 
 	private final String xmlBase;
-	private final CPathService service;
+	private final Service service;
 	private final Set<String> supportedTaxonomyIds;
   private final Model warehouseModel;
   private final Model mainModel;
@@ -47,16 +47,14 @@ public final class Merger {
 	 * 
 	 * @param service cpath2 service
 	 */
-	Merger(CPathService service)
+	Merger(Service service)
 	{
 		this.service = service;
 		this.xmlBase = service.settings().getXmlBase();
 		this.supportedTaxonomyIds = service.settings().getOrganismTaxonomyIds();
-		
 		this.warehouseModel = service.loadWarehouseModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
-		log.info("Successfully imported Warehouse BioPAX archive.");	
-		
+		log.info("Successfully imported Warehouse BioPAX archive.");
 		this.mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 		this.mainModel.setXmlBase(xmlBase);
 		log.info("Created a new empty main BioPAX model.");
@@ -74,32 +72,31 @@ public final class Merger {
 	public void merge() {
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
 
-		Collection<Metadata> providersMetadata = new ArrayList<>();
-		for(Metadata metadata : service.metadata().findAll()) {
-			providersMetadata.add(metadata);
-		}
+		//init the lucene index
+		service.initIndex(mainModel, service.settings().indexDir(), false);
 
-		for (Metadata metadata : providersMetadata) {
-			if(metadata.isNotPathwayData()) {
-				log.info("Skip Warehouse data: " + metadata);
+		for (Datasource datasource : service.metadata().getDatasources()) {
+			if(datasource.getType().isNotPathwayData()) {
+				log.info("Skip Warehouse data: " + datasource);
 				continue;
 			}
-			Model providerModel = merge(metadata);
-			save(providerModel, metadata);
+			Model providerModel = merge(datasource);
+			save(providerModel, datasource);
 
-			log.info("Replacing conflicting URIs in " + metadata.getIdentifier() + " before merging into Main...");
+			log.info("Replacing conflicting URIs in " + datasource.getIdentifier() + " before merging into Main...");
 			replaceConflictingUris(providerModel, mainModel);
 
-			log.info("Merging '" + metadata.getIdentifier() + "' model into the Main BioPAX model...");
+			log.info("Merging '" + datasource.getIdentifier() + "' model into the Main BioPAX model...");
 			simpleMerger.merge(mainModel, providerModel);
 		}
 
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 
-		log.info("Creating the main ('All') BioPAX archive...");
+		log.info("Saving the main BioPAX Model to file: " + service.settings().mainModelFile());
 		save();
 
-		log.info("Complete.");
+		service.setModel(mainModel);
+		log.info("All merged!");
 	}
 
 	//remove bad unif. and rel. xrefs
@@ -120,18 +117,18 @@ public final class Merger {
 		}
 	}
 
-	private Model merge(Metadata metadata) {
-		Model providerModel = service.loadBiopaxModelByDatasource(metadata);
+	private Model merge(Datasource datasource) {
+		Model providerModel = service.loadBiopaxModelByDatasource(datasource);
 		if(providerModel == null)
 		{
-			log.info("Merging " + metadata.getIdentifier());
+			log.info("Merging " + datasource.getIdentifier());
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 			providerModel.setXmlBase(xmlBase);
 
-			for (String f : metadata.getFiles()) {
+			for (String f : datasource.getFiles()) {
 				String fn = CPathUtils.normalizedFile(f);
 				if (Files.notExists(Paths.get(fn))) {
-					log.warn("Skipped " + metadata.getIdentifier() + " - no normalized data found.");
+					log.warn("Skipped " + datasource.getIdentifier() + " - no normalized data found.");
 					continue;
 				}
 				log.info("Processing: " + fn);
@@ -141,12 +138,13 @@ public final class Merger {
 					log.error("Skipped " + fn + " - " + "cannot read.");
 					continue;
 				}
+				//merge each input file model with Warehouse model (using id-mapping too) and into providerModel (one-datasource model)
 				merge(fn, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
 			}
 
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
 
-			log.info("Normalizing generics (" + metadata.getIdentifier() + ")...");
+			log.info("Normalizing generics (" + datasource.getIdentifier() + ")...");
 			ModelUtils.normalizeGenerics(providerModel);
 
 			//replace not normalized URIs with shorter ones to save storage and memory
@@ -164,14 +162,14 @@ public final class Merger {
 				}
 			}
 
-			log.info("Breaking pathway/pathwayComponent cycles (" + metadata.getIdentifier() + ")...");
+			log.info("Breaking pathway/pathwayComponent cycles (" + datasource.getIdentifier() + ")...");
 			for(Pathway pathway : providerModel.getObjects(Pathway.class)) {
 				breakPathwayComponentCycle(pathway);
 			}
 
-			log.info("Done merging " + metadata);
+			log.info("Done merging " + datasource);
 		} else {
-			log.info("Loaded BioPAX model from " + service.settings().biopaxFileNameFull(metadata.getIdentifier()));
+			log.info("Loaded BioPAX model from " + service.settings().biopaxFileNameFull(datasource.getIdentifier()));
 		}
 
 		return providerModel;
@@ -214,7 +212,7 @@ public final class Merger {
 		}
 	}
 
-	private void save(Model datasourceModel, Metadata datasource) {
+	private void save(Model datasourceModel, Datasource datasource) {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(datasourceModel, 
 				new GZIPOutputStream(new FileOutputStream(
@@ -240,7 +238,6 @@ public final class Merger {
 	 * @param target model to merge into
 	 */
 	protected void merge(final String description, final Model source, final Model target) {
-		
 		final String srcModelInfo = "source: " + description;
 
 		cleanupXrefs(source);
@@ -264,8 +261,7 @@ public final class Merger {
 			if (replacement != null) {
 				//save in the map to replace the source bpe later 
 				replacements.put(origEr, replacement);
-			} else {
-				//i.e., no matching ER found in the Warehouse (the ER is from unwanted organism or unknown/no id).
+			} else { // No matching ER found in the Warehouse (the ER is from unwanted organism or unknown id)
 				// Remove the PR/Dna*R/Rna*R if entityReferenceOf() is empty (member of a generic ER, or dangling)
 				if(origEr instanceof SequenceEntityReference && origEr.getEntityReferenceOf().isEmpty()) {
 					//remove unwanted dangling/member ER from the source model
@@ -412,9 +408,8 @@ public final class Merger {
 					|| currUri.startsWith("http://identifiers.org/")
 					|| currUri.startsWith("uniprot:")
 					|| currUri.startsWith("chebi:") ) ) {
-				// Generate a new URI (using MD5HEX sum);
-				CPathUtils.replaceUri(source, bpe,
-						xmlBase + bpe.getModelInterface() + "_" + UUID.randomUUID());
+				// Generate a new URI
+				CPathUtils.replaceUri(source, bpe, xmlBase + bpe.getModelInterface() + "_" + UUID.randomUUID());
 			}
 		}
 	}
@@ -462,9 +457,8 @@ public final class Merger {
 	private void copySomeOfPropertyValues(Map<EntityReference, EntityReference> replacements, Model model) {
 		// post-fix
 		for (Map.Entry<EntityReference,EntityReference> entry: replacements.entrySet()) {
-      final EntityReference old = entry.getKey();
+			final EntityReference old = entry.getKey();
 			final EntityReference repl = entry.getValue();
-
 			for (EntityFeature ef : new HashSet<>(old.getEntityFeature()))
 			{ // move entity features of the replaced ER to the new canonical one
 				// remove the ef from the old ER
@@ -495,16 +489,16 @@ public final class Merger {
 				}
 			}				
 
-			// Copy/Keep PublicationXrefs and RelationshipXrefs to the original PEs
-			// (otherwise we'd lost most of original xrefs...) TODO review; shall we copy only PXs?
-			for(Xref x : new HashSet<>(old.getXref())) {
-				if(x instanceof UnificationXref) //sub with RX
-					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model, false);
-
-				for(SimplePhysicalEntity owner : old.getEntityReferenceOf()) {
-					owner.addXref(x);
-				}
-			}
+			// Copy old/orig. ER's xrefs to the PEs (otherwise they might be lost forever after the ERs substitution)
+			//todo: shall we copy only PXs or nothing at all?..
+//			for(Xref x : new HashSet<>(old.getXref())) {
+//				if(x instanceof UnificationXref) {//sub with RX
+//					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model, false);
+//				}
+//				for(SimplePhysicalEntity owner : old.getEntityReferenceOf()) {
+//					owner.addXref(x);
+//				}
+//			}
 		}
 	}
 
@@ -629,39 +623,36 @@ public final class Merger {
 			}
 		}
 
-		// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
+		// map primary ACs to HGNC Symbols and generate RXs if not too many...
 		if (noneXrefDbStartsWith(bpe, "hgnc symbol"))
 			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
 	}
 
 	// For biopolymers, also map uniprot accessions to HGNC Symbols, and add the xrefs, if possible -
 	private void mayAddHgncXrefs(final Model m, final XReferrable bpe,
-								 final Collection<String> accessions, final int maxNumXrefsToAdd)
-	{
-		if(accessions == null || accessions.isEmpty())
+								 final Collection<String> accessions, final int maxNumXrefsToAdd) {
+		if(accessions == null || accessions.isEmpty()) {
 			return;
-
+		}
 		final Set<String> hgncSymbols = new HashSet<>();
 		for (String ac : accessions) {
 			ProteinReference canonicalPR =
 					(ProteinReference) warehouseModel.getByID("http://identifiers.org/uniprot/" + ac);
 			if (canonicalPR != null) {
-				//TODO: shall we keep just one-two symbols (which) instead of using 'maxNumXrefsToAdd' param?
 				for (Xref x : canonicalPR.getXref())
 					if (x.getDb().equalsIgnoreCase("hgnc symbol"))
 						hgncSymbols.add(x.getId());
 			}
 		}
 		// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
-		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd)
+		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd) {
 			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION, false);
+		}
 	}
 
-	private static boolean noneXrefDbStartsWith(XReferrable xr, String db)
-	{
+	private static boolean noneXrefDbStartsWith(XReferrable xr, String db) {
 		db = db.toLowerCase();
-		for(Xref x : xr.getXref())
-		{
+		for(Xref x : xr.getXref()) {
 			if (!(x instanceof PublicationXref) && x.getDb().toLowerCase().startsWith(db)) {
 				return false;
 			}

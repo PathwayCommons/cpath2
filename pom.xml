@@ -28,7 +28,7 @@
     <paxtools.version>5.3.0-SNAPSHOT</paxtools.version>
     <validator.version>5.1.0-SNAPSHOT</validator.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <lucene.version>7.5.0</lucene.version>
+    <lucene.version>9.4.2</lucene.version>
     <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvm.options>
     <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring.version}/spring-instrument-${spring.version}.jar</agent>
   </properties>
@@ -428,12 +428,6 @@
       <version>1.6</version>
     </dependency>
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>2.1.210</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-core</artifactId>
       <version>${lucene.version}</version>
@@ -445,12 +439,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-analyzers-common</artifactId>
+      <artifactId>lucene-queryparser</artifactId>
       <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-queryparser</artifactId>
+      <artifactId>lucene-analysis-common</artifactId>
       <version>${lucene.version}</version>
     </dependency>
     <dependency>
@@ -509,23 +503,13 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <scope>runtime</scope>
+<!--      <scope>runtime</scope>-->
     </dependency>
     <!--jackson-databind allows to use JAXB annotations for converting beans to JSON -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.transaction</groupId>
-          <artifactId>javax.transaction-api</artifactId>
-        </exclusion>
-      </exclusions>
+<!--      <scope>runtime</scope>-->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -570,6 +554,11 @@
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-ui</artifactId>
       <version>1.6.11</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.24</version>
     </dependency>
   </dependencies>
 

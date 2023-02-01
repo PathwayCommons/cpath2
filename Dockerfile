@@ -1,5 +1,6 @@
 # builds the image after maven build from local sources
-# todo: test (perhaps get the data from PC2 and the fat JAR/WAR from M2 repo instead of using local build)
+#TODO: try/test it
+#TODO: download the data from PC2 and the fat JAR from Maven repo instead of building locally
 FROM openjdk:17
 ARG WRK=target/work
 VOLUME /work

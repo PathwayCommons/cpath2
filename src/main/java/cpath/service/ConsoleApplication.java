@@ -1,16 +1,15 @@
 package cpath.service;
 
 import cpath.service.api.Analysis;
-import cpath.service.api.CPathService;
-import cpath.service.api.Searcher;
+import cpath.service.metadata.Index;
+import cpath.service.api.Service;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.service.jpa.Metadata;
-import cpath.service.jpa.Metadata.METADATA_TYPE;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Datasource.METADATA_TYPE;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -48,7 +47,7 @@ public class ConsoleApplication implements CommandLineRunner {
   private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx60g -jar paxtools.jar";
 
   @Autowired
-  private CPathService service;
+  private Service service;
 
   /**
    * Validator bean is available when "premerge" profile is activated;
@@ -65,10 +64,9 @@ public class ConsoleApplication implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
-    if (!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
-      LOG.error("Default Charset, " + Charset.defaultCharset() +
-        " (is NOT 'UTF-8'); problems with input data are possible...");
-
+    if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
+      LOG.error("Default Charset " + Charset.defaultCharset() + " is NOT 'UTF-8'");
+    }
     Options options = new Options();
     Option o = Option.builder("b").longOpt("build")
       .desc("PREMERGE: parse metadata.json, expand input archives, clean, convert, normalize the data, create the " +
@@ -95,6 +93,7 @@ public class ConsoleApplication implements CommandLineRunner {
       .desc("run as web (service) app").build();
     options.addOption(o);
 
+    // process command line args
     CommandLine cmd;
     try {
       cmd = new DefaultParser().parse(options, args);
@@ -103,8 +102,8 @@ public class ConsoleApplication implements CommandLineRunner {
       return;
     }
 
-    // process command line args and do smth.
     if (cmd.hasOption("build")) {
+      //Perform the data build from given stage (or from "premerge" when no value provided) to the end.
       Stage stage;
       try {
         stage = Stage.valueOf(cmd.getOptionValue("build").toUpperCase());
@@ -113,12 +112,11 @@ public class ConsoleApplication implements CommandLineRunner {
       }
       switch ((stage != null) ? stage : Stage.PREMERGE) {
         case PREMERGE:
-          premerge();
+          premerge(); //, and continue to "merge"
         case MERGE:
-          new Merger(service).merge();
-          index();
+          merge();
         case POSTMERGE:
-          postmerge();
+          postmerge(); //is the final stage
       }
     } else if (cmd.hasOption("export")) {
       String[] uris = new String[]{};
@@ -176,34 +174,33 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   /*
-   * Builds a new BioPAX full-text index,creates the black list or ubiquitous molecules,
-   * and calculates/updates the total no. of pathways, interactions, physical entities in the main db.
+   * Executes the premerge stage:
+   * organize, clean, convert, validate, normalize pathway/interaction data,
+   * and create BioPAX utility class objects warehouse and id-mapping.
    */
-  private void index() throws IOException {
-    LOG.info("index: indexing...");
-    service.index();
-
-    // Updates counts of pathways, etc. and saves in the Metadata table.
-    // This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
-    LOG.info("Updating pathway/interaction/participant counts per data source...");
-    List<Metadata> pathwayMetadata = new ArrayList<>();
-    for (Metadata md : service.metadata().findAll())
-      if (!md.isNotPathwayData())
-        pathwayMetadata.add(md);
-    // update counts for each non-warehouse metadata entry
-    for (Metadata md : pathwayMetadata) {
-      Model m = service.loadBiopaxModelByDatasource(md); //to count objects, by type
-      String name = md.standardName();
-      md.setNumPathways(m.getObjects(Pathway.class).size());
-      LOG.info(name + " - pathways: " + md.getNumPathways());
-      md.setNumInteractions(m.getObjects(Interaction.class).size());
-      LOG.info(name + " - interactions: " + md.getNumInteractions());
-      md.setNumPhysicalEntities(m.getObjects(PhysicalEntity.class).size() + m.getObjects(Gene.class).size());
-      LOG.info(name + " - participants: " + md.getNumPhysicalEntities());
+  private void premerge() {
+    LOG.info("premerge: initializing DAO, validator, etc...");
+    //check that organisms are specified; throw an exception otherwise
+    service.settings().getOrganismTaxonomyIds();
+    LOG.info("premerge: this instance is configured to integrate and query " +
+      " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
+    System.setProperty("net.sf.ehcache.disabled", "true");
+    PreMerger premerger = new PreMerger(service, validator);
+    premerger.premerge();
+    // create the Warehouse BioPAX model and id-mapping db table
+    if (!Files.exists(Paths.get(service.settings().warehouseModelFile()))) {
+      premerger.buildWarehouse();
     }
-    service.metadata().saveAll(pathwayMetadata);
+  }
 
-    LOG.info("Generating the blacklist.txt...");
+  private void merge() {
+    Merger biopaxMerger = new Merger(service);
+    biopaxMerger.merge();
+
+    LOG.info("Indexing BioPAX Model (this may take an hour or so)...");
+    service.index().save(service.getModel());
+
+    LOG.info("Generating blacklist.txt...");
     //Generates, if not exist, the blacklist.txt -
     //to exclude/keep ubiquitous small molecules (e.g. ATP)
     //from graph query and output format converter results.
@@ -213,52 +210,7 @@ public class ConsoleApplication implements CommandLineRunner {
     if (blacklist != null) {
       blacklist.write(service.settings().blacklistFile());
     }
-
-    LOG.info("index: all done.");
   }
-
-  /*
-   * Executes the premerge stage:
-   * organize, clean, convert, validate, normalize pathway/interaction data,
-   * and create BioPAX utility class objects warehouse and id-mapping.
-   */
-  private void premerge() {
-
-    fetchMetadata();
-
-    LOG.info("premerge: initializing DAO, validator, etc...");
-    //test that officially supported organisms are specified (throws a runtime exception otherwise)
-    service.settings().getOrganismTaxonomyIds();
-    LOG.info("premerge: this instance is configured to integrate and query " +
-      " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
-
-    System.setProperty("hibernate.hbm2ddl.auto", "update");
-    System.setProperty("net.sf.ehcache.disabled", "true");
-
-    PreMerger premerger = new PreMerger(service, validator);
-    premerger.premerge();
-
-    // create the Warehouse BioPAX model (in the downloads dir) and id-mapping db table
-    if (!Files.exists(Paths.get(service.settings().warehouseModelFile())))
-      premerger.buildWarehouse();
-
-    //back to read-only schema mode (useful when called from the web Main page)
-    System.setProperty("hibernate.hbm2ddl.auto", "validate");
-  }
-
-  /*
-   * Loads data providers' metadata.
-   */
-  private void fetchMetadata() {
-    System.setProperty("hibernate.hbm2ddl.auto", "update");
-    // grab the data
-    // load the test metadata and create warehouse
-    for (Metadata mdata : CPathUtils.readMetadata(service.settings().getMetadataLocation()))
-      service.metadata().save(mdata);
-    //back to read-only schema mode (useful when called from the web admin app)
-    System.setProperty("hibernate.hbm2ddl.auto", "validate");
-  }
-
 
   /**
    * Exports a cpath2 BioPAX sub-model or full model to the specified file.
@@ -284,24 +236,22 @@ public class ConsoleApplication implements CommandLineRunner {
     if (uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
 
       // initialize the search engine
-      Searcher searcher = new SearchEngine(model, service.settings().indexDir());
-
+      Index index = new IndexImpl(model, service.settings().indexDir(), false);
       Collection<String> selectedUris = new HashSet<>();
-
       if (types.length > 0) {
-        //collect biopax object URIs of the specified types and sub-types, and data sources if specified
+        //collect biopax object URIs of the specified types and subtypes, and data sources if specified
         //(child biopax elements will be auto-included during the export to OWL)
         for (String bpInterfaceName : types) {
-          selectedUris.addAll(findAllUris(searcher,
+          selectedUris.addAll(findAllUris(index,
             biopaxTypeFromSimpleName(bpInterfaceName), datasources, null));
         }
       } else {
         //collect all Entity URIs filtered by the not empty data sources list
         //(child Gene, PhysicalEntity, UtilityClass biopax elements will be auto-included
         // during the export to OWL; we do not want to export dangling Genes, PEs, etc., except for Complexes...)
-        selectedUris.addAll(findAllUris(searcher, Pathway.class, datasources, null));
-        selectedUris.addAll(findAllUris(searcher, Interaction.class, datasources, null));
-        selectedUris.addAll(findAllUris(searcher, Complex.class, datasources, null));
+        selectedUris.addAll(findAllUris(index, Pathway.class, datasources, null));
+        selectedUris.addAll(findAllUris(index, Interaction.class, datasources, null));
+        selectedUris.addAll(findAllUris(index, Complex.class, datasources, null));
       }
 
       uris = selectedUris.toArray(new String[]{});
@@ -316,7 +266,7 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   private Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type) {
-    // 'type' (a BioPAX L3 interface class name) is case insensitive
+    // 'type' (a BioPAX L3 interface class name) is case-insensitive
     for (Class<? extends BioPAXElement> c : SimpleEditorMap.L3
       .getKnownSubClassesOf(BioPAXElement.class)) {
       if (c.getSimpleName().equalsIgnoreCase(type)) {
@@ -328,12 +278,28 @@ public class ConsoleApplication implements CommandLineRunner {
   }
 
   private void postmerge() throws IOException {
-    LOG.info("postmerge(), started...");
+    LOG.info("postmerge: started");
+    Model model;
+    // Updates counts of pathways, etc. and saves in the Metadata table.
+    // This depends on the full-text index created already
+    LOG.info("updating pathway/interaction/participant counts per data source...");
+    // update counts for each non-warehouse metadata entry
+    for (Datasource ds : service.metadata().getDatasources()) {
+      ds.getFiles().clear(); //do not export to json
+      if(ds.getType().isNotPathwayData()) {
+        continue;
+      }
+      model = service.loadBiopaxModelByDatasource(ds);
+      ds.setNumPathways(model.getObjects(Pathway.class).size());
+      ds.setNumInteractions(model.getObjects(Interaction.class).size());
+      ds.setNumPhysicalEntities(model.getObjects(PhysicalEntity.class).size() + model.getObjects(Gene.class).size());
+    }
+    CPathUtils.saveMetadata(service.metadata(), service.settings().getMetadataLocation()); //update the json file
 
     //load the main model
     LOG.info("loading the Main BioPAX Model...");
-    Model model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
-    LOG.info("loaded.");
+    model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+    LOG.info("loaded");
 
     // create an imported data summary file.txt (issue#23)
     PrintWriter writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
@@ -344,24 +310,20 @@ public class ConsoleApplication implements CommandLineRunner {
       .asList("#CPATH2:", service.settings().getName(), "version", service.settings().getVersion(), date)));
     writer.println("#Columns:\t" + String.join("\t", Arrays.asList(
       "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS")));
-    Iterable<Metadata> allMetadata = service.metadata().findAll();
-    for (Metadata m : allMetadata) {
-      //we use StringUtils.join instead String.join as there are only only char sequence objects
+    for (Datasource d : service.metadata().getDatasources()) {
       writer.println(StringUtils.join(Arrays.asList(
-        CPathUtils.getMetadataUri(model, m), m.getDescription(), m.getType(), m.getUrlToHomepage(),
-        m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t")
-      );
+        CPathUtils.getMetadataUri(model, d), d.getDescription(), d.getType(), d.getHomepageUrl(),
+        d.getNumPathways(), d.getNumInteractions(), d.getNumPhysicalEntities()), "\t"));
     }
     writer.flush();
     writer.close();
-    LOG.info("generated datasources.txt");
+    LOG.info("done datasources.txt");
 
-    LOG.info("Creating the list of primary uniprot IDs...");
+    LOG.info("creating the list of primary uniprot ACs...");
     Set<String> acs = new TreeSet<>();
     //exclude publication xrefs
     Set<Xref> xrefs = new HashSet<>(model.getObjects(UnificationXref.class));
     xrefs.addAll(model.getObjects(RelationshipXref.class));
-    long left = xrefs.size();
     for (Xref x : xrefs) {
       String id = x.getId();
       if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "uniprot")
@@ -380,13 +342,10 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.close();
     LOG.info("generated uniprot.txt");
 
-    LOG.info("Init the full-text search engine...");
-    final Searcher searcher = new SearchEngine(model, service.settings().indexDir());
-
-//    createBySpeciesBiopax(model, searcher);
-
+    LOG.info("init the full-text search engine...");
+    final Index index = new IndexImpl(model, service.settings().indexDir(), false);
     // generate the "Detailed" pathway data file:
-    createDetailedBiopax(model, searcher, allMetadata);
+    createDetailedBiopax(model, index);
 
     // generate the export.sh script (to run Paxtools commands for exporting the BioPAX files to other formats)
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
@@ -419,7 +378,6 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println("gzip pathways.txt *.json");
     writer.println("echo \"All done.\"");
     writer.close();
-
     LOG.info("postmerge: done.");
   }
 
@@ -427,7 +385,6 @@ public class ConsoleApplication implements CommandLineRunner {
     //make output file name prefix that includes datasource and ends with '.':
     final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
     final String commaSepTaxonomyIds = String.join(",", service.settings().getOrganismTaxonomyIds());
-
     if (exportToGSEA) {
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
         prefix + "hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
@@ -436,74 +393,50 @@ public class ConsoleApplication implements CommandLineRunner {
       writer.println("wait"); //important
       writer.println("echo \"Done converting " + bpFilename + " to GSEA.\"");
     }
-
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
       prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
-
     //UniProt ID based extended SIF files can be huge, take too long to generate; skip for now.
-
     writer.println("wait"); //important
     writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");
   }
 
-  private Collection<String> findAllUris(Searcher searcher,
-                                         Class<? extends BioPAXElement> type, String[] ds, String[] org) {
+  private Collection<String> findAllUris(Index index, Class<? extends BioPAXElement> type, String[] ds, String[] org) {
     Collection<String> uris = new ArrayList<>();
-
-    SearchResponse resp = searcher.search("*", 0, type, ds, org);
+    SearchResponse resp = index.search("*", 0, type, ds, org);
     int page = 0;
     while (!resp.isEmpty()) {
       for (SearchHit h : resp.getSearchHit())
         uris.add(h.getUri());
       //next page
-      resp = searcher.search("*", ++page, type, ds, org);
+      resp = index.search("*", ++page, type, ds, org);
     }
-
     LOG.info("findAllUris(in " + type.getSimpleName() + ", ds: " + Arrays.toString(ds) + ", org: " + Arrays.toString(org) + ") "
       + "collected " + uris.size());
-
     return uris;
   }
 
-  private void createDetailedBiopax(final Model mainModel, Searcher searcher, Iterable<Metadata> allMetadata) {
+  private void createDetailedBiopax(final Model mainModel, Index index) {
     //collect BioPAX pathway data source names
     final Set<String> pathwayDataSources = new HashSet<>();
-    for (Metadata md : allMetadata) {
+    for (Datasource md : service.metadata().getDatasources()) {
       if (md.getType() == METADATA_TYPE.BIOPAX || md.getType() == METADATA_TYPE.SBML)
         pathwayDataSources.add(md.standardName());
     }
     final String archiveName = service.settings().biopaxFileNameFull("Detailed");
-    exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
+    exportBiopax(mainModel, index, archiveName, pathwayDataSources.toArray(new String[]{}), null);
   }
 
-  private void createBySpeciesBiopax(final Model mainModel, Searcher searcher) {
-    // export by organism (name)
-    Set<String> organisms = service.settings().getOrganismTaxonomyIds();
-    if (organisms.size() > 1) {
-      LOG.info("splitting the main BioPAX model by organism, into " + organisms.size() + " BioPAX files...");
-      for (String organism : organisms) {
-        String archiveName = service.settings().biopaxFileNameFull(organism);
-        exportBiopax(mainModel, searcher, archiveName, null, new String[]{organism});
-      }
-    } else {
-      LOG.info("won't generate any 'by organism' archives, for only one " +
-        ArrayUtils.toString(service.settings().getOrganisms()) + " is listed in the properties file");
-    }
-  }
-
-  private void exportBiopax(
-    final Model mainModel, final Searcher searcher,
-    final String biopaxArchive, final String[] datasources,
-    final String[] organisms) {
+  private void exportBiopax(Model mainModel, Index index, String biopaxArchive,
+                            String[] datasources, String[] organisms) {
     // check file exists
     if (!(new File(biopaxArchive)).exists()) {
       LOG.info("creating new " + biopaxArchive);
       try {
         //find all entities (all child elements will be then exported too)
         Collection<String> uris = new HashSet<>();
-        uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));
-        uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
-        uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
+        uris.addAll(findAllUris(index, Pathway.class, datasources, organisms));
+        uris.addAll(findAllUris(index, Interaction.class, datasources, organisms));
+        uris.addAll(findAllUris(index, Complex.class, datasources, organisms));
         // export objects found above to a new biopax archive
         if (!uris.isEmpty()) {
           OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));

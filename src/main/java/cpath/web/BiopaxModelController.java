@@ -139,7 +139,6 @@ public class BiopaxModelController extends BasicController {
         errorResponse(args, (ErrorResponse) sr, request, response);
       } else {
         track(request, args, null, null);
-        //TODO: log/track data providers that occur is the traverse query result
         TraverseResponse traverseResponse = (TraverseResponse) sr;
         traverseResponse.setVersion(service.settings().getVersion());
         return traverseResponse;

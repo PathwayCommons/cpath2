@@ -190,11 +190,11 @@ class ChebiOboConverter extends BaseConverter
 					smr.setStructure(structure);
 				} else if (sy.contains("FORMULA")) {
 					smr.setChemicalFormula(name);
-					smr.addName(name); //add - possible helps mapping by name
+					smr.addName(name); //helps to map/search by name
 				} else if (sy.contains("MASS")) {
 					smr.setMolecularWeight(Float.parseFloat(name));
 				} else if (sy.contains("CHARGE") || sy.contains("MONOISOTOPIC_MASS")) {
-					// TODO: save charge, monoisotopic mass?
+					//TODO: save as comments?..
 				} else {
 					smr.addName(name); //incl. for SMILES
 				}

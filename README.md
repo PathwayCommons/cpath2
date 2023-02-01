@@ -116,7 +116,7 @@ simply include to the cpath2.sh Java options like:
 ### Data
 
 One (a data manager) has to find, download, re-pack (zip) and put original 
-biological pathway data files to the data/ sub-directory.
+biological pathway data files to the data/ subdirectory.
 
 #### Warehouse data
 

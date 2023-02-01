@@ -1,13 +1,13 @@
 package cpath.service;
 
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.api.Cleaner;
 import cpath.service.api.Converter;
 import cpath.service.api.RelTypeVocab;
-import cpath.service.jpa.Mapping;
-import cpath.service.jpa.Metadata;
-import cpath.service.jpa.Metadata.METADATA_TYPE;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Mapping;
+import cpath.service.metadata.Datasource.METADATA_TYPE;
 
 import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -43,14 +43,14 @@ final class PreMerger {
   private final String xmlBase;
   private final Validator validator;
 
-  private CPathService service;
+  private Service service;
 
   /**
    * Constructor.
    * @param service   cpath2 service
    * @param validator BioPAX Validator
    */
-  PreMerger(CPathService service, Validator validator) {
+  PreMerger(Service service, Validator validator) {
     this.service = service;
     this.validator = validator;
     this.xmlBase = service.settings().getXmlBase();
@@ -62,33 +62,31 @@ final class PreMerger {
   void premerge() {
     // if this has been run before, there are some intermediate files left
     // in the corresponding output folder (can continue without processing the data from scratch)
-    // which will be kept unless overwrite=true option is used
-    // (one can also manually clean up a particular datasource sub-directory in /data to start over on re-run)
-    for (Metadata metadata : service.metadata().findAll())
+    // (one can also manually clean up a particular /data subdirectory to start over)
+    for (Datasource datasource : service.metadata().getDatasources())
     {
-      final String mid = metadata.getIdentifier();
+      final String mid = datasource.getIdentifier();
 
-      if(!Files.isDirectory(Paths.get(service.intermediateDataDir(metadata)))) {
-        service.clear(metadata); //empty the sub-directory and db entries
+      if(!Files.isDirectory(Paths.get(service.intermediateDataDir(datasource)))) {
+        service.clear(datasource); //empty the subdirectory and db entries
       } else {
-        metadata.getFiles().clear();  //clear the list of input file names
+        datasource.getFiles().clear();  //clear the list of input file names
       }
 
       //read and analyze the input data archive
       log.info("premerge(), processing: " + mid);
-      service.unzipData(metadata);
-      metadata = service.metadata().save(metadata); //persist data file names
-      log.debug("premerge(), " + mid + " contains " + metadata.getFiles().size() + " files");
+      service.unzipData(datasource);
+      log.debug("premerge(), " + mid + " contains " + datasource.getFiles().size() + " files");
 
-      if (metadata.getType() == METADATA_TYPE.MAPPING) {
-        log.info("premerge(), done (mapping type data)");
-        return;
+      if (datasource.getType() == METADATA_TYPE.MAPPING) {
+        log.info("premerge(), done for the mapping type data: " + mid);
+        continue;
       }
 
       try {
         // Try to instantiate the Cleaner now, and exit if it fails!
         Cleaner cleaner = null;
-        String cl = metadata.getCleanerClassname();
+        String cl = datasource.getCleanerClass();
         if (cl != null && cl.length() > 0) {
           cleaner = CPathUtils.newCleaner(cl);
           if (cleaner == null) {
@@ -101,7 +99,7 @@ final class PreMerger {
         }
 
         Converter converter = null;
-        cl = metadata.getConverterClassname();
+        cl = datasource.getConverterClass();
         if (cl != null && cl.length() > 0) {
           converter = CPathUtils.newConverter(cl);
           if (converter == null) {
@@ -115,10 +113,9 @@ final class PreMerger {
         }
 
         // Premerge for each pathway data: clean, convert, validate.
-        for (String datafile : new HashSet<>(metadata.getFiles())) {
-          pipeline(metadata, datafile, cleaner, converter);
+        for (String datafile : new HashSet<>(datasource.getFiles())) {
+          pipeline(datasource, datafile, cleaner, converter);
         }
-
       } catch (Exception e) {
         log.error("premerge(), failed for datasource: " + mid, e);
       }
@@ -132,19 +129,18 @@ final class PreMerger {
    * result model.
    */
   void buildWarehouse() {
-
     Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
     warehouse.setXmlBase(xmlBase);
 
     // process "warehouse" type metadata
-    for (Metadata metadata : service.metadata().findAll()) {
+    for (Datasource datasource : service.metadata().getDatasources()) {
       //skip for not "warehouse" type data
-      if (metadata.getType() != METADATA_TYPE.WAREHOUSE) {
+      if (datasource.getType() != METADATA_TYPE.WAREHOUSE) {
         continue;
       }
-      log.info("buildWarehouse(), adding data: " + metadata.getIdentifier());
+      log.info("buildWarehouse(), adding data: " + datasource.getIdentifier());
       InputStream inputStream;
-      for (String datafile : metadata.getFiles()) {
+      for (String datafile : datasource.getFiles()) {
         try {
           inputStream = new GZIPInputStream(new FileInputStream(CPathUtils.normalizedFile(datafile)));
           Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);
@@ -160,19 +156,18 @@ final class PreMerger {
 
     //clear all id-mapping tables
     log.warn("buildWarehouse(), removing all previous id-mapping db entries...");
-    service.mapping().deleteAll();
 
+    service.initIndex(null, service.settings().indexDir(), false);
     // Using the just built Warehouse BioPAX model, generate the id-mapping tables:
     buildIdMappingFromWarehouse(warehouse);
-
     // Process all MAPPING data - save in the id-mapping repository
-    for (Metadata metadata : service.metadata().findAll()) {
+    for (Datasource datasource : service.metadata().getDatasources()) {
       //skip not "mapping" data
-      if (metadata.getType() != METADATA_TYPE.MAPPING) {
+      if (datasource.getType() != METADATA_TYPE.MAPPING) {
         continue;
       }
-      log.info("buildWarehouse(), adding id-mapping: " + metadata.getIdentifier());
-      for (String content : metadata.getFiles()) {
+      log.info("buildWarehouse(), adding id-mapping: " + datasource.getIdentifier());
+      for (String content : datasource.getFiles()) {
         Set<Mapping> mappings;
         try {
           mappings = loadSimpleMapping(content);
@@ -180,10 +175,13 @@ final class PreMerger {
           log.error("buildWarehouse(), failed to get id-mapping from: " + content, e);
           continue;
         }
-        if(mappings != null) //i.e., when no exception was thrown above
-          service.mapping().saveAll(mappings);
+        if(mappings != null) {
+          mappings.stream().forEach(m -> service.mapping().save(m));
+          service.mapping().commit();
+        }
       }
     }
+    service.mapping().refresh();
 
     //remove dangling xrefs (PDB,RefSeq,..) - left after they've been used for creating id-mappings, then unlinked
     ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
@@ -232,22 +230,20 @@ final class PreMerger {
       mappings.add(new Mapping(from, srcId, to, tgtId));
     }
     scanner.close();
-
     return mappings;
   }
 
   /*
    * Extracts id-mapping information (name/id -> primary id)
-   * from the Warehouse entity references's xrefs to the mapping tables.
+   * from the Warehouse entity references' xrefs to the mapping tables.
    */
   private void buildIdMappingFromWarehouse(Model warehouse) {
     log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
       "tables by analyzing the warehouse data...");
 
-    //Generates Mapping tables (objects) using ERs:
-    //a. ChEBI secondary IDs, PUBCHEM Compound, InChIKey, chem. name - to primary CHEBI AC;
-    //b. UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
-    final Set<Mapping> mappings = new HashSet<>();
+    //Generates Mapping tables:
+    //a) ChEBI secondary IDs, PUBCHEM Compound, InChIKey, chem. name - to primary CHEBI AC;
+    //b) UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
 
     // for each ER, using its xrefs, map other identifiers to the primary accession
     for(EntityReference er : warehouse.getObjects(EntityReference.class))
@@ -257,21 +253,21 @@ final class PreMerger {
         destDb = "UNIPROT";
       else if(er instanceof SmallMoleculeReference)
         destDb = "CHEBI";
-      else //there're only PR or SMR types of ER in the warehouse model
+      else //there are only PR or SMR types of ER in the warehouse model
         throw new AssertionError("Unsupported warehouse ER type: " + er.getModelInterface().getSimpleName());
 
       //extract the primary id from the standard (identifiers.org) URI
       final String ac = CPathUtils.idFromNormalizedUri(er.getUri());
 
       // There are lots of unification and different type relationship xrefs
-      // generated by the the uniprot and  chebi Converters;
+      // generated by the uniprot and  chebi Converters;
       // we use some of these xrefs to populate our id-mapping repository:
       for(Xref x : new HashSet<>(er.getXref())) {
         if(!(x instanceof PublicationXref)) {
           final String src = x.getDb().toUpperCase();
           if(x instanceof UnificationXref) {
             //map to itself; each warehouse ER has only one UX, the primary AC
-            mappings.add(new Mapping(src, x.getId(), destDb, ac));
+            service.mapping().save(new Mapping(src, x.getId(), destDb, ac));
           }
           else if(x instanceof RelationshipXref) {
             // each warehouse RX has relationshipType property defined,
@@ -281,7 +277,7 @@ final class PreMerger {
               || rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
               //other RX types ain't a good idea for id-mapping (has_part,has_role,is_conjugate_*)
             ) {
-              mappings.add(new Mapping(src, x.getId(), destDb, ac));
+              service.mapping().save(new Mapping(src, x.getId(), destDb, ac));
             }
             // remove the rel. xref unless it's the secondary/parent ChEBI ID, 'HGNC Symbol'
             // (id-mapping and search/graph queries do not need these xrefs anymore)
@@ -292,12 +288,8 @@ final class PreMerger {
           }
         }
       }
+      service.mapping().commit();
     }
-
-    //save/update to the id-mapping database
-    log.info("buildIdMappingFromWarehouse(), saving all...");
-    service.mapping().saveAll(mappings);
-
     log.info("buildIdMappingFromWarehouse(), done.");
   }
 
@@ -305,17 +297,17 @@ final class PreMerger {
   /*
    * Given Content undergoes clean/convert/validate/normalize data pipeline.
    *
-   * @param metadata about the data provider
+   * @param datasource about the data provider
    * @param content provider's pathway data (file) to be processed and modified
    * @param cleaner data specific cleaner class (to apply before the validation/normalization)
    * @param converter data specific to BioPAX L3 converter class
    * @throws IOException
    */
-  private void pipeline(final Metadata metadata, final String inputDataFile,
+  private void pipeline(final Datasource datasource, final String inputDataFile,
                         Cleaner cleaner, Converter converter) throws IOException
   {
     Path originalDataPath = Paths.get(inputDataFile);
-    if (metadata.getType() == METADATA_TYPE.MAPPING) {
+    if (datasource.getType() == METADATA_TYPE.MAPPING) {
       log.info("pipeline(), skip for id-mapping data: " + originalDataPath);
       return;
     } else {
@@ -380,17 +372,17 @@ final class PreMerger {
     // Validate & normalize the BioPAX model:
     // synonyms in xref.db property values may be replaced
     // with the primary db names (based on Miriam db); some URIs get normalized
-    checkAndNormalize(metadata, inputFile);
+    checkAndNormalize(datasource, inputFile);
   }
 
 
   /*
    * Validates, fixes, and normalizes given pathway data.
    *
-   * @param metadata data provider's metadata
+   * @param datasource data provider's datasource
    * @param file one of data files from the provider
    */
-  private void checkAndNormalize(Metadata metadata, File file) throws IOException
+  private void checkAndNormalize(Datasource datasource, File file) throws IOException
   {
     // init Normalizer
     Normalizer normalizer = new Normalizer();
@@ -403,8 +395,8 @@ final class PreMerger {
 
     Model model;
     //validate or just normalize
-    if(metadata.isNotPathwayData()) { //when "warehouse" or "mapping" data type
-      if(metadata.getType() == METADATA_TYPE.MAPPING) {
+    if(datasource.getType().isNotPathwayData()) { //when "warehouse" or "mapping" data type
+      if(datasource.getType() == METADATA_TYPE.MAPPING) {
         throw new IllegalArgumentException("Unsupported data type: MAPPING");
       }
       //just load the model and skip validation
@@ -427,7 +419,7 @@ final class PreMerger {
         // get the updated model
         model = (Model) validation.getModel();
         // update dataSource property (force new Provenance) for all entities
-        metadata.setProvenanceFor(model, xmlBase);
+        datasource.setProvenanceFor(model, xmlBase);
 
         service.saveValidationReport(validation, CPathUtils.validationFile(filename));
 

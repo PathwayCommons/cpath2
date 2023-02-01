@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.api.Status.*;
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.ErrorResponse;
 import cpath.service.api.OutputFormat;
 import cpath.web.args.ServiceQuery;
@@ -42,10 +42,10 @@ public abstract class BasicController
 {
   private static final Logger log = LoggerFactory.getLogger(BasicController.class);
 
-  protected CPathService service;
+  protected Service service;
 
   @Autowired
-  public void setService(CPathService service) {
+  public void setService(Service service) {
     this.service = service;
   }
 
@@ -58,12 +58,12 @@ public abstract class BasicController
                                      HttpServletRequest request,
                                      HttpServletResponse response)
   {
-    //TODO: eventually switch to using @RestControllerAdvice and @ExceptionHandler
+    //TODO: switch to using @RestControllerAdvice and @ExceptionHandler
     try {
       //log/track using a shorter message
       track(request, args, null, error);
       //return a long detailed message
-      response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
+      response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error);
     } catch (IOException e) {
       log.error("FAILED sending an error response; " + e);
     }
@@ -73,7 +73,7 @@ public abstract class BasicController
   /*
    * Builds an error message from
    * the web parameters binding result
-   * if there're errors.
+   * if there are errors.
    */
   final String errorFromBindingResult(BindingResult bindingResult)
   {

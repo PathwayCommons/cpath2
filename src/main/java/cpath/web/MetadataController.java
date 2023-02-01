@@ -8,7 +8,7 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import cpath.service.CPathUtils;
-import cpath.service.jpa.Metadata;
+import cpath.service.metadata.Datasource;
 import cpath.web.args.binding.MetadataTypeEditor;
 
 import org.slf4j.Logger;
@@ -28,13 +28,13 @@ public class MetadataController extends BasicController {
 
   @InitBinder
   public void initBinder(WebDataBinder binder) {
-    binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
+    binder.registerCustomEditor(Datasource.METADATA_TYPE.class, new MetadataTypeEditor());
   }
 
   @RequestMapping(value = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
   public byte[] queryForLogo(@PathVariable String identifier)
     throws IOException {
-    Metadata ds = service.metadata().findByIdentifier(identifier);
+    Datasource ds = service.metadata().findByIdentifier(identifier);
     byte[] bytes = null;
 
     if (ds != null) {
@@ -69,16 +69,16 @@ public class MetadataController extends BasicController {
 
   // to return a xml or json data http response
   @RequestMapping(value = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
-  public List<Metadata> queryForDatasources() {
+  public List<Datasource> queryForDatasources() {
     log.debug("Getting pathway datasources info.");
     //pathway/interaction data sources
-    List<Metadata> ds = new ArrayList<>();
+    List<Datasource> ds = new ArrayList<>();
     //warehouse data sources
-    List<Metadata> wh = new ArrayList<>();
+    List<Datasource> wh = new ArrayList<>();
 
-    for (Metadata m : service.metadata().findAll()) {
+    for (Datasource m : service.metadata().getDatasources()) {
       //set dynamic extra fields
-      if (m.isNotPathwayData()) {
+      if (m.getType().isNotPathwayData()) {
         wh.add(m);
       } else {
         ds.add(m);
@@ -92,8 +92,8 @@ public class MetadataController extends BasicController {
   }
 
   @RequestMapping(value = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
-  public Metadata datasource(@PathVariable String identifier) {
-    Metadata m = service.metadata().findByIdentifier(identifier);
+  public Datasource datasource(@PathVariable String identifier) {
+    Datasource m = service.metadata().findByIdentifier(identifier);
     if (m == null)
       return null;
     return m;

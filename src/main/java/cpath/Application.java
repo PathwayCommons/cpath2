@@ -1,6 +1,6 @@
 package cpath;
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,8 @@ public class Application {
       LOG.info("Starting the web application...");
       application.setAdditionalProfiles("web");
       ConfigurableApplicationContext applicationContext = application.run(args);
-      CPathService service = applicationContext.getBean(CPathService.class);
-      service.init();
+      Service service = applicationContext.getBean(Service.class);
+      service.init(); //init the service, read-only index, and model, after the web app/services started!
     } else {
       application.setWebApplicationType(WebApplicationType.NONE);
       if (ArrayUtils.contains(args, "-b") || ArrayUtils.contains(args, "--build")) {
@@ -32,5 +32,4 @@ public class Application {
       applicationContext.close();
     }
   }
-
 }
