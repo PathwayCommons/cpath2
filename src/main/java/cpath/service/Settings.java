@@ -36,11 +36,6 @@ public class Settings
   public static final String DOWNLOADS_SUBDIR = "downloads";
 
   /**
-   * The cache subdirectory (under cpath2 home dir.)
-   */
-  public static final String CACHE_SUBDIR = "cache";
-
-  /**
    * The index subdirectory (under cpath2 home dir.)
    */
   public static final String INDEX_SUBDIR = "index";
@@ -222,7 +217,7 @@ public class Settings
    * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
    */
   public Map<String,String> getOrganismsAsTaxonomyToNameMap() {
-    Map<String,String> m = new HashMap<String,String>();
+    Map<String,String> m = new HashMap<>();
     final Pattern taxIdPattern = Pattern.compile("([a-zA-Z0-9\\. ]+)\\s*\\(\\s*(\\d+)\\s*\\)");
     for(String org : getOrganisms()) {
       Matcher matcher = taxIdPattern.matcher(org);
@@ -314,16 +309,6 @@ public class Settings
    */
   public String downloadsDir() {
     return subDir(DOWNLOADS_SUBDIR);
-  }
-
-
-  /**
-   * Gets the full path to query cache directory.
-   * @deprecated
-   * @return
-   */
-  public String cacheDir() {
-    return subDir(CACHE_SUBDIR);
   }
 
 

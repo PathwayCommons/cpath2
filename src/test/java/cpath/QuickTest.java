@@ -22,9 +22,9 @@ public class QuickTest {
         Model model = reader.convertFromOWL((new DefaultResourceLoader())
                 .getResource("classpath:test_merge_equiv_pe.owl").getInputStream());
 
-        for(Protein p : model.getObjects(Protein.class)) {
-            System.out.println(p.getUri() + ", equivalenceCode=" + p.equivalenceCode());
-        }
+//        for(Protein p : model.getObjects(Protein.class)) {
+//            System.out.println(p.getUri() + ", equivalenceCode=" + p.equivalenceCode());
+//        }
 
         EquivalenceGrouper<PhysicalEntity> groups = new EquivalenceGrouper(model.getObjects(PhysicalEntity.class));
         Set<? extends List> buckets = groups.getBuckets();

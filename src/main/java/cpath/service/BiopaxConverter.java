@@ -208,8 +208,9 @@ public class BiopaxConverter {
   private void convertToSIF(Model m, OutputStream out,
                             boolean extended, Map<String, String> options) {
     String db;
-    if ((db = options.get("db")) == null)
+    if ((db = options.get("db")) == null) {
       db = "hgnc symbol"; //default
+    }
 
     ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
     idFetcher.chemDbStartsWithOrEquals("chebi");
@@ -258,7 +259,7 @@ public class BiopaxConverter {
     Set<String> names = null;
 
     if (m != null) {
-      Set<Provenance> provs = m.getObjects(Provenance.class);
+      Collection<Provenance> provs = m.getObjects(Provenance.class);
       if (provs != null && !provs.isEmpty()) {
         names = new TreeSet<>();
         for (Provenance prov : provs) {

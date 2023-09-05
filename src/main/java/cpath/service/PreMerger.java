@@ -10,11 +10,14 @@ import cpath.service.metadata.Mapping;
 import cpath.service.metadata.Datasource.METADATA_TYPE;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.normalizer.Namespace;
 import org.biopax.paxtools.normalizer.Normalizer;
+import org.biopax.paxtools.normalizer.Resolver;
 import org.biopax.validator.BiopaxIdentifier;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
@@ -34,7 +37,7 @@ import java.io.*;
 
 
 /**
- * Class responsible for premerging pathway and warehouse data.
+ * Class responsible for pre-merging pathway and warehouse data.
  */
 final class PreMerger {
 
@@ -184,7 +187,7 @@ final class PreMerger {
     service.mapping().refresh();
 
     //remove dangling xrefs (PDB,RefSeq,..) - left after they've been used for creating id-mappings, then unlinked
-    ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
+    Set<BioPAXElement> removed = ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
 
     // save to compressed file
     String whFile = service.settings().warehouseModelFile();
@@ -212,8 +215,8 @@ final class PreMerger {
    * This is a package-private method, mainly for jUnit testing
    * (not API).
    */
-  private Set<Mapping> loadSimpleMapping(String mappingFile) throws IOException
-  {
+  private Set<Mapping> loadSimpleMapping(String mappingFile) throws IOException {
+    log.info("loadSimpleMapping, loading: " + mappingFile);
     Set<Mapping> mappings = new HashSet<>();
     Scanner scanner = new Scanner(new GZIPInputStream(Files.newInputStream(Paths.get(mappingFile))),
       StandardCharsets.UTF_8.name());
@@ -222,30 +225,67 @@ final class PreMerger {
     assert head.length == 2 : "bad header";
     String from = head[0].trim();
     String to = head[1].trim();
+
+    //normalize from/to collection name as bioregistry.io prefix, e.g. 'uniprot', 'pubchem.compound'
+    Namespace fns = Resolver.getNamespace(from, true);
+    if(fns != null) {
+      from = fns.getPrefix();
+    }
+    Namespace tns = Resolver.getNamespace(to, true);
+    if(tns != null) {
+      to = tns.getPrefix();
+    }
+
     while (scanner.hasNextLine()) {
       line = scanner.nextLine();
       String[] pair = line.split("\t");
-      String srcId = pair[0].trim();
-      String tgtId = pair[1].trim();
-      mappings.add(new Mapping(from, srcId, to, tgtId));
+
+      //if possible, validate IDs and add banana+peel prefixes
+      String src = pair[0].trim();
+      src = bananaPeelId(fns, src); //null when invalid id
+      String tgt = pair[1].trim();
+      tgt = bananaPeelId(tns, tgt);
+
+      if(src != null && tgt != null) {
+        mappings.add(new Mapping(from, src, to, tgt));
+      }
     }
+
     scanner.close();
     return mappings;
+  }
+
+  private String bananaPeelId(Namespace ns, String id) {
+    if(ns == null) {
+      return id;
+    }
+
+    if(!Resolver.checkRegExp(id, ns.getPrefix())) {
+      return null;
+    }
+
+    String peel = ns.getBanana_peel(); //empty means no banana
+    if(!StringUtils.isBlank(peel)) {
+      return ns.getBanana() + peel + id;
+    }
+
+    return id;
   }
 
   /*
    * Extracts id-mapping information (name/id -> primary id)
    * from the Warehouse entity references' xrefs to the mapping tables.
+   *
+   * Currently, we use PR and SMR object types only.
    */
-  private void buildIdMappingFromWarehouse(Model warehouse) {
-    log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
-      "tables by analyzing the warehouse data...");
+  private void buildIdMappingFromWarehouse(Model warehouse) throws AssertionError {
+    log.info("buildIdMappingFromWarehouse(), updating id-mapping tables by analyzing the warehouse data...");
 
     //Generates Mapping tables:
     //a) ChEBI secondary IDs, PUBCHEM Compound, InChIKey, chem. name - to primary CHEBI AC;
-    //b) UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
+    //b) UniProt secondary IDs, RefSeq, NCBI Gene (number), etc. - to primary UniProt AC.
 
-    // for each ER, using its xrefs, map other identifiers to the primary accession
+    // for each ER, using its xrefs, map other IDs to the primary AC
     for(EntityReference er : warehouse.getObjects(EntityReference.class))
     {
       String destDb;
@@ -254,20 +294,22 @@ final class PreMerger {
       else if(er instanceof SmallMoleculeReference)
         destDb = "CHEBI";
       else //there are only PR or SMR types of ER in the warehouse model
-        throw new AssertionError("Unsupported warehouse ER type: " + er.getModelInterface().getSimpleName());
+        throw new AssertionError("Unsupported warehouse ER type: " +
+            er.getModelInterface().getSimpleName());
 
-      //extract the primary id from the standard (identifiers.org) URI
-      final String ac = CPathUtils.idFromNormalizedUri(er.getUri());
+      //extract the primary id from the normalized URI (no db/banana/prefix)
+      String ac = CPathUtils.idFromNormalizedUri(er.getUri());
 
       // There are lots of unification and different type relationship xrefs
-      // generated by the uniprot and  chebi Converters;
-      // we use some of these xrefs to populate our id-mapping repository:
+      // generated by the uniprot and chebi Converters;
+      // we use some of these (already normalized) xrefs to populate our id-mapping repository:
       for(Xref x : new HashSet<>(er.getXref())) {
         if(!(x instanceof PublicationXref)) {
-          final String src = x.getDb().toUpperCase();
+          final String srcDb = x.getDb();
           if(x instanceof UnificationXref) {
             //map to itself; each warehouse ER has only one UX, the primary AC
-            service.mapping().save(new Mapping(src, x.getId(), destDb, ac));
+            //new Mapping args (src and dest db and id) are
+            service.mapping().save(new Mapping(srcDb, x.getId(), destDb, ac));
           }
           else if(x instanceof RelationshipXref) {
             // each warehouse RX has relationshipType property defined,
@@ -277,12 +319,14 @@ final class PreMerger {
               || rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
               //other RX types ain't a good idea for id-mapping (has_part,has_role,is_conjugate_*)
             ) {
-              service.mapping().save(new Mapping(src, x.getId(), destDb, ac));
+              service.mapping().save(new Mapping(srcDb, x.getId(), destDb, ac));
             }
-            // remove the rel. xref unless it's the secondary/parent ChEBI ID, 'HGNC Symbol'
+            // remove the rel. xref unless secondary/parent ChEBI ID, HGNC Symbol, NCBI Gene ID
             // (id-mapping and search/graph queries do not need these xrefs anymore)
-            if(!src.equalsIgnoreCase("HGNC Symbol") && !src.startsWith("NCBI Gene")
-              && !src.equalsIgnoreCase("CHEBI")) {
+            if( !srcDb.equalsIgnoreCase("hgnc.symbol")
+                && !StringUtils.equalsIgnoreCase(srcDb,"ncbigene")
+                && !srcDb.equalsIgnoreCase("chebi")
+            ) {
               er.removeXref(x);
             }
           }
@@ -310,10 +354,9 @@ final class PreMerger {
     if (datasource.getType() == METADATA_TYPE.MAPPING) {
       log.info("pipeline(), skip for id-mapping data: " + originalDataPath);
       return;
-    } else {
-      log.info("pipeline(), process " + originalDataPath);
     }
 
+    log.info("pipeline(), process " + originalDataPath);
     File inputFile = originalDataPath.toFile(); // will be a different file at different steps
     final File cleaned = Paths.get(CPathUtils.cleanedFile(inputDataFile)).toFile();
     final File converted = Paths.get(CPathUtils.convertedFile(inputDataFile)).toFile();
@@ -427,7 +470,7 @@ final class PreMerger {
         int noErrors = validation.countErrors(null, null, null, null,
           true, true);
         log.info("pipeline(), summary for " + filename + ". Critical errors found:" + noErrors + ". "
-          + validation.getComment().toString() + "; " + validation.toString());
+          + validation.getComment().toString() + "; " + validation);
 
       } catch (Exception e) {
         log.error("checkAndNormalize(), failed " + filename + "; " + e);
@@ -435,9 +478,9 @@ final class PreMerger {
       }
     }
 
-    //Normalize URIs, etc.
+    //Normalize URIs, Xrefs, etc.
     log.info("checkAndNormalize, normalizing "	+ filename);
-    normalizer.normalize(model);
+    normalizer.normalize(model, true);
 
     // save
     try {

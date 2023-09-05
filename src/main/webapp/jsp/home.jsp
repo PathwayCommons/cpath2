@@ -295,8 +295,11 @@
     <h4>Parameters:</h4>
     <ul>
         <li><em>path=</em> [Required] a BioPAX property path in the form of
-            type0/property1[:type1]/property2[:type2]; see <a href="#biopax_properties">properties</a>,
-            <a href="#biopax_inverse_properties">inverse properties</a>, <a href="https://www.biopax.org/paxtools">Paxtools</a>,
+            type0/property1[:type1]/property2[:type2]; see BioPAX
+            <a href="#biopax_types">types</a>,
+            <a href="#biopax_properties">properties</a>,
+            <a href="#biopax_inverse_properties">inverse properties</a>,
+            <a href="https://www.biopax.org/paxtools">Paxtools</a>,
             <a href="https://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
                 org.biopax.paxtools.controller.PathAccessor</a>.
         </li>
@@ -304,7 +307,7 @@
             <a href="#get">'GET' command above</a>). Multiple URIs are
             allowed (uri=...&amp;uri=...&amp;uri=...). Standard gene/chemical IDs can now be used along with absolute
             URIs,
-            which makes such request equivalent to two queries combined: 1) <i>search</i> for the specified biopax type
+            which makes such request equivalent to two queries combined: 1) <i>search</i> for the specified BioPAX type
             objects
             by IDs in the 'xrefid' index field; 2) <i>traverse</i> - using URIs of objects found in the first step and
             the path.
@@ -407,7 +410,7 @@
         <div class="parameters col-sm-6" id="biopax_types">
             <h3>BioPAX class ('type'):</h3>
             <p><a href="#" class="hider" hide-id="types">Click here</a> to show/hide the list
-                (see also: <a href="https://www.biopax.org/webprotege/">BioPAX Classes</a>).
+                (see also: <a href="https://www.biopax.org/owldoc/Level3/">BioPAX Classes</a>).
             </p>
             <!-- items are to be added here by a javascript -->
             <ul class="dropdown hidden" id="types"></ul>

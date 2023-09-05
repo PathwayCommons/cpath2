@@ -9,28 +9,30 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.3</version>
+    <version>2.7.15</version>
+    <!-- spring-framework.version=5.3.29 property is already there defined -->
   </parent>
 
   <name>Pathway Commons builder and server</name>
   <groupId>pathwaycommons</groupId>
   <artifactId>cpath2</artifactId>
-  <version>13.0.0-SNAPSHOT</version>
-  <description>Biological pathways/interactions data integration and services</description>
+  <!-- version format: "YY[.mm[.dd]]" (it is not a library to be released into a public m2 repo) -->
+  <version>23.09</version>
+  <description>Bio pathways/interactions integration and service (using BioPAX and Paxtools)</description>
   <url>https://pathwaycommons.github.io/cpath2</url>
   <inceptionYear>2009</inceptionYear>
 
   <properties>
-    <spring.version>5.3.22</spring.version>
     <start-class>cpath.Application</start-class>
     <license.licenseName>MIT</license.licenseName>
     <github.global.server>github</github.global.server>
-    <paxtools.version>5.3.0-SNAPSHOT</paxtools.version>
-    <validator.version>5.1.0-SNAPSHOT</validator.version>
+    <paxtools.version>6.0.0-SNAPSHOT</paxtools.version>
+    <validator.version>6.0.0-SNAPSHOT</validator.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <lucene.version>9.4.2</lucene.version>
+    <lucene.version>9.7.0</lucene.version>
     <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvm.options>
-    <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring.version}/spring-instrument-${spring.version}.jar</agent>
+<!--    <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring-framework.version}/spring-instrument-${spring-framework.version}.jar</agent>-->
+    <agent>target/spring-instrument.jar</agent><!-- this copy is created by maven-dependency-plugin -->
   </properties>
 
   <issueManagement>
@@ -45,7 +47,7 @@
 
   <organization>
     <name>Pathway Commons</name>
-    <url>http://www.pathwaycommons.org</url>
+    <url>https://www.pathwaycommons.org</url>
   </organization>
 
   <scm>
@@ -158,8 +160,9 @@
     <finalName>cpath2</finalName>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.11.0</version>
         <configuration>
           <release>17</release>
         </configuration>
@@ -172,10 +175,8 @@
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
           <useSystemClassLoader>false</useSystemClassLoader>
+          <runOrder>alphabetical</runOrder>
         </configuration>
       </plugin>
       <plugin>
@@ -186,54 +187,45 @@
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
-          <runOrder>alphabetical</runOrder>
-          <includes>
-            <include>**/*IT.java</include>
-          </includes>
           <useSystemClassLoader>false</useSystemClassLoader>
+          <runOrder>alphabetical</runOrder>
         </configuration>
       </plugin>
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>1.4.4</version>
+        <version>1.4.13</version>
         <configuration>
           <repository>pathwaycommons/cpath2</repository>
           <buildArgs>
-            <JAR_FILE>target/${project.build.finalName}.war</JAR_FILE>
+            <APP_JAR>target/${project.build.finalName}.war</APP_JAR>
           </buildArgs>
         </configuration>
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<id>push-image</id>-->
-            <!--<phase>deploy</phase>-->
-            <!--<goals>-->
-              <!--<goal>build</goal>-->
-              <!--<goal>tag</goal>-->
-              <!--<goal>push</goal>-->
-            <!--</goals>-->
-            <!--<configuration>-->
-              <!--<tag>${project.version}</tag>-->
-            <!--</configuration>-->
-          <!--</execution>-->
-        <!--</executions>-->
+        <executions>
+          <execution>
+            <id>docker-image</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>build</goal>
+              <goal>tag</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <tag>${project.version}</tag>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <mainClass>${start-class}</mainClass>
           <jvmArguments>${jvm.options}</jvmArguments>
           <agents>
             <agent>${agent}</agent>
           </agents>
+          <arguments>-s</arguments>
         </configuration>
       </plugin>
       <plugin>
@@ -245,28 +237,27 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.6.0</version>
         <executions>
           <execution>
-            <id>copy</id>
-            <phase>package</phase>
+            <id>copy-spring-instrument-jar</id>
             <goals>
               <goal>copy</goal>
             </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.springframework</groupId>
+                  <artifactId>spring-instrument</artifactId>
+                  <type>jar</type>
+                  <destFileName>spring-instrument.jar</destFileName>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <artifactItems>
-            <artifactItem>
-              <groupId>org.springframework</groupId>
-              <artifactId>spring-instrument</artifactId>
-              <type>jar</type>
-              <overWrite>false</overWrite>
-              <outputDirectory>${project.build.directory}</outputDirectory>
-              <destFileName>spring-instrument.jar</destFileName>
-            </artifactItem>
-          </artifactItems>
-        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -288,25 +279,20 @@
       <version>1.3.2</version>
     </dependency>
     <dependency>
-      <groupId>com.sun.activation</groupId>
-      <artifactId>javax.activation</artifactId>
-      <version>1.2.0</version>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>4.0.0</version>
     </dependency>
     <dependency>
-      <groupId>javax.transaction</groupId>
-      <artifactId>javax.transaction-api</artifactId>
-      <version>1.3</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.4.0-b180830.0359</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-      <version>2.4.0-b180830.0438</version>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+      <version>4.0.3</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
+      <version>2.1.2</version>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
@@ -425,7 +411,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>1.10.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
@@ -503,13 +489,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-<!--      <scope>runtime</scope>-->
     </dependency>
     <!--jackson-databind allows to use JAXB annotations for converting beans to JSON -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-<!--      <scope>runtime</scope>-->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -553,7 +537,7 @@
     <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-ui</artifactId>
-      <version>1.6.11</version>
+      <version>1.7.0</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>

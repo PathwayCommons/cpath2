@@ -12,16 +12,13 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
 @SpringBootTest
 @ActiveProfiles("admin")
 public class ServiceIT {
@@ -30,7 +27,7 @@ public class ServiceIT {
   private Service service;
 
   @Test
-  public final void testSettings() {
+  public final void settings() {
     Settings s = service.settings();
     assertNotNull(s);
     assertEquals("test/", s.getXmlBase());
@@ -41,7 +38,7 @@ public class ServiceIT {
 
   @Test
   @DirtiesContext
-  public void testIdMapping() {
+  public void idMapping() {
     //capitalization is important in 99% of identifier types (we should not ignore it)
     // we should be able to save it and not get 'duplicate key' exception here
     final String indexDir = "target/work/idx";
@@ -51,30 +48,34 @@ public class ServiceIT {
     service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
     service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
     service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
-    service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+    service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "12345"));
     service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
-    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
-    assertEquals("SID:14438", m.getSrcId()); //already auto-fixed src ID
+    service.mapping().save(new Mapping("pubchem.substance", "14439", "CHEBI", "CHEBI:28"));
+    //will be stored as SID:14438 -> CHEBI:20
+    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "20");
+    assertEquals("CHEBI:20", m.getDstId()); //auto-fixed src ID
+    assertEquals("SID:14438", m.getSrcId()); //auto-fixed src ID
     service.mapping().save(m);
+
     service.mapping().commit(); //all the above
     service.mapping().refresh(); //required to acquire an up-to-date index searcher used in service.map(..) etc.
 
     //check it's saved
-    assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
-    assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
+    assertEquals(1, service.map(List.of("ZHX1-C8orf76"), "UNIPROT").size());
+    assertEquals(1, service.map(List.of("ZHX1-C8ORF76"), "UNIPROT").size());
     // repeat (should successfully update)- add a Mapping
-    assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
-    Set<String> mapsTo = service.map("FooBar", "CHEBI");
+    assertTrue(service.map(List.of("FooBar"), "UNIPROT").isEmpty());
+    Set<String> mapsTo = service.map(List.of("FooBar"), "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next());
-    mapsTo = service.map("FooBar", "CHEBI");
+    mapsTo = service.map(List.of("FooBar"), "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next());
     //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
-    Set<String> map = service.map("A2A2M3-1", "UNIPROT");
+    Set<String> map = service.map(List.of("A2A2M3-1"), "UNIPROT");
     assertEquals(1, map.size());
-    assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
-    assertEquals(1, service.map("SID:14438", "CHEBI").size());
+    assertEquals(1, service.map(List.of("A2A2M3"), "UNIPROT").size());
+    assertEquals(1, service.map(List.of("SID:14438"), "CHEBI").size());
     //map from a list of IDs to target ID type (UNIPROT)
     List<String> srcIds = new ArrayList<>();
     //add IDs - both map to the same uniprot ID ()
@@ -91,7 +92,7 @@ public class ServiceIT {
 
   @Test
   @DirtiesContext
-  public void testReadContent() throws IOException {
+  public void readContent() throws IOException {
     // in case there's no "datasource page" prepared -
     Datasource datasource = new Datasource("TEST",
       Arrays.asList("Test", "testReadContent"),

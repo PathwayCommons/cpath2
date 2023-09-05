@@ -20,7 +20,7 @@
 </bp:PublicationXref>
 
 <!-- this PR must be matched by xrefs and replaced by the warehouse PR O75191 during the merge. 
-In fact, this PR should have been already normalized and have URI=http://identifiers.org/uniprot/O75191 (so matching by xrefs won't be needed),
+In fact, this PR should have been already normalized and have URI: bioregistry.io/uniprot:O75191 (so matching by xrefs wouldn't be needed),
 but, there was a bug in the normalizer... Anyway, we keep this PR as it was for testing!
 -->
 <bp:ProteinReference rdf:about="http://biocyc.org/biopax/biopax-level3ProteinReference155353">
@@ -36,14 +36,14 @@ but, there was a bug in the normalizer... Anyway, we keep this PR as it was for 
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
 </bp:Protein>
 
-<!--  original data was MODIFIED below to be able to test with test warehouse data! -->
-<!-- Test Case: a SM1 (SmallMolecule173158) has SMR1 (ketone, chebi:17087 cpath2 merger will replace) that has member A, 
-which has member B (phylloquinone); SMR1 also has the same B (and both B’s and A’s entityReferenceOf() are empty, 
-luckily, - otherwise, cpath2 merging becomes even more difficult task, and B and A do not have xrefs).  
-Another SM2 (SmallMolecule165394) has SMR2 (quinone, chebi:36141 (WRONG!), merger is to replace as well) that also has member B. 
+<!-- Original data were MODIFIED below for testing together with test Warehouse model. -->
+<!-- SM1 (SmallMolecule173158) has SMR1 (ketone, chebi:17087 cpath2 merger will replace) that has a member A,
+which has a member B (phylloquinone); SMR1 also has the same B (and both B’s and A’s entityReferenceOf() are empty
+luckily - otherwise, cpath2 merging becomes even more difficult task, and B and A do not have xrefs).
+SM2 (SmallMolecule165394) has SMR2 (quinone, chebi:36141 (WRONG!), merger is to replace as well) that also has member B.
 During the merge, SMR1 but not SMR2 gets replaced, A becomes dangling (to be removed), but B does not, 
-and B.memberEntityReferenceOf() still refers to removed A. We want both A and B disappear and not making trouble ;) !
- -->
+and B.memberEntityReferenceOf() still refers to removed A. We want both A and B disappear and not making trouble ;)
+-->
 <bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule173158">
  <bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:28" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM1</bp:displayName>
@@ -70,10 +70,11 @@ and B.memberEntityReferenceOf() still refers to removed A. We want both A and B 
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM2</bp:displayName>
 </bp:SmallMolecule>
 
+<!-- this SMR will be neither normalized (as bioregistry.io/chebi:36141), due to no xrefs,
+ nor replaced, due to no match in our test SMR warehouse model -->
 <bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:36141">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR2</bp:displayName>
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
 </bp:SmallMoleculeReference>
-
 
 </rdf:RDF>

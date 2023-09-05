@@ -184,7 +184,7 @@ public class ConsoleApplication implements CommandLineRunner {
     service.settings().getOrganismTaxonomyIds();
     LOG.info("premerge: this instance is configured to integrate and query " +
       " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
-    System.setProperty("net.sf.ehcache.disabled", "true");
+//    System.setProperty("net.sf.ehcache.disabled", "true"); //(there is no JPA/Hibernate/H2 anymore)
     PreMerger premerger = new PreMerger(service, validator);
     premerger.premerge();
     // create the Warehouse BioPAX model and id-mapping db table
@@ -328,7 +328,7 @@ public class ConsoleApplication implements CommandLineRunner {
       String id = x.getId();
       if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "uniprot")
         && id != null && !acs.contains(id)) {
-        acs.addAll(service.map(id, "UNIPROT"));
+        acs.addAll(service.map(List.of(id), "UNIPROT"));
       }
     }
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(

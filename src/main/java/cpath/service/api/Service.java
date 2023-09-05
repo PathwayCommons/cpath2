@@ -149,23 +149,12 @@ public interface Service {
   ServiceResponse topPathways(String q, String[] organisms, String[] datasources);
 
   /**
-   * Maps an identifier to primary ID(s) of a given type.
-   * Auto-detects the source ID type or tries all types.
-   * The result set may contain more than one primary ID.
-   *
-   * @param fromId the source ID
-   * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
-   * @return a set of primary IDs of the type; normally one or none elements
-   */
-  Set<String> map(String fromId, String toDb);
-
-  /**
    * Maps multiple identifiers to primary IDs of given type.
    * Auto-detects the source ID type or tries all types.
    * The result set may contain more than one primary ID.
    *
    * @param fromIds the source IDs
-   * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+   * @param toDb standard preferred name of the target ID type/collection name/prefix (e.g., 'UNIPROT','CHEBI')
    * @return a set of primary IDs of the type; normally one or none elements
    */
   Set<String> map(Collection<String> fromIds, String toDb);

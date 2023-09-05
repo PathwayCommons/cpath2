@@ -59,7 +59,7 @@ public class ControllersTest {
       .andExpect(status().isOk())
       .andExpect(content().contentType(MediaType.APPLICATION_JSON))
 			.andExpect(content().string(
-			  containsString("{\"id\":\"types\",\"title\":\"BioPAX classes\",\"info\":\"Objects of the")))
+			  containsString("{\"id\":\"types\",\"title\":\"BioPAX classes\",\"info\":\"These BioPAX Level3 classes")))
       .andExpect(content().string(
         containsString("{\"id\":\"TissueVocabulary\",\"title\":null,\"info\":null,\"example\":null,\"output\":null,\"members\":[],")));
 	}
@@ -69,7 +69,7 @@ public class ControllersTest {
     mvc.perform(get("/help/types/Gene").accept(MediaType.APPLICATION_JSON))
       .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
       .andExpect(content().json("{\"id\":\"Gene\",\"title\":\"Gene\",\"info\":\"See: biopax.org, " +
-        "http://www.biopax.org/webprotege\",\"example\":null,\"output\":null,\"members\":[],\"empty\":false}"));
+        "https://www.biopax.org/owldoc/Level3/\",\"example\":null,\"output\":null,\"members\":[],\"empty\":false}"));
   }
 
   @Test
@@ -78,7 +78,7 @@ public class ControllersTest {
       .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_XML))
       .andExpect(content().xml("<?xml version=\"1.0\" encoding=\"UTF-8\" " +
         "standalone=\"yes\"?><help><id>Gene</id><info>See: biopax.org, " +
-        "http://www.biopax.org/webprotege</info><title>Gene</title></help>"));
+        "https://www.biopax.org/owldoc/Level3/</info><title>Gene</title></help>"));
   }
 
 	@Test

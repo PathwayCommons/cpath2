@@ -99,11 +99,8 @@ public class HelpController extends BasicController {
     }
     help.setId("types");
     help.setTitle("BioPAX classes");
-    help.setInfo("Objects of the following BioPAX L3 class " +
-      "(and some abstract ones) "
-      + System.getProperty("line.separator") +
-      "are persisted/indexed/searchable in the system " +
-      "(names are case insensitive):");
+    help.setInfo("These BioPAX Level3 classes (including some abstract) can be used in search/traverse queries " +
+        "(case insensitive):");
     help.setExample("search?type=pathway&q=b*");
     return help;
   }
@@ -115,7 +112,7 @@ public class HelpController extends BasicController {
 
     Help h = new Help(type.getSimpleName());
     h.setTitle(type.getSimpleName());
-    h.setInfo("See: biopax.org, http://www.biopax.org/webprotege");
+    h.setInfo("See: biopax.org, https://www.biopax.org/owldoc/Level3/");
 
     return h;
   }

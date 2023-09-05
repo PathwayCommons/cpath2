@@ -50,9 +50,9 @@ public class WebApplicationIT {
 	@Test
 	public void testGetQueryById() {
 		String result = template.getForObject("/get?uri={uri}",
-				String.class, "http://identifiers.org/uniprot/P27797");
+				String.class, "bioregistry.io/uniprot:P27797");
 		assertNotNull(result);
-		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
+		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"bioregistry.io/uniprot:P27797\""));
 	}
 
 	@Test
@@ -66,11 +66,10 @@ public class WebApplicationIT {
 	@Test //if POST isn't disabled
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-		map.add("uri", "http://identifiers.org/uniprot/P27797");
+		map.add("uri", "bioregistry.io/uniprot:P27797");
 		String result = template.postForObject("/get", map, String.class);
 		assertNotNull(result);
-		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://identifiers.org/uniprot/P27797\""));
-//		assertTrue(result.contains("Method Not Allowed"));
+		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"bioregistry.io/uniprot:P27797\""));
 	}
 
 }

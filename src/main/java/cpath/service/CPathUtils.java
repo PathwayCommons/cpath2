@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Stream;
 import java.util.zip.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -147,74 +148,95 @@ public final class CPathUtils {
   }
 
   /**
-   * From a warehouse (normalized) ER or CV URI,
-   * extract the identifier (e.g., UniProt or ChEBI).
-   * It depends on Normalizer and cPath2 Premerge
-   * using 'http://identifiers.org/*' URIs for such objects.
+   * From a normalized ER/CV URI, extract the id (uniprot, chebi,..)
    *
-   * @param uri URI
-   * @return local part URI - ID
+   * @param uri some (preferably normalized) ER or CV URI
+   * @return identifier; null when the URI is nothing like *identifiers.org/* or *bioregistry.io/*
    */
   static String idFromNormalizedUri(String uri) {
-    Assert.isTrue(uri.contains("http://identifiers.org/"),"Not a Identifiers.org URI");
-    return uri.substring(uri.lastIndexOf('/') + 1);
+    if(Stream.of("identifiers.org/", "bioregistry.io/")
+        .anyMatch(s -> StringUtils.containsIgnoreCase(uri, s))) {
+
+      String id = uri.substring(uri.lastIndexOf('/') + 1);
+      //remove prefix/banana for now
+      if(StringUtils.contains(id,":")) {
+        id = StringUtils.substringAfter(id, ":");
+      }
+      //add CID:/SID:/CHEBI: prefix to the id before id-mapping due to our id-mapping/index implementation
+      if(StringUtils.containsIgnoreCase(uri,"substance")) //contains 'substance' or 'pubchem...substance'...
+        id = "SID:" + id;
+      else if(StringUtils.containsIgnoreCase(uri,"compound") || StringUtils.containsIgnoreCase(uri,"pubchem"))
+        id = "CID:" + id;
+      else if(StringUtils.containsIgnoreCase(uri,"chebi"))
+        id = "CHEBI:" + id;
+
+      return id;
+    }
+
+    return null;
   }
 
   /**
-   * Auto-fix an ID of particular type before using it
-   * for id-mapping. This helps to map e.g., RefSeq versions ID and
-   * UniProt isoforms to primary UniProt accessions despite our id-mapping db
-   * does not have such records as e.g. "NP_12345.1 maps to P01234".
+   * Auto-fix some ID types before searching or saving in the id-mapping index.
+   * This helps to map e.g. a RefSeq version or UniProt isoform ID to the primary UniProt AC,
+   * despite our id-mapping index/table does not have records like "NP_12345.1 maps to P01234".
    *
-   * @param fromDb type of the identifier (standard resource name, e.g., RefSeq)
-   * @param fromId identifier
+   * @param db type of the identifier (standard resource name, e.g., RefSeq)
+   * @param id identifier
    * @return "fixed" ID
    */
-  public static String fixSourceIdForMapping(String fromDb, String fromId) {
-    Assert.hasText(fromId, "fromId is empty");
-    Assert.hasText(fromDb, "fromDb is empty");
+  public static String fixIdForMapping(String db, String id) {
+    Assert.hasText(id, "fromId is empty");
+    Assert.hasText(db, "fromDb is empty");
 
-    String id = fromId;
-    String db = fromDb.toUpperCase();
+    db = db.toUpperCase();
 
-    if (db.startsWith("UNIPROT") || db.contains("SWISSPROT") || db.contains("TREMBL")) {
+    if (db.startsWith("UNIPROT")) {
       //always use UniProt ID instead of the isoform ID for mapping
-      if (id.contains("-"))
+      if (id.contains("-")) {
         id = id.replaceFirst("-\\d+$", "");
-    } else if (db.equals("REFSEQ") && id.contains(".")) {
+      }
+    }
+    else if (db.equals("CHEBI")) {
+      //by design of this app, chebi id must always have 'CHEBI:' (banana+peel) prefix for id-mapping/indexing/searching
+      id = id.toUpperCase(); //converts ChEBI:*, chebi:*, etc. => CHEBI:*
+      if (!StringUtils.startsWith(id, "CHEBI:")) {
+        id = "CHEBI:" + id;
+      }
+    }
+    else if (db.equals("REFSEQ") && id.contains(".")) {
       //strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
       id = id.replaceFirst("\\.\\d+$", "");
-    } else if (db.startsWith("KEGG") && id.matches(":\\d+$")) {
-      id = id.substring(id.lastIndexOf(':') + 1); //it's NCBI Gene ID;
-    } else if (db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
+    }
+    else if (db.startsWith("KEGG") && id.matches(":\\d+$")) {
+      id = id.substring(id.lastIndexOf(':') + 1); //it's a NCBI Gene ID!
+    }
+    else if (db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
       id = id.toUpperCase(); //ok for a SID
       //add prefix if not present
       if (!id.startsWith("SID:") && id.matches("^\\d+$"))
         id = "SID:" + id;
-    } else if (db.contains("PUBCHEM") && (db.contains("COMPOUND") || db.contains("CID"))) {
+    }
+    else if (db.contains("PUBCHEM") && (db.contains("COMPOUND") || db.contains("CID"))) {
       id = id.toUpperCase(); //ok for a CID
       //add prefix if not present
-      if (!id.startsWith("CID:") && id.matches("^\\d+$"))
+      if (!id.startsWith("CID:") && id.matches("^\\d+$")) {
         id = "CID:" + id;
+      }
     }
 
     return id;
   }
 
   /**
-   * Whether a string starts with any of the prefixes (case insensitive).
+   * Whether a string starts with any of the prefixes (case-insensitive).
    *
-   * @param s a string
+   * @param str a string
    * @param prefixes optional array of prefix terms to match
    * @return true/false
    */
-  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
-    for (String prefix : prefixes) {
-      if (StringUtils.startsWithIgnoreCase(s, prefix)) {
-        return true;
-      }
-    }
-    return false;
+  public static boolean startsWithAnyIgnoreCase(String str, String... prefixes) {
+    return Arrays.stream(prefixes).anyMatch(p -> StringUtils.startsWithIgnoreCase(str, p));
   }
 
   /**
@@ -224,17 +246,21 @@ public final class CPathUtils {
    * Note: the corresponding CV does not have a unification xref
    * (this method won't validate; so, non-standard CV terms can be used).
    *
-   * @param vocab       relationship xref type
-   * @param model       a biopax model where to find/add the xref
-   * @param isPrimaryId whether it's a primary ID/AC (then adds a comment)
+   * @param vocab relationship xref type
+   * @param model a biopax model where to find/add the xref
    */
   public static RelationshipXref findOrCreateRelationshipXref(
-    RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId) {
+    RelTypeVocab vocab, String db, String id, Model model) {
     Assert.notNull(vocab, "vocab is null");
 
     RelationshipXref toReturn;
 
-    String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab.toString(), RelationshipXref.class);
+    //if chebi, make sure 'CHEBI:' is present
+    if(StringUtils.equalsIgnoreCase(db, "chebi") && !StringUtils.startsWithIgnoreCase(id, "chebi:")) {
+      id = "CHEBI:" + id;
+    }
+
+    String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab, RelationshipXref.class);
     if (model.containsID(uri)) {
       return (RelationshipXref) model.getByID(uri);
     }
@@ -243,8 +269,6 @@ public final class CPathUtils {
     toReturn = model.addNew(RelationshipXref.class, uri);
     toReturn.setDb(db.toLowerCase());
     toReturn.setId(id);
-    if (isPrimaryId)
-      toReturn.addComment("PRIMARY");
 
     // create/add the relationship type vocabulary
     String relTypeCvUri = vocab.uri; //identifiers.org standard URI
@@ -267,6 +291,11 @@ public final class CPathUtils {
     return toReturn;
   }
 
+  /**
+   * Recursively extracts all unification and relationship xrefs from the BioPAX object and its children.
+   * @param bpe
+   * @return
+   */
   static Set<String> getXrefIds(BioPAXElement bpe) {
     final Set<String> ids = new HashSet<>();
 
@@ -276,21 +305,28 @@ public final class CPathUtils {
     fetcher.setSkipSubPathways(true);
     //fetch all children of (implicit) type XReferrable, which means - either
     //BioSource or ControlledVocabulary or Evidence or Provenance or Entity or EntityReference
-    //(we actually want only the latter two types and their sub-types; will skip the rest later on):
+    //(we actually want only the latter two types and their subtypes; will skip the rest later on):
     Set<XReferrable> children = fetcher.fetch(bpe, XReferrable.class);
     //include itself (- for fetcher only gets child elements)
     if (bpe instanceof XReferrable)
       children.add((XReferrable) bpe);
 
     for (XReferrable child : children) {
-      //skip for unwanted utility class child elements, such as Evidence,CV,Provenance
-      if (!(child instanceof Entity || child instanceof EntityReference))
+      //skip unwanted utility class elements, such as Evidence, CV, Provenance
+      if (!(child instanceof Entity || child instanceof EntityReference)) {
         continue;
+      }
       // collect standard bio IDs (skip publications);
       // (we will use id-mapping later to associate more IDs)
       for (Xref x : child.getXref()) {
         if (!(x instanceof PublicationXref) && x.getId() != null && x.getDb() != null) {
-          ids.add(x.getId());
+          String id = x.getId();
+          //add 'CHEBI:' ("banana and peel" prefix) if it's missing
+          if(StringUtils.equalsIgnoreCase("chebi", x.getDb()) &&
+              !StringUtils.startsWithIgnoreCase(id, "chebi:")) {
+            id = "CHEBI:" + id;
+          }
+          ids.add(id);
         }
       }
     }

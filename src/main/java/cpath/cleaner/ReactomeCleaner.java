@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -25,7 +26,7 @@ import org.biopax.paxtools.model.level3.Process;
  * Implementation of Cleaner interface for Reactome data. 
  * 
  * Can normalize URIs for some Reactome Entity class objects (pathways, interaction)
- * to http://identifiers.org/reactome/R-* form if a unification xref with the stable Reactome ID is found.
+ * to bioregistry.io/reactome:R-* form if a unification xref with the stable Reactome ID is found.
  * Removes "unstable" Reactome ID xref from objects where a stable ID is present.
  */
 final class ReactomeCleaner implements Cleaner {
@@ -40,14 +41,15 @@ final class ReactomeCleaner implements Cleaner {
 
 		// Normalize pathway URIs, where possible, using Reactome stable IDs
 		// Since v54, Reactome stable ID format has been changed to like: "R-HSA-123456"
-		final Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
+		final Map<String, Entity> newUriToEntityMap = new HashMap<>();
 		final Set<Process> processes = new HashSet<>(model.getObjects(Process.class));
 
 		for(Process proc : processes) {
-			if (proc.getUri().startsWith("http://identifiers.org/reactome/"))
+			if (StringUtils.contains(proc.getUri(),"identifiers.org/reactome")
+					|| StringUtils.contains(proc.getUri(), "bioregistry.io/reactome"))
 				continue; //skip for already normalized pathway or interaction
 
-			final Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
+			final Set<UnificationXref> uxrefs = new ClassFilterSet<>(
 					new HashSet<>(proc.getXref()), UnificationXref.class);
 			for (UnificationXref x : uxrefs) {
 				if (x.getDb() != null && x.getDb().equalsIgnoreCase("Reactome")) {
@@ -55,9 +57,9 @@ final class ReactomeCleaner implements Cleaner {
 					//remove 'REACTOME:' (length=9) prefix if present (it's optional - according to MIRIAM)
 					if (stableId.startsWith("REACTOME:"))
 						stableId = stableId.substring(9);
-					// stableID is like 'R-HSA-123456' (or old REACT_12345) now...
+					// stableID is like 'R-HSA-123456'
 
-					final String uri = "http://identifiers.org/reactome/" + stableId;
+					final String uri = "https://bioregistry.io/reactome:" + stableId;
 
 					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
 						//save it in the map to replace the URI later (see below)
@@ -90,7 +92,7 @@ final class ReactomeCleaner implements Cleaner {
 		}
 		
 		// Remove unstable UnificationXrefs like "Reactome Database ID Release XX"
-		// if there is a stable one in the same object
+		// if there is a stable xref in the same object
 		// Since Reactome v54, stable ID format is different (not like REACT_12345...)
 		final Set<Xref> xrefsToRemove = new HashSet<>();
 		for(Xref xref: new HashSet<>(model.getObjects(Xref.class))) {

@@ -19,8 +19,6 @@ public interface Mappings {
 
 	List<Mapping> findBySrcIdInAndDstDbIgnoreCase(List<String> srcIds, String dstDb);
 
-	List<Mapping> findBySrcIdInAndDstDbIgnoreCase(String srcId, String dstDb);
-
 	void save(Mapping mapping);
 
 	void commit();

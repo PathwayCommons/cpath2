@@ -12,12 +12,13 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.normalizer.MiriamLink;
+import org.biopax.paxtools.normalizer.Resolver;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -73,8 +74,8 @@ public class ServiceImpl implements Service {
   //on first access when proxy model mode is enabled (so do not use the var. directly!)
   private Model paxtoolsModel;
 
-  private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
-  private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+  private final Pattern isoformIdPattern = Pattern.compile(Resolver.getNamespace("uniprot.isoform", true).getPattern());
+  private final Pattern refseqIdPattern = Pattern.compile(Resolver.getNamespace("refseq", true).getPattern());
 
   public ServiceImpl() {
     this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
@@ -89,7 +90,7 @@ public class ServiceImpl implements Service {
     if(paxtoolsModel == null) {
       paxtoolsModel = loadMainModel();
       if (paxtoolsModel != null) {
-        paxtoolsModel.setXmlBase(settings.getXmlBase());
+        paxtoolsModel.setXmlBase(settings().getXmlBase());
         log.info("Main BioPAX model (in-memory) is now ready for queries.");
       }
     }
@@ -222,7 +223,7 @@ public class ServiceImpl implements Service {
     completer.setSkipSubPathways(!includeSubPathways); //mind NOT (!) here
     Model m = cloner.clone(completer.complete(elements));
     if(m != null) {
-      m.setXmlBase(paxtoolsModel.getXmlBase());
+      m.setXmlBase(settings().getXmlBase());
     }
 
     return m;
@@ -415,27 +416,29 @@ public class ServiceImpl implements Service {
   }
 
   /**
-   * Mapping IDs to BioPAX entity URIs.
+   * Mapping from URL/IDs to the BioPAX entity URIs.
    *
-   * @param identifiers - a list of genes/protein or molecules as: \
+   * @param identifiers - a list of URIs or genes/protein/molecules IDs: \
    * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
    * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB.
-   * @param types filter search to get back URIs of given biopax types and sub-types
+   * @param types filter search to get back URIs of given biopax types and subtypes
    * @return URIs of matching Xrefs
    *
    * See also: issue #296
    */
   private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
   {
-    if (identifiers.length == 0)
+    if (identifiers.length == 0) {
       return identifiers; //empty array
+    }
 
     Set<String> uris = new TreeSet<>();
 
     StringBuilder q = new StringBuilder();
-    for (String identifier : identifiers)
-    {
-      if(identifier.startsWith("http://")) {
+    for (String identifier : identifiers) {
+      if(identifier.startsWith(settings().getXmlBase())
+        || StringUtils.startsWithIgnoreCase(identifier, "http")
+        || StringUtils.containsAny(identifier, "bioregistry.io/", "identifiers.org/")) {
         // must be valid URI of some existing BioPAX object in our model
         uris.add(identifier);
       } else {
@@ -476,7 +479,7 @@ public class ServiceImpl implements Service {
 
     Set<String> uris = new TreeSet<>();
 
-    if(idOrUri.startsWith("http://")) {
+    if(idOrUri.startsWith(settings().getXmlBase())) {
       // must be valid URI of some existing BioPAX object in our model
       uris.add(idOrUri);
     } else {
@@ -673,22 +676,12 @@ public class ServiceImpl implements Service {
   }
 
   /**
-   * ID mapping to either CHEBI or UNIPROT primary ac/id.
-   * @param fromId the source ID
-   * @param toDb only "CHEBI" or "UNIPROT" (case-insensitive)
-   * @return
-   */
-  public Set<String> map(String fromId, final String toDb) {
-    return map(Collections.singletonList(fromId), toDb);
-  }
-
-  /**
-   * ID mapping to either CHEBI or UNIPROT primary ac/id.
+   * ID mapping from any ID but only to either CHEBI or UNIPROT primary id.
    * @param fromIds the source IDs
    * @param toDb only "CHEBI" or "UNIPROT" (case-insensitive)
    * @return
    */
-  public Set<String> map(Collection<String> fromIds, final String toDb) {
+  public Set<String> map(Collection<String> fromIds, String toDb) {
     Assert.hasText(toDb,"toDb must be not null, empty or blank");
     Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb),
       "toDb is not CHEBI or UNIPROT");
@@ -700,29 +693,31 @@ public class ServiceImpl implements Service {
 
     List<String> sourceIds = new ArrayList<>();
     // let's guess the source db (id type) and take care of isoform ids;
-    // it's risky if a no-prefix integer ID type (pubchem cid, sid) is used and no srcDb is provided;
-    // nevertheless, for biopolymers, we support the only 'NCBI Gene' (integer) ID type.
+    // it's risky if a no-prefix integer ID type (PubChem CID, SID) is used and no srcDb is provided;
+    // for biopolymers, we support the only one integer ID type - 'NCBI Gene'
     for(String fromId : fromIds) {
-      if (fromId.matches("^\\d+$") && !toDb.equalsIgnoreCase("UNIPROT")) {
-        //an integer ID is expected to mean NCBI gene ID, and can be mapped only to UNIPROT;
-        //so, skip this one (won't map to anything anyway)
-        log.debug("map(), won't map " + fromId + " to " + toDb + " (ambiguous ID, unknown source)");
-        continue;
-      } else if (toDb.equalsIgnoreCase("UNIPROT") && isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
-        //it's certainly an uniprot isoform id; so we replace it with the corresponding accession number
-        fromId = fromId.replaceFirst("-\\d+$", "");
-      } else if (toDb.equalsIgnoreCase("UNIPROT") && refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
-        //remove the version number, such as ".1"
-        fromId = fromId.replaceFirst("\\.\\d+$", "");
+      if (toDb.equalsIgnoreCase("chebi")) {
+        if(fromId.matches("^\\d+$")) {
+          fromId = "CHEBI:" + fromId;
+        }
+      }
+      else if (toDb.equalsIgnoreCase("uniprot")) {
+        if(isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
+          //it's certainly an uniprot isoform id; so we replace it with the corresponding accession number
+          fromId = fromId.replaceFirst("-\\d+$", "");
+        } else if (refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
+          //remove the version number, such as ".1"
+          fromId = fromId.replaceFirst("\\.\\d+$", "");
+        }
       }
       sourceIds.add(fromId); //collect
     }
 
     //use Mappings repository to execute the search and get results
     Set<String> results = mapping().findBySrcIdInAndDstDbIgnoreCase(sourceIds, toDb).stream()
-//            .filter(m -> toDb.equalsIgnoreCase(m.getDstDb())) //seems always true
             .map(Mapping::getDstId)
             .collect(Collectors.toCollection(TreeSet::new));
+
     return results;
   }
 

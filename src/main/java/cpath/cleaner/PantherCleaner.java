@@ -31,10 +31,10 @@ import cpath.service.api.Cleaner;
  */
 final class PantherCleaner implements Cleaner {
 	
-    private static Logger log = LoggerFactory.getLogger(PantherCleaner.class);
+  private static Logger log = LoggerFactory.getLogger(PantherCleaner.class);
 
     
-    public void clean(InputStream data, OutputStream cleanedData)
+  public void clean(InputStream data, OutputStream cleanedData)
 	{	
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model originalModel = simpleReader.convertFromOWL(data);
@@ -46,7 +46,7 @@ final class PantherCleaner implements Cleaner {
 			throw new RuntimeException("Human data (e.g. BioSource) not found.");
 
 		// fix the taxonomy xref.db standard name
-		human.getXref().iterator().next().setDb("Taxonomy");
+		human.getXref().iterator().next().setDb("taxonomy");
 		
 		//Remove/replace non-human BioSources, SequenceEntityReferences 
 		//Pathways all have organism=null; let's set 'human' for all
@@ -74,7 +74,7 @@ final class PantherCleaner implements Cleaner {
 			}
 		});
 		exec.execute(() -> {
-			for(Pathway p : new ClassFilterSet<BioPAXElement, Pathway>(objects, Pathway.class)) {
+			for(Pathway p : new ClassFilterSet<>(objects, Pathway.class)) {
 				if(p.getUri().startsWith("http://identifiers.org/panther.pathway/")
 						|| !p.getPathwayComponent().isEmpty()
 						|| !p.getPathwayOrder().isEmpty()) { //- seems they don't use pathwayOrder property, anyway
@@ -102,8 +102,7 @@ final class PantherCleaner implements Cleaner {
 		}
 		
 		//clone the model (to actually get rid of removed objects in all object properties)
-		final Model cleanModel = (new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory()))
-				.clone(originalModel, originalModel.getObjects());		
+		final Model cleanModel = (new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory())).clone(originalModel.getObjects());
 		log.info((objects.size()-cleanModel.getObjects().size())
 				+ " non-human objects (and all corresponding properties) were cleared.");
 		originalModel = null; // free some memory, perhaps...

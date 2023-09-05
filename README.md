@@ -57,6 +57,11 @@ Expect that most queries or example links won't return any result as there are n
 instance; try to find e.g. all the pathways there with `http://localhost:8080/search?q=*&type=pathway` 
 (remove `type` parameter to list all the objects; use "Accept:application/xml" header to get XML instead of JSON result).
 
+Alternatively, can run the demo/dev app as:
+
+    mvn spring-boot:run
+
+
 ## Configuration
 
 ### Working directory

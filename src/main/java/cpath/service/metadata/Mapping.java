@@ -23,19 +23,10 @@ public final class Mapping {
 
 
   public Mapping(@NonNull String srcDb, @NonNull String srcId, @NonNull String dstDb, @NonNull String dstId) {
-    srcDb = srcDb.toUpperCase();
-    //replace an uniprot* db name with simply 'UNIPROT'
-    if (srcDb.startsWith("UNIPROT") || srcDb.startsWith("SWISSPROT"))
-      srcDb = "UNIPROT";
-    else if (srcDb.startsWith("PUBCHEM") && (srcDb.contains("COMPOUND") || srcDb.contains("CID"))) {
-      srcDb = "PUBCHEM-COMPOUND";
-    } else if (srcDb.startsWith("PUBCHEM") && (srcDb.contains("SUBSTANCE") || srcDb.contains("SID"))) {
-      srcDb = "PUBCHEM-SUBSTANCE";
-    }
-    this.srcDb = srcDb; //already upper case
-    this.srcId = CPathUtils.fixSourceIdForMapping(srcDb, srcId);
+    this.srcDb = srcDb.toUpperCase();
+    this.srcId = CPathUtils.fixIdForMapping(srcDb, srcId);
     this.dstDb = dstDb.toUpperCase();
-    this.dstId = dstId;
+    this.dstId = CPathUtils.fixIdForMapping(dstDb, dstId);
   }
 
   public String docId() {

@@ -25,7 +25,7 @@ public class IndexIT {
   static final Logger logger = LoggerFactory.getLogger(IndexIT.class);
 
   @Test
-  public final void testSearch() throws IOException {
+  public final void search() throws IOException {
     SimpleIOHandler reader = new SimpleIOHandler();
     Model model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pathwaydata1.owl").getInputStream());
@@ -135,7 +135,7 @@ public class IndexIT {
     assertEquals(10, response.getSearchHit().size());
     assertEquals(1, response.getPageNo().intValue());
 
-    //test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs
+    //test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs with banana ('CHEBI:')
     response =  index.search("CHEBI?20", 0, SmallMoleculeReference.class, null, null);
     assertFalse(response.getSearchHit().isEmpty());
     response =  index.search("xrefid:CHEBI?20", 0, SmallMolecule.class, null, null);
@@ -144,19 +144,24 @@ public class IndexIT {
     //NO result as the MultiFieldQueryParser there ignores (or splits by, analyzes...) colons, etc.
     response =  index.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
     assertTrue(response.getSearchHit().isEmpty());
-
     //if escaped - '\:' - then it works (now, after recent changes in the indexer)
+    response =  index.search("20", 0, SmallMoleculeReference.class, null, null);
+    assertFalse(response.getSearchHit().isEmpty());
     response =  index.search("CHEBI\\:20", 0, SmallMoleculeReference.class, null, null);
     assertFalse(response.getSearchHit().isEmpty());
     response =  index.search("xrefid:CHEBI\\:20", 0, SmallMoleculeReference.class, null, null);
     assertFalse(response.getSearchHit().isEmpty());
-    response =  index.search("xrefid:\"CHEBI\\:20\"", 0, SmallMoleculeReference.class, null, null);
-    assertFalse(response.getSearchHit().isEmpty());
-
-    response =  index.search("xrefid:chebi\\:20", 0, SmallMoleculeReference.class, null, null);
-    assertTrue(response.getSearchHit().isEmpty()); //xrefid field is case-sensitive
     response =  index.search("xrefid:\"chebi\\:20\"", 0, SmallMoleculeReference.class, null, null);
-    assertTrue(response.getSearchHit().isEmpty()); //xrefid field is case-sensitive
+    assertFalse(response.getSearchHit().isEmpty()); //we allow case-insensitive id prefix search e.g. chebi:* and CHEBI:*
+    response =  index.search("xrefid:chebi\\:20", 0, SmallMoleculeReference.class, null, null);
+    assertFalse(response.getSearchHit().isEmpty()); //ID search is case-sensitive but the prefix (if any, e.g. 'chebi:') is not
+    response =  index.search("xrefid:\"chebi\\:20\"", 0, SmallMoleculeReference.class, null, null);
+    assertFalse(response.getSearchHit().isEmpty()); //xrefid field is case-sensitive but the prefix (if any, e.g. 'chebi:') is not
+
+    response =  index.search("xrefid:P16104", 0, Protein.class, null, null);
+    assertFalse(response.getSearchHit().isEmpty()); //unprefixed (no "banana") id search is case-sensitive
+    response =  index.search("xrefid:p16104", 0, Protein.class, null, null);
+    assertTrue(response.getSearchHit().isEmpty()); //unprefixed (no "banana") id search is case-sensitive - so no results here
 
     //find by name: beta-D-fructose-6-phosphate
     response =  index.search("beta-d-fructose-6-phosphate", 0, SmallMoleculeReference.class, null, null);
@@ -212,32 +217,33 @@ public class IndexIT {
 
   @Test
   @DirtiesContext
-  public void testIdMapping() {
+  public void idMapping() {
     Mappings mappings = new IndexImpl(null, "target/work/idx", false);
     //capitalization is important in 99% of identifier types (we should not ignore it)
+    //but, let's allow both chebi:1234 and CHEBI:1234 and 1234 for ChEBI IDs when searching...
 
     //save some id mappings
     mappings.save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
     mappings.save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
-    mappings.save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
-    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
+    mappings.save(new Mapping("TEST", "FooBar", "CHEBI", "12345"));
+    Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "20");
     assertEquals("SID:14438", m.getSrcId()); //already auto-fixed src ID
     mappings.save(m);
     mappings.commit(); //all the above
     mappings.refresh(); //required to acquire an up-to-date index searcher used in service.map(..) etc.
 
     //check that both of those two similar IDs were saved
-    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase("ZHX1-C8orf76", "UNIPROT").size());
-    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase("ZHX1-C8ORF76", "UNIPROT").size());
+    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("ZHX1-C8orf76"), "UNIPROT").size());
+    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("ZHX1-C8ORF76"), "UNIPROT").size());
     // repeat (should successfully update)- add a Mapping
-    assertTrue(mappings.findBySrcIdInAndDstDbIgnoreCase("FooBar", "UNIPROT").isEmpty());
-    List<Mapping> mapsTo = mappings.findBySrcIdInAndDstDbIgnoreCase("FooBar", "CHEBI");
+    assertTrue(mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("FooBar"), "UNIPROT").isEmpty());
+    List<Mapping> mapsTo = mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("FooBar"), "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next().getDstId());
-    mapsTo = mappings.findBySrcIdInAndDstDbIgnoreCase("FooBar", "CHEBI");
+    mapsTo = mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("FooBar"), "CHEBI");
     assertEquals(1, mapsTo.size());
     assertEquals("CHEBI:12345", mapsTo.iterator().next().getDstId());
-    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase("SID:14438", "CHEBI").size());
+    assertEquals(1, mappings.findBySrcIdInAndDstDbIgnoreCase(List.of("SID:14438"), "CHEBI").size());
 
     mappings.close();
   }

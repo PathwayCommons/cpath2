@@ -1,16 +1,11 @@
-# builds the image after maven build from local sources
-#TODO: try/test it
-#TODO: download the data from PC2 and the fat JAR from Maven repo instead of building locally
-FROM openjdk:17
-ARG WRK=target/work
+FROM eclipse-temurin:latest
+ARG APP_JAR
+# persistent volume containing the app data (biopax model ad index files;
+# can use target/work demo/test data)
 VOLUME /work
-WORKDIR /work
-COPY target/cpath2.war .
-# copy the data except listed in .dockerignore
-COPY $WRK .
+COPY ${APP_JAR} cpath2.war
 ENV CPATH2_HOME /work
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dfile.encoding=UTF-8", "-Xmx64g",\
-"-Dspring.profiles.active=docker", "-jar", "cpath2.war", "--server", \
-"--add-opens=java.base/java.lang=ALL-UNNAMED", \
-"--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"]
+ENV JDK_JAVA_OPTIONS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED"
+ENTRYPOINT ["java", "-server", "-Djava.security.egd=file:/dev/./urandom", \
+"-Dfile.encoding=UTF-8", "-Xss32m", "-Xmx64g", "-Dspring.profiles.active=docker", "-jar", "cpath2.war", "--server"]
 EXPOSE 8080

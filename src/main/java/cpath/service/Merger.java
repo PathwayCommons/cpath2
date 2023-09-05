@@ -4,10 +4,12 @@ import cpath.service.api.Service;
 import cpath.service.api.RelTypeVocab;
 import cpath.service.metadata.Datasource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
+import org.biopax.paxtools.normalizer.Resolver;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -38,7 +40,7 @@ public final class Merger {
 	private final String xmlBase;
 	private final Service service;
 	private final Set<String> supportedTaxonomyIds;
-  private final Model warehouseModel;
+	private final Model warehouseModel;
   private final Model mainModel;
 
 
@@ -67,6 +69,10 @@ public final class Merger {
 	 */
 	Model getMainModel() {
 		return mainModel;
+	}
+
+	Model getWarehouseModel() {
+		return warehouseModel;
 	}
 	
 	public void merge() {
@@ -147,17 +153,14 @@ public final class Merger {
 			log.info("Normalizing generics (" + datasource.getIdentifier() + ")...");
 			ModelUtils.normalizeGenerics(providerModel);
 
-			//replace not normalized URIs with shorter ones to save storage and memory
-			replaceOriginalUris(providerModel);
-
-			//quick-fix BioSource: add name if it's missing (helps full-text search)
+			//for (already normalized) BioSource, also add the name from
+			//application.properties (it helps full-text search)
 			Map<String,String> orgMap = service.settings().getOrganismsAsTaxonomyToNameMap();
 			for(BioSource org : providerModel.getObjects(BioSource.class)) {
-				for (Map.Entry<String,String> entry : orgMap.entrySet()) {
-					// BioSource URIs are already normalized and contain identifiers.org/taxonomy
-					// (if it was possible); might also contain a suffix after "_" (cell type, tissue terms)
-					if(org.getUri().startsWith("http://identifiers.org/taxonomy/" + entry.getKey() + "_")) {
-						org.addName(entry.getValue()); //won't duplicate if the name exists in the Set
+				for(UnificationXref x : new ClassFilterSet<>(org.getXref(), UnificationXref.class)) {
+					String orgName = orgMap.get(x.getId());
+					if(orgName != null) {
+						org.addName(orgName);
 					}
 				}
 			}
@@ -242,8 +245,8 @@ public final class Merger {
 
 		cleanupXrefs(source);
 
-		log.info("Searching for canonical or existing EntityReference objects " +
-				" to replace equivalent original objects ("+srcModelInfo+")...");
+		log.info("Searching for canonical or existing Entity References " +
+				" to replace the original ones ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<>();
 		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
 		for (EntityReference origEr: new HashSet<>(source.getObjects(EntityReference.class)))
@@ -375,41 +378,22 @@ public final class Merger {
 		for(BioPAXElement bpe : new HashSet<>(source.getObjects()))
 		{
 			String currUri = bpe.getUri();
-			if( (
-					!(bpe instanceof ProteinReference)
-					&& (currUri.startsWith("http://identifiers.org/uniprot/") || currUri.toLowerCase().startsWith("uniprot:"))
-				) || (
-					!(bpe instanceof SmallMoleculeReference)
-					&& (currUri.startsWith("http://identifiers.org/chebi/") || currUri.toLowerCase().startsWith("chebi:")))
-				) {
+			if(
+				(!(bpe instanceof ProteinReference) && (StringUtils.containsIgnoreCase(currUri, "bioregistry.io/uniprot")))
+				||
+				(!(bpe instanceof SmallMoleculeReference) && (StringUtils.containsIgnoreCase(currUri, "bioregistry.io/chebi")))
+			){
 				//Replace URI due to potential type collision
 				CPathUtils.replaceUri(source, bpe,
-						xmlBase + bpe.getModelInterface() + "_" + UUID.randomUUID());
-			} else {
+						xmlBase + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
+			}
+			else {
 				BioPAXElement targetBpe = target.getByID(currUri);
 				if (targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface()) {
 					//Replace due to target has the same URI for a different type object
 					CPathUtils.replaceUri(source, bpe,
-							xmlBase + bpe.getModelInterface() + "_" + UUID.randomUUID());
+							xmlBase + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
 				}
-			}
-		}
-	}
-
-	/*
-	 * Replaces not normalized yet original BioPAX object URIs in the model
-	 * with new hash based URIs using the xml:base URI prefix.
-	 */
-	private void replaceOriginalUris(Model source) {
-		//wrap source.getObjects() in a new set to avoid concurrent exceptions
-		for(BioPAXElement bpe : new HashSet<>(source.getObjects())) {
-			String currUri = bpe.getUri();
-			if( !( currUri.startsWith(xmlBase)
-					|| currUri.startsWith("http://identifiers.org/")
-					|| currUri.startsWith("uniprot:")
-					|| currUri.startsWith("chebi:") ) ) {
-				// Generate a new URI
-				CPathUtils.replaceUri(source, bpe, xmlBase + bpe.getModelInterface() + "_" + UUID.randomUUID());
 			}
 		}
 	}
@@ -489,8 +473,8 @@ public final class Merger {
 				}
 			}				
 
-			// Copy old/orig. ER's xrefs to the PEs (otherwise they might be lost forever after the ERs substitution)
-			//todo: shall we copy only PXs or nothing at all?..
+// TODO: original xrefs of a known/matched ER seem useless (can get later from the primary ID); so why to copy?..
+			// Copy orig. ER xrefs to the PEs (old xrefs are gone after the ERs substitution)
 //			for(Xref x : new HashSet<>(old.getXref())) {
 //				if(x instanceof UnificationXref) {//sub with RX
 //					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model, false);
@@ -507,7 +491,7 @@ public final class Merger {
 	 * This won't improve our full-text index/search and graph queries (where id-mapping is used again anyway),
 	 * but may help improve export to SIF and GSEA formats.
 	 * This method is called only for those PEs/ERs that were not merged into warehouse canonical ERs,
-	 * for reasons such as no match for a ID, or no ID found, ambiguous ID, etc.
+	 * for reasons such as no match for an ID, or no ID found, ambiguous ID, etc.
 	 * This method won't add additional xrefs if a ChEBI one (secondary id or not doesn't matter) is already there.
 	 */
 	private void chemXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
@@ -537,7 +521,7 @@ public final class Merger {
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryIds.isEmpty() && primaryIds.size() <= maxNumXrefsToAdd) {
-				addRelXrefs(m, bpe, "CHEBI", primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION, false);
+				addRelXrefs(m, bpe, "CHEBI", primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
 			}
 		}
 	}
@@ -579,14 +563,15 @@ public final class Merger {
 		if(noneXrefDbStartsWith(bpe, "UNIPROT")) {
 			//bpe does not have any uniprot xrefs; try to map other IDs to the primary ACs of the PRs in the Warehouse
 			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT"));
-			if (primaryACs.isEmpty())
+			if (primaryACs.isEmpty()) {
 				primaryACs.addAll(idMappingByXrefs(bpe, RelationshipXref.class, "UNIPROT"));
-            // FYI: if we'd try mapping biopolymers by name, then e.g,, 'HLA DQB1' or 'ND5'
-            // would result in hundreds unique uniprot/trembl IDs; so we don't do this!
+				// FYI: if we'd try mapping biopolymers by name, then, e.g., 'HLA DQB1' or 'ND5'
+				// would result in hundreds unique uniprot/trembl IDs; so we don't do this!
+			}
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryACs.isEmpty() && primaryACs.size() <= maxNumXrefsToAdd) {
-				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION, true);
+				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION);
 			}
 			else if(primaryACs.size() > maxNumXrefsToAdd) {
 				log.debug(bpe.getUri() + ", " + organismRemark + ", ambiguously maps to many UNIPROT ACs: "
@@ -597,7 +582,7 @@ public final class Merger {
 					it.next();
 					it.remove();
 				}
-				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION, true);
+				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION);
 			}
 		} else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
 			// let's map those to primary accessions, then - to HGNC Symbols, and then remove other ids
@@ -609,17 +594,15 @@ public final class Merger {
 				Collection<String> newACs = new HashSet<>(primaryACs);
 				for(Xref x : new HashSet<>(bpe.getXref())) { //here was a bug: body never executed due to empty set
 					if(!(x instanceof PublicationXref)
-                            && CPathUtils.startsWithAnyIgnoreCase(x.getDb(),"uniprot"))
-					{
-                        if (primaryACs.contains(x.getId())) {
-                            newACs.remove(x.getId()); //won't add the same xref again below
-							x.addComment("PRIMARY");
-                        } else {
-                            bpe.removeXref(x); //remove a secondary or unsupported species uniprot xref
-                        }
-                    }
+							&& CPathUtils.startsWithAnyIgnoreCase(x.getDb(),"uniprot")) {
+						if (primaryACs.contains(x.getId())) {
+							newACs.remove(x.getId()); //won't add the same xref again below
+						} else {
+							bpe.removeXref(x); //remove a secondary or unsupported species uniprot xref
+						}
+					}
 				}
-				addRelXrefs(m, bpe, "UNIPROT", newACs, RelTypeVocab.IDENTITY,true);
+				addRelXrefs(m, bpe, "UNIPROT", newACs, RelTypeVocab.IDENTITY);
 			}
 		}
 
@@ -637,7 +620,7 @@ public final class Merger {
 		final Set<String> hgncSymbols = new HashSet<>();
 		for (String ac : accessions) {
 			ProteinReference canonicalPR =
-					(ProteinReference) warehouseModel.getByID("http://identifiers.org/uniprot/" + ac);
+					(ProteinReference) warehouseModel.getByID("bioregistry.io/uniprot:" + ac);
 			if (canonicalPR != null) {
 				for (Xref x : canonicalPR.getXref())
 					if (x.getDb().equalsIgnoreCase("hgnc symbol"))
@@ -646,14 +629,13 @@ public final class Merger {
 		}
 		// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd) {
-			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION, false);
+			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
 	}
 
 	private static boolean noneXrefDbStartsWith(XReferrable xr, String db) {
-		db = db.toLowerCase();
 		for(Xref x : xr.getXref()) {
-			if (!(x instanceof PublicationXref) && x.getDb().toLowerCase().startsWith(db)) {
+			if (!(x instanceof PublicationXref) && StringUtils.startsWithIgnoreCase(x.getDb(), db)) {
 				return false;
 			}
 		}
@@ -668,17 +650,16 @@ public final class Merger {
 	 * @param db ref. target database name for new xrefs; normally, 'uniprot', 'chebi', 'hgnc symbol'
 	 * @param accessions bio/chem identifiers
 	 * @param relType - vocabulary term to use with the Xref
-	 * @param isPrimaryIds - if so, adds a comment "PRIMARY" to xrefs
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
 	private static void addRelXrefs(Model model, XReferrable bpe, String db,
-									Collection<String> accessions, RelTypeVocab relType, boolean isPrimaryIds)
+									Collection<String> accessions, RelTypeVocab relType)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("addRelXrefs: not a Gene, ER, or PE: " + bpe.getUri());
 		
 		for(String ac : accessions) {
-			RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(relType, db, ac, model, isPrimaryIds);
+			RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(relType, db, ac, model);
 			bpe.addXref(rx);
 		}
 	}
@@ -691,57 +672,63 @@ public final class Merger {
 	 */
 	private ProteinReference findProteinReferenceInWarehouse(final ProteinReference orig)
 	{
-		final String standardPrefix = "http://identifiers.org/";
-		final String warehouseUniprotUriPrefix = standardPrefix + "uniprot/";
 		final String origUri = orig.getUri();
 		
-		// Try to re-use existing object
-		if(origUri.startsWith(warehouseUniprotUriPrefix)) {
-			ProteinReference toReturn = (ProteinReference) warehouseModel.getByID(origUri);
-			if(toReturn != null)
-				return toReturn;
+		// first, search in the Warehouse for a PR by the uri
+		ProteinReference toReturn = (ProteinReference) warehouseModel.getByID(origUri);
+		if(toReturn != null) {
+			return toReturn;
 		}
- 
-		// If nothing's found by URI so far,
-		if (origUri.startsWith(standardPrefix)) {
-			// try id-mapping to UniProt AC using the ID part of the normalized URI
-			String id = origUri.substring(origUri.lastIndexOf('/')+1);
-			Set<String> mp = service.map(id, "UNIPROT");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
-			if(ers.size()>1) {
-				log.debug(origUri + ": by URI, ambiguously maps to " + ers.size() + " warehouse PRs");
+
+		// when orig has no xrefs or only publication xrefs,
+		if(orig.getXref().stream().noneMatch(x -> !(x instanceof PublicationXref))) {
+			// try id-mapping to uniprot AC using the ID part of the normalized URI
+			String id = CPathUtils.idFromNormalizedUri(origUri);
+			if (id != null) { //indeed normalized PR
+				Set<String> mp = service.map(List.of(id), "UNIPROT");
+				Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "UNIPROT");
+				if (ers.size() > 1) {
+					log.debug(origUri + ", by URI, ambiguously maps to " + ers.size() + " warehouse PRs");
+					return null;
+				} else if (ers.size() == 1)
+					return (ProteinReference) ers.iterator().next();
+			}
+		} else {
+			// try id-mapping by xrefs
+			// map by unification xrefs that are equivalent or map to the same, the only, primary ID and warehouse ER
+			Set<String> primaryIds = idMappingByXrefs(orig, UnificationXref.class, "UNIPROT");
+			Set<EntityReference> ers = entRefFromWhByPrimaryId(primaryIds, "UNIPROT");
+			if (ers.isEmpty()) {
+				//next, try - relationship xrefs
+				primaryIds = idMappingByXrefs(orig, RelationshipXref.class, "UNIPROT");
+				ers = entRefFromWhByPrimaryId(primaryIds, "UNIPROT");
+			}
+			if (ers.size() > 1) {
+				log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse PRs");
 				return null;
-			} else if (ers.size()==1)
+			} else if (ers.size() == 1) {
 				return (ProteinReference) ers.iterator().next();
+			}
 		}
-				
-		// if still nothing came out yet, try id-mapping by `Xrefs:
-		Set<EntityReference> ers = findWarehouseEntityRefByXrefsAndIdMapping(orig, "UNIPROT", warehouseUniprotUriPrefix);
-		if(ers.size()>1) {
-			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse PRs");
-			return null;
-		} else if (ers.size()==1)
-			return (ProteinReference) ers.iterator().next();
 
-		// mapping/merging proteins by names is too risky, even when unambiguous (quite unlikely); so we won't do.
+		// protein names are risky to use for mapping even if unambiguous (unlikely); won't do
 
-		//nothing found
+		// none found
 		return null;
 	}
 
 	/* A tricky internal id-mapping method.
-	 * @param element xRefferable BioPAX object; i.e. that can (and hopefully does) have Xrefs
-	 * @param xrefClassForMapping only use this Xref sub-class for mapping
+	 * @param element XRefferable BioPAX object; i.e. that can (and hopefully does) have Xrefs
+	 * @param xrefClassForMapping only use this Xref subclass for mapping
 	 * @param toDb target ID type; can be either 'UNIPROT' or 'CHEBI' only
 	 * @param dbStartsWithIgnoringcase optional list of allowed source xref.db names or prefixes
-	 * @param <T> the Xref sub-type
-     * @return primary accession numbers of the kind (toDb)
-     */
+	 * @param <T> only either UnificationXref or RelationshipXref
+   * @return primary accession numbers of the kind (toDb)
+  */
 	private <T extends Xref> Set<String> idMappingByXrefs(XReferrable element, Class<T> xrefClassForMapping,
-														  String toDb, String... dbStartsWithIgnoringcase)
-	{
-		//this method is to be called for a Gene, Complex, EntityReference
-		// - or a simple PEs that have no ER or its ER has no xrefs.
+														  String toDb, String... dbStartsWithIgnoringcase) {
+		//this method should be called for a Gene, Complex, EntityReference,
+		//or for SimplePhysicalEntity that either have no ER or its ER has no xrefs.
 		Assert.isTrue(PublicationXref.class != xrefClassForMapping,
 				"xrefClassForMapping cannot be PublicationXref");
 		Assert.isTrue(element instanceof Gene || element instanceof PhysicalEntity
@@ -753,13 +740,12 @@ public final class Merger {
 				"bad element type");
 
 		Set<String> result = Collections.emptySet();
+
 		final Set<T> filteredXrefs = new ClassFilterSet<>(element.getXref(), xrefClassForMapping);
 		if(filteredXrefs.isEmpty()) {
 			log.debug("no " + xrefClassForMapping.getSimpleName() +
-				" xrefs found for " + element.getModelInterface().getSimpleName() + " (" + element.getUri());
-		}
-		else
-		{
+				" found for " + element.getModelInterface().getSimpleName() + ": " + element.getUri());
+		} else {
 			final Set<String> sourceIds = new HashSet<>();
 			for (T x : filteredXrefs) {
 				if ( !(x instanceof PublicationXref) && !CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "PANTHER")
@@ -768,7 +754,7 @@ public final class Merger {
 					&&	(dbStartsWithIgnoringcase.length == 0
 							|| CPathUtils.startsWithAnyIgnoreCase(x.getDb(), dbStartsWithIgnoringcase))
 				){
-					sourceIds.add(CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId()));
+					sourceIds.add(CPathUtils.fixIdForMapping(x.getDb(), x.getId()));
 				}
 			}
 			// do id-mapping, for all ids at once, and return the result set:
@@ -810,47 +796,49 @@ public final class Merger {
 	 */
 	private SmallMoleculeReference findSmallMoleculeReferenceInWarehouse(final SmallMoleculeReference orig)
 	{
-		final String standardPrefix = "http://identifiers.org/";
-		final String warehouseChebiUriPrefix = standardPrefix + "chebi/";
 		final String origUri = orig.getUri();
-		
-		// Try to re-use existing object
-		if(origUri.startsWith(warehouseChebiUriPrefix)) {
-			SmallMoleculeReference toReturn = (SmallMoleculeReference) warehouseModel.getByID(origUri);
-			if(toReturn != null)
-				return toReturn;
+
+		//first, search in the Warehouse with the original SMR uri (feel lucky?)
+		BioPAXElement el = warehouseModel.getByID(origUri);
+		if( el instanceof SmallMoleculeReference) {
+			return (SmallMoleculeReference) el; //awesome!
 		}
 
-		// If nothing's found by URI, try id-mapping of the normalized URI part to chebi ID
-		if (origUri.startsWith(standardPrefix)) {
-			String id = origUri.substring(origUri.lastIndexOf('/')+1);
-			if(origUri.contains("compound"))
-				id = "CID:" + id;
-			else if(origUri.contains("substance"))
-				id = "SID:" + id;
-			Set<String> mp = service.map(id, "CHEBI");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
-			if(ers.size()>1) {
-				log.debug(origUri + ": by URI (ID part), ambiguously maps to " + ers.size() + " warehouse SMRs");
+		// when orig has no xrefs or only publication xrefs,
+		if(orig.getXref().stream().noneMatch(x -> !(x instanceof PublicationXref))) {
+			// try with the id from the (normalized but not a chebi) SMR URI
+			// and perform id-mapping to find a canonical SMR in the Warehouse model,
+			String id = CPathUtils.idFromNormalizedUri(origUri);
+			if (id != null) {
+				Set<String> mp = service.map(List.of(id), "CHEBI");
+				Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "CHEBI");
+				if (ers.size() > 1) {
+					log.debug(origUri + ": by URI (ID part), ambiguously maps to " + ers.size() + " warehouse SMRs");
+				} else if (!ers.isEmpty()) //size==1
+					return (SmallMoleculeReference) ers.iterator().next();
 			}
-			else if (!ers.isEmpty()) //size==1
+		} else { //otherwise, use xrefs
+			// try id-mapping by/from (already normalized) xrefs
+			Set<String> primaryIds = idMappingByXrefs(orig, UnificationXref.class, "CHEBI");
+			Set<EntityReference> ers = entRefFromWhByPrimaryId(primaryIds, "CHEBI");
+			if (ers.isEmpty()) {
+				//next, try - relationship xrefs
+				primaryIds = idMappingByXrefs(orig, RelationshipXref.class, "CHEBI");
+				ers = entRefFromWhByPrimaryId(primaryIds, "CHEBI");
+			}
+			if (ers.size() > 1) {
+				log.debug(origUri + ", by xrefs, ambiguously maps to " + ers.size() + " warehouse SMRs");
+				return null;
+			} else if (ers.size() == 1) {
 				return (SmallMoleculeReference) ers.iterator().next();
+			}
 		}
 
-		// if so far the mapping there was either ambiguous or got nothing,
-		// try id-mapping by (already normalized) Xrefs:
-		Set<EntityReference> ers = findWarehouseEntityRefByXrefsAndIdMapping(orig, "CHEBI", warehouseChebiUriPrefix);
-		if(ers.size()>1) {
-			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse SMRs");
-			return null;
-		} else if (ers.size()==1)
-			return (SmallMoleculeReference) ers.iterator().next();
-
-		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
+		// finally, map by exact name (e.g, 'ethanol' to ChEBI ID, etc.)
 		Set<String> mp = mapSmallMoleculeByExactName(orig);
-		ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
+		Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "CHEBI");
 		if(ers.size()>1) {
-			log.debug(origUri + ": by NAMEs, ambiguously maps to " + ers.size() + " warehouse SMRs");
+			log.debug(origUri + ", by names, ambiguously maps to " + ers.size() + " warehouse SMRs");
 			return null;
 		} else if (ers.size()==1) {
 			SmallMoleculeReference smr = (SmallMoleculeReference) ers.iterator().next();
@@ -858,62 +846,45 @@ public final class Merger {
 			return smr;
 		}
 
-		//if nothing found
+		// none found
 		return null;
 	}
 
-	private Set<EntityReference> findWarehouseEntityRefByXrefsAndIdMapping(
-			EntityReference orig, String dest, String canonicalUriPrefix)
-	{
-		//map by unification xrefs that are equivalent or map to the same, the only, primary ID and warehouse ER
-		Set<String> mappingSet = idMappingByXrefs(orig, UnificationXref.class, dest);
-		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
-
-		if(mapsTo.isEmpty()) {
-			//next, try - relationship xrefs
-			mappingSet = idMappingByXrefs(orig, RelationshipXref.class, dest);
-			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
-		}
-
-		return mapsTo; //can be more than one, but then we won't merge the original ER
-	}
-
 	private Set<String> mapSmallMoleculeByExactName(Named el) {
-		Set<String> mp = new HashSet<>();
-
-		// save all the names in a different Set:
-		final Set<String> names = new HashSet<>();
-		for(String n : el.getName())
-			names.add(n.toLowerCase()); //LC is vital
-
+		Set<String> mp = new HashSet<>(1);
 		if(el instanceof SmallMolecule || el instanceof SmallMoleculeReference) {
 			//find a warehouse SMR(s) with exactly the same name (case-insensitive).
-			for(SmallMoleculeReference er : warehouseModel.getObjects(SmallMoleculeReference.class))
-			{
-				for(String s : er.getName()) {
-					if(names.contains(s.toLowerCase())) {
-						//extract the ChEBI accession from URI, add
+			for(SmallMoleculeReference er : warehouseModel.getObjects(SmallMoleculeReference.class)) {
+				for(String erName : er.getName()) {
+					if(el.getName().stream().anyMatch(name -> StringUtils.equalsIgnoreCase(name, erName))) {
+						//extract the ChEBI AC from the normalized SMR URI
 						mp.add(CPathUtils.idFromNormalizedUri(er.getUri()));
 						break;
 					}
 				}
-			}			
+			}
 		}
-
 		return mp;
 	}
 
-	private Set<EntityReference> findEntityRefUsingIdMappingResult(Set<String> mapsTo, String uriPrefix)
-	{
+	/*
+	 * @param primaryIds - chebi or uniprot primary IDs
+	 * @param collection - 'chebi' or 'uniprot'
+	 * @return set of matching ERs from the Warehouse model or empty set
+	 */
+	private Set<EntityReference> entRefFromWhByPrimaryId(Set<String> primaryIds, String collection) {
 		Set<EntityReference> toReturn = new HashSet<>();
-		
-		for(String id : mapsTo) {		
-			String uri = uriPrefix + id;
-			EntityReference er = (EntityReference) warehouseModel.getByID(uri);
-			if(er != null)
-				toReturn.add(er);
+		for(String id : primaryIds) {
+			// Normalizer.uri("", prefix, id, EntityReference.class); //alternative way (in case we generalize for more biopax types)
+			String uri = Resolver.getURI(collection, id); //e.g. id can be 'CHEBI:20' or '20' (no banana)
+			if(uri != null) {
+				EntityReference er = (EntityReference) getWarehouseModel().getByID(uri);
+				if (er != null) {
+					toReturn.add(er);
+				}
+			}
 		}
-		
 		return toReturn;
 	}
+
 }

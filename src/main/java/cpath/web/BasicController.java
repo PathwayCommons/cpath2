@@ -58,7 +58,7 @@ public abstract class BasicController
                                      HttpServletRequest request,
                                      HttpServletResponse response)
   {
-    //TODO: switch to using @RestControllerAdvice and @ExceptionHandler
+    // TODO: switch to using @RestControllerAdvice and @ExceptionHandler
     try {
       //log/track using a shorter message
       track(request, args, null, error);

@@ -27,7 +27,7 @@ public class OpenApiConfig {
     return new Info()
       .title(settings.getName() + " " + settings.getVersion())
       .description("PC2 (cPath2) web services")
-      .version("14")
+      .version(settings.getVersion())
       .contact(apiContact())
       .license(apiLicence());
   }
