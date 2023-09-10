@@ -4,8 +4,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.humanmetabolism.converter.SbmlToBiopaxConverter;
-import org.sbml.jsbml.SBMLDocument;
-import org.sbml.jsbml.SBMLReader;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
@@ -18,12 +16,11 @@ public class ReconxConverter extends BaseConverter {
 
     public void convert(InputStream is, OutputStream os) {
         Model bpModel;
-
+        SbmlToBiopaxConverter sbmlToBiopaxConverter = new SbmlToBiopaxConverter();
         try {
-            SBMLDocument sbmlDocument = SBMLReader.read(is);
-            SbmlToBiopaxConverter sbmlToBiopaxConverter = new SbmlToBiopaxConverter();
-            sbmlToBiopaxConverter.setMakePathway(false); //won't generate that all-interactions root model pathway
-            bpModel = sbmlToBiopaxConverter.convert(sbmlDocument);
+            sbmlToBiopaxConverter.setMakePathway(false);
+            //do not produce root/top pathway
+            bpModel = sbmlToBiopaxConverter.convert(is);
         } catch (XMLStreamException e) {
             throw new RuntimeException("Failed to convert Recon2 SBML to BioPAX.", e);
         }
