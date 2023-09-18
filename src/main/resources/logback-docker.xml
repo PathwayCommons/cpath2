@@ -13,6 +13,7 @@
   </appender>
 
   <logger name="org.bbop" level="error"/>
+  <logger name="org.biopax" level="warn"/>
   <root level="info">
     <appender-ref ref="console"/>
   </root>

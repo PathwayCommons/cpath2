@@ -22,16 +22,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+
+import static org.springframework.http.MediaType.*;
 
 /**
  * cPathSquared Model Access Web Service.
  */
 @Profile("web")
 @RestController
-@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
 public class BiopaxModelController extends BasicController {
 
   /**
@@ -50,28 +51,28 @@ public class BiopaxModelController extends BasicController {
     binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
     binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-    binder.registerCustomEditor(SIFType.class, new SIFTypeEditor()); //also works for the SIFEnum sub-class
-    binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
+    binder.registerCustomEditor(SIFType.class, new SIFTypeEditor()); //also works for the SIFEnum subclass
+//    binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
   }
 
   // Get by ID (URI) command
-  @RequestMapping("/get")
+  @PostMapping("/get")
   @Operation(
-    summary = "Get BioPAX elements (as sub-model) by URIs.",
-    description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
-      "optionally, convert the result to other <a href='formats'>output formats</a>."
+    summary = "HTTP POST for a BioPAX sub-model by URI/IDs (but not too many)",
+    description = "Retrieve pathways/interactions/entities by their BioPAX URIs " +
+        "(values must be URL-encoded); optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
-  public void elementById(@Valid Get args, BindingResult bindingResult,
-                          HttpServletRequest request, HttpServletResponse response)
+  public void elementById(@Valid @RequestBody Get args, BindingResult bindingResult,
+                             HttpServletRequest request, HttpServletResponse response)
   {
     if(bindingResult.hasErrors()) {
       errorResponse(args, new ErrorResponse(Status.BAD_REQUEST, errorFromBindingResult(bindingResult)),
         request, response);
     } else {
       String[] uris = args.getUri();
-      Map<String,String> options = new HashMap<String,String>();
+      Map<String,String> options = new HashMap<>();
       if(args.getPattern()!=null && args.getPattern().length>0) {
-        //used StringUtils.join vs String.join due to it's array of enum. objects, not char sequences.
+        //use StringUtils.join (not String.join) here due to it is an enum (not char seq.) array!
         options.put("pattern", StringUtils.join(args.getPattern(), ","));
       }
       ServiceResponse result = service.fetch(args.getFormat(), options, args.getSubpw(), uris);
@@ -79,8 +80,18 @@ public class BiopaxModelController extends BasicController {
     }
   }
 
+  @GetMapping("/get")
+  @Operation(
+      summary = "HTTP POST to retrieve a BioPAX sub-model by element URI/IDs (using JSON request body).",
+      description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
+          "optionally, convert the result to other <a href='/#formats'>output formats</a>."
+  )
+  public void elementByIdGet(@Valid Get args, BindingResult bindingResult,
+                             HttpServletRequest request, HttpServletResponse response) {
+    elementById(args, bindingResult, request, response);
+  }
 
-  @RequestMapping("/top_pathways")
+  @GetMapping(path = "/top_pathways", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
     summary = "Search for top pathways.",
     description = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
@@ -90,7 +101,6 @@ public class BiopaxModelController extends BasicController {
   public SearchResponse topPathways(@Valid TopPathways args, BindingResult bindingResult,
                                     HttpServletRequest request, HttpServletResponse response)
   {
-
     if(bindingResult.hasErrors()) {
       errorResponse(args, new ErrorResponse(Status.BAD_REQUEST,
         errorFromBindingResult(bindingResult)), request, response);
@@ -103,15 +113,35 @@ public class BiopaxModelController extends BasicController {
       } else {
         SearchResponse hits = (SearchResponse) results;
         // log/track data access events
-        track(request, args, hits.getProviders(), null);
+        audit(request, args, hits.getProviders(), null);
         hits.setVersion(service.settings().getVersion());
         return hits;
       }
     }
   }
 
+  @GetMapping(path = "/traverse", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
+  @Operation(
+      summary = "Access properties of BioPAX elements using graph path expressions",
+      description = "To collect specific BioPAX property values, use the following path accessor format: " +
+          "InitialClass/property[:filterClass]/[property][:filterClass]... A \"*\" sign after the property " +
+          "instructs the path accessor to transitively traverse that property. For example, the following " +
+          "path accessor will traverse through all physical entity components a complex, including components " +
+          "of nested complexes, if any: Complex/component*/entityReference/xref:UnificationXref. " +
+          "The next would list display names of all participants of interactions, which are pathway components " +
+          "of a pathway: Pathway/pathwayComponent:Interaction/participant*/displayName. " +
+          "Optional restriction ':filterClass' enables limiting the property values to a certain sub-class " +
+          "of the object property range. In the first example above, this is used to get only the unification xrefs. " +
+          "All the official BioPAX properties as well as additional derived classes and properties, " +
+          "such as inverse properties and interfaces that represent anonymous union classes in BioPAX OWL " +
+          "can be used in a path accessor."
+  )
+  public TraverseResponse traverseGet(@Valid Traverse args, BindingResult bindingResult,
+                                   HttpServletRequest request, HttpServletResponse response) {
+    return traverse(args, bindingResult, request, response);
+  }
 
-  @RequestMapping("/traverse")
+  @PostMapping(path = "/traverse", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
     summary = "Access properties of BioPAX elements using graph path expressions",
     description = "To collect specific BioPAX property values, use the following path accessor format: " +
@@ -127,7 +157,7 @@ public class BiopaxModelController extends BasicController {
       "such as inverse properties and interfaces that represent anonymous union classes in BioPAX OWL " +
       "can be used in a path accessor."
   )
-  public TraverseResponse traverse(@Valid Traverse args, BindingResult bindingResult,
+  public TraverseResponse traverse(@Valid @RequestBody Traverse args, BindingResult bindingResult,
                                    HttpServletRequest request, HttpServletResponse response)
   {
     if(bindingResult.hasErrors()) {
@@ -138,7 +168,7 @@ public class BiopaxModelController extends BasicController {
       if(sr instanceof ErrorResponse) {
         errorResponse(args, (ErrorResponse) sr, request, response);
       } else {
-        track(request, args, null, null);
+        audit(request, args, null, null);
         TraverseResponse traverseResponse = (TraverseResponse) sr;
         traverseResponse.setVersion(service.settings().getVersion());
         return traverseResponse;
@@ -147,20 +177,40 @@ public class BiopaxModelController extends BasicController {
     return null;
   }
 
-  @RequestMapping("/graph")
+  @GetMapping("/graph")
+  @Operation(
+      summary = "BioPAX graph query.",
+      description = "Find connections of bio network elements, such as the shortest path between " +
+          "two proteins or the neighborhood for a particular protein state or all states. " +
+          "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
+          "Graph searches consider detailed BioPAX semantics, such as generics, nested complexes, " +
+          "and traverse the graph accordingly. We integrate data from multiple <a href='/#datasources'>sources</a> " +
+          "and consistently normalize Xref, EntityReference, Provenance, BioSource, and ControlledVocabulary objects " +
+          "if we are absolutely sure about several objects of the same type are equivalent. " +
+          "We do not merge physical entities (states) and processes from different sources automatically, " +
+          "as accurately matching and aligning pathways at that level is still an open research problem."
+  )
+  public void graphQueryGet(@Valid Graph args, BindingResult bindingResult,
+                         HttpServletRequest request, HttpServletResponse response)
+  {
+    graphQuery(args, bindingResult, request, response);
+  }
+
+
+  @PostMapping("/graph")
   @Operation(
     summary = "BioPAX graph query.",
     description = "Find connections of bio network elements, such as the shortest path between " +
       "two proteins or the neighborhood for a particular protein state or all states. " +
-      "Optionally, convert the result to other <a href='formats'>output formats</a>." +
+      "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
       "Graph searches consider detailed BioPAX semantics, such as generics, nested complexes, " +
-      "and traverse the graph accordingly. We integrate data from multiple <a href='datasources'>sources</a> " +
+      "and traverse the graph accordingly. We integrate data from multiple <a href='/#datasources'>sources</a> " +
       "and consistently normalize Xref, EntityReference, Provenance, BioSource, and ControlledVocabulary objects " +
       "if we are absolutely sure about several objects of the same type are equivalent. " +
       "We do not merge physical entities (states) and processes from different sources automatically, " +
       "as accurately matching and aligning pathways at that level is still an open research problem."
   )
-  public void graphQuery(@Valid Graph args, BindingResult bindingResult,
+  public void graphQuery(@Valid @RequestBody Graph args, BindingResult bindingResult,
                          HttpServletRequest request, HttpServletResponse response)
   {
     //check for binding errors
@@ -172,7 +222,7 @@ public class BiopaxModelController extends BasicController {
 
     ServiceResponse result;
 
-    Map<String,String> formatOptions = new HashMap<String,String>();
+    Map<String,String> formatOptions = new HashMap<>();
     if(args.getPattern()!=null && args.getPattern().length>0)
       formatOptions.put("pattern", StringUtils.join(args.getPattern(),","));
 
@@ -205,7 +255,7 @@ public class BiopaxModelController extends BasicController {
     stringResponse(args, result, request, response);
   }
 
-  @RequestMapping(value="/search")
+  @GetMapping(path="/search", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
     summary = "A full-text search in the BioPAX database using Lucene query syntax",
     description = "Index fields (case-sensitive): uri, keyword, name, pathway, xrefid, datasource, " +
@@ -228,7 +278,7 @@ public class BiopaxModelController extends BasicController {
         errorFromBindingResult(bindingResult)), request, response);
     } else {
       // get results from the service
-      ServiceResponse results = service.search(args.getQ(), args.getPage(), args.getType(),
+      ServiceResponse results = service.search(args.getQ(), args.getPage(), args.getBiopaxClass(),
         args.getDatasource(), args.getOrganism());
 
       if(results instanceof ErrorResponse) {
@@ -236,7 +286,7 @@ public class BiopaxModelController extends BasicController {
       }
       else { //if, due to a bug, results==null, it'll throw a NullPointerException
         // log/track one data access event for each data provider listed in the result
-        track(request, args, ((SearchResponse)results).getProviders(), null);
+        audit(request, args, ((SearchResponse)results).getProviders(), null);
         searchResponse = (SearchResponse) results;
         searchResponse.setVersion(service.settings().getVersion());
       }

@@ -3,7 +3,7 @@ package cpath.web.args;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 
 import cpath.service.api.OutputFormat;
@@ -13,8 +13,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Get extends ServiceQuery {
+
   @NotNull(message = "Illegal Output Format")
-  @Parameter(
+  @Schema(
     description = "Output format name (default: BIOPAX)",
     example = "JSONLD"
   )
@@ -22,29 +23,31 @@ public class Get extends ServiceQuery {
 
   // required at least one value
   @NotEmpty(message = "Provide at least one URI.")
-  @Parameter(
+  @Schema(
     description = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
     example = "TP53"
   )
   private String[] uri;
 
-  @Parameter(
+  @Schema(
     description = "If format is SIF or TXT, one can specify interaction types to apply " +
-      "(by default it uses all the build-in patterns but 'neighbor-of')",
-    example = "interacts-with"
+      "(by default, it uses all the build-in patterns but 'neighbor-of')",
+    example = "interacts-with" //custom editor maps this to "INTERACTS_WITH" and then to the SIFEnum instance
   )
   private SIFEnum[] pattern;
 
-  @Parameter(
+  @Schema(
     description =  "For the 'get' and 'graph' queries, whether to skip or not traversing into " +
-      "sub-pathways in the result BioPAX sub-model."
+      "sub-pathways in the result BioPAX sub-model.",
+    example = "false"
   )
   private boolean subpw;
 
   public Get() {
     format = OutputFormat.BIOPAX; // default
     subpw = false;
+    uri = new String[]{};
   }
 
   public OutputFormat getFormat() {
@@ -85,6 +88,9 @@ public class Get extends ServiceQuery {
   public boolean getSubpw() {
     return subpw;
   }
+  public boolean isSubpw() {
+    return subpw;
+  }
 
   public void setSubpw(boolean subpw) {
     this.subpw = subpw;
@@ -96,9 +102,9 @@ public class Get extends ServiceQuery {
       .append(" for:").append(format)
       .append("; spw:").append(subpw)
       .append("; uri:").append(Arrays.toString(uri));
-    if (pattern != null && pattern.length > 0)
+    if (pattern != null && pattern.length > 0) {
       sb.append("; pat:").append(Arrays.toString(pattern));
-
+    }
     return sb.toString();
   }
 
@@ -107,8 +113,4 @@ public class Get extends ServiceQuery {
     return "get";
   }
 
-  @Override
-  public String outputFormat() {
-    return format.name().toLowerCase();
-  }
 }

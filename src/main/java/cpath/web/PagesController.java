@@ -7,6 +7,7 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @Profile("web")
+@Hidden //from swagger/openapi
 @RequestMapping(method = RequestMethod.GET)
 public class PagesController extends BasicController {
 

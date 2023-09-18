@@ -6,9 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+//import org.springframework.util.LinkedMultiValueMap;
+//import org.springframework.util.MultiValueMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,11 +66,30 @@ public class WebApplicationIT {
 		assertTrue(result.contains("<glyph class=\"process\""));
 	}
 
-	@Test //if POST isn't disabled
+//	@Test
+//	public void testPostQueryById() {
+//		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+//		map.add("uri", "bioregistry.io/uniprot:P27797");
+//		String result = template.postForObject("/get", map, String.class);
+//		assertNotNull(result);
+//		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"bioregistry.io/uniprot:P27797\""));
+//	}
+
+	@Test
 	public void testPostQueryById() {
-		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-		map.add("uri", "bioregistry.io/uniprot:P27797");
-		String result = template.postForObject("/get", map, String.class);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		String body = """
+    		{
+    			"uri": [
+    				"bioregistry.io/uniprot:P27797"
+    			]
+    		}
+				""";
+		HttpEntity<String> req = new HttpEntity<>(body, headers);
+
+		String result = template.postForObject("/get", req, String.class);
+
 		assertNotNull(result);
 		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"bioregistry.io/uniprot:P27797\""));
 	}

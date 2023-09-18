@@ -39,7 +39,7 @@ public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
   private static final String dataFileSuffixRegex = "[^.]+\\.gz$";
 
-  // LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
+  // LOADER can handle file://, ftp://, http://  resources
   public static final ResourceLoader LOADER = new DefaultResourceLoader();
 
   private CPathUtils() {

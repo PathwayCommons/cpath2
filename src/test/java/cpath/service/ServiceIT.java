@@ -30,7 +30,7 @@ public class ServiceIT {
   public final void settings() {
     Settings s = service.settings();
     assertNotNull(s);
-    assertEquals("test/", s.getXmlBase());
+    assertEquals("http://test/", s.getXmlBase());
     assertEquals("Pathway Commons Demo",s.getName());
     assertEquals(1, s.getOrganismTaxonomyIds().size());
     assertEquals(Integer.valueOf(100),s.getMaxHitsPerPage());

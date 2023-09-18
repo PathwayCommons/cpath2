@@ -3,7 +3,7 @@ package cpath.service.jaxb;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 import org.apache.commons.text.StringEscapeUtils;
 

@@ -26,7 +26,7 @@ public class OpenApiConfig {
   private Info apiInfo() {
     return new Info()
       .title(settings.getName() + " " + settings.getVersion())
-      .description("PC2 (cPath2) web services")
+      .description("Pathway Commons Web Services (pc2/cpath2)")
       .version(settings.getVersion())
       .contact(apiContact())
       .license(apiLicence());
@@ -42,7 +42,7 @@ public class OpenApiConfig {
     return new Contact()
       .name("Pathway Commons")
       .email("pathway-commons-help@googlegroups.com")
-      .url("http://www.pathwaycommons.org");
+      .url("https://www.pathwaycommons.org");
   }
 
 }

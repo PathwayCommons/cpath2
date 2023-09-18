@@ -5,6 +5,7 @@ import cpath.service.api.OutputFormat;
 import cpath.service.jaxb.*;
 import cpath.web.args.binding.*;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -12,25 +13,25 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.MediaType;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 
 /**
- * Help Controller.
- *
- * Returns XML or JSON documents.
+ * Help Controller (returns JSON docs).
  * {@link Help} bean.
  */
 @Profile("web")
+@Hidden
 @RestController
-@RequestMapping(method = RequestMethod.GET)
+@RequestMapping(method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
 public class HelpController extends BasicController {
 
   /**
@@ -54,11 +55,6 @@ public class HelpController extends BasicController {
     Files.copy(xsdPath, response.getOutputStream());
   }
 
-  /*
-   * List of formats that web methods return
-   *
-   * @return
-   */
   @RequestMapping("/help/formats")
   public Help getFormats() {
     Help help = new Help();
@@ -72,7 +68,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-
   @RequestMapping("/help/formats/{fmt}")
   public Help getFormat(@PathVariable OutputFormat fmt) {
     if (fmt == null) return getFormats();
@@ -83,11 +78,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-  /**
-   * List of BioPAX L3 Classes
-   *
-   * @return
-   */
   @RequestMapping("/help/types")
   public Help getBiopaxTypes() {
     Help help = new Help();
@@ -133,7 +123,6 @@ public class HelpController extends BasicController {
     return h;
   }
 
-
   @RequestMapping("/help/types/properties")
   public Help getBiopaxTypesProperties() {
     Help h = new Help("properties");
@@ -167,7 +156,6 @@ public class HelpController extends BasicController {
     return h;
   }
 
-
   @RequestMapping("/help/types/inverse_properties")
   public Help getBiopaxTypesInverseProperties() {
     Help h = new Help("inverse_properties");
@@ -186,11 +174,6 @@ public class HelpController extends BasicController {
     return h;
   }
 
-  /**
-   * List of graph query types.
-   *
-   * @return
-   */
   @RequestMapping("/help/kinds")
   public Help getGraphTypes() {
     Help help = new Help();
@@ -204,7 +187,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-
   @RequestMapping("/help/kinds/{kind}")
   public Help getGraphType(@PathVariable GraphType kind) {
     if (kind == null) return getGraphTypes();
@@ -215,12 +197,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-
-  /**
-   * List of graph directions.
-   *
-   * @return
-   */
   @RequestMapping("/help/directions")
   public Help getDirectionTypes() {
     Help help = new Help();
@@ -233,7 +209,6 @@ public class HelpController extends BasicController {
     help.setExample("help/directions/downstream");
     return help;
   }
-
 
   @RequestMapping("/help/directions/{direction}")
   public Help getDirectionType(@PathVariable Direction direction) {

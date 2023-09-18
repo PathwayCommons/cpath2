@@ -428,6 +428,9 @@ public class ServiceImpl implements Service {
    */
   private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
   {
+    if(identifiers == null) {
+      return new String[]{};
+    }
     if (identifiers.length == 0) {
       return identifiers; //empty array
     }
@@ -719,14 +722,6 @@ public class ServiceImpl implements Service {
             .collect(Collectors.toCollection(TreeSet::new));
 
     return results;
-  }
-
-  /*
-   * Track core service events using Google Analytics Measurement Protocol
-   */
-  public void track(String ip, String category, String label)
-  {
-    log.info(String.format("%s, %s, %s", ip, category.toUpperCase(), String.valueOf(label).toLowerCase()));
   }
 
   public Mappings mapping() {

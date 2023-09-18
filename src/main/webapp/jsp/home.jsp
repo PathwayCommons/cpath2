@@ -12,34 +12,25 @@
     <title>cPath2::Info (${cpath.name})</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
+
 <jsp:include page="header.jsp"/>
 
-<div class="row nav-target" id="about">
-    <h3><a href="${cpath.url}">${cpath.name}</a></h3>
-    <blockquote>
-        <!-- using c:out below to escape all internal html, if any (should not be) -->
-        <p><c:out value="${cpath.description}"/></p>
-    </blockquote>
-</div>
-
-<h2>RESTful Web Service API</h2>
-
-<div class="row">
+<div class="row" id="about">
     <div class="jumbotron">
-        <h3>Core Commands</h3>
-        <blockquote><p>To query the integrated biological pathway database,
-            application developers can use the following commands:</p></blockquote>
-        <ul id="commands" title="Main commands">
+      <p><c:out value="${cpath.description}"/></p>
+        <blockquote>
+          <p>Web service commands:</p>
+          <ul id="commands" title="Main commands">
             <li><a href="#search">SEARCH</a></li>
             <li><a href="#get">GET</a></li>
             <li><a href="#graph">GRAPH</a></li>
             <li><a href="#traverse">TRAVERSE</a></li>
             <li><a href="#top_pathways">TOP_PATHWAYS</a></li>
-        </ul>
+          </ul>
+        </blockquote>
         <blockquote>
-            <p>Please check the availability terms of <a href="datasources">contributing databases</a>.<br/>
-                <strong>Please see also the <a href="swagger">Swagger</a> auto-generated documentation.</strong>
-            </p>
+          <p>Please check the availability terms of <a href="datasources">contributing databases</a>.</p>
+          <p>Try the <a href="swagger">auto-generated API docs</a> (OpenAPI/Swagger)</p>
         </blockquote>
     </div>
 </div>
@@ -49,15 +40,14 @@
     <h4><a id="about_uris"></a>About URIs and IDs</h4>
     <p>
         Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which
-        are either standard <a href="http://identifiers.org" target="_blank">Identifiers.org</a>
-        URLs (for most canonical biological entities and controlled vocabularies), or ${cpath.name}
-        generated ${cpath.xmlBase}<em>&lt;localID&gt;</em> URLs (for most BioPAX Entities and Xrefs).
+        are either based on a <a href="https://bioregistry.io" target="_blank">bioregistry.io</a> prefix
+        (for canonical biological entities and controlled vocabularies) or ${cpath.name}
+        generated ${cpath.xmlBase}<em>&lt;localID&gt;</em> URL (for most BioPAX Entities).
         BioPAX object URIs used by this service are not easy to guess; thus, they should be discovered using
         web service commands, such as search, top_pathways, or from our archive files.
-        For example, despite knowing PC URI namespace ${cpath.xmlBase} or Identifiers.org prefix,
-        one should not build a query by guessing uri like '/get?uri=${cpath.xmlBase}foo' or
-        '/get?uri=http://identifiers.org/something/foo', respectively,
-        unless the BioPAX individual there exists (instead, search for existing objects of interest first).
+        For example, despite knowing the URI namespace ${cpath.xmlBase} or prefix,
+        one should not build a query by guessing URIs unless the BioPAX individual there exists
+        (do search first and collect the URIs).
         However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer)
         <strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance
             (ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene),
@@ -225,7 +215,7 @@
         <li><em>limit=</em> [Optional] graph query search distance limit (default = 1).
         </li>
         <li><em>format=</em> [Optional] output format (<a
-                href="#graph_formats">values</a>)
+                href="#output_formats">values</a>)
         </li>
         <li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
             see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
@@ -410,7 +400,7 @@
         <div class="parameters col-sm-6" id="biopax_types">
             <h3>BioPAX class ('type'):</h3>
             <p><a href="#" class="hider" hide-id="types">Click here</a> to show/hide the list
-                (see also: <a href="https://www.biopax.org/owldoc/Level3/">BioPAX Classes</a>).
+                (see also: <a href="https://www.biopax.org/owldoc/Level3/" target="_blank">BioPAX Classes</a>).
             </p>
             <!-- items are to be added here by a javascript -->
             <ul class="dropdown hidden" id="types"></ul>
@@ -427,7 +417,7 @@
                 values of ControlledVocabulary.xref can only be of <em>UnificationXref</em> type.</p>
             <p><a href="#" class="hider" hide-id="properties">Click here</a>
                 to show/hide the list of properties</p>
-            <!-- items are to be added here by a javascript -->
+            <!-- items will be added here by the javascript -->
             <ul id="properties" class="hidden"></ul>
         </div>
         <div class="parameters col-sm-6" id="biopax_inverse_properties">

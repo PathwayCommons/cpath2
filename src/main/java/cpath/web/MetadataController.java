@@ -11,6 +11,7 @@ import cpath.service.CPathUtils;
 import cpath.service.metadata.Datasource;
 import cpath.web.args.binding.MetadataTypeEditor;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -20,8 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import static org.springframework.http.MediaType.*;
 
 @Profile("web")
+@Hidden
 @RestController
-@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
+@RequestMapping(method = {RequestMethod.GET})
 public class MetadataController extends BasicController {
 
   private static final Logger log = LoggerFactory.getLogger(MetadataController.class);

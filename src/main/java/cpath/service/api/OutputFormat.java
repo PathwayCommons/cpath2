@@ -25,11 +25,11 @@ public enum OutputFormat {
 	JSONLD("JSON-LD format", ".json", "application/ld+json")
 	;
 
-    private final String info;
+  private final String info;
 	private final String ext;
 	private final String mediaType;
     
-    public String getInfo() {
+  public String getInfo() {
 		return info;
 	}
 

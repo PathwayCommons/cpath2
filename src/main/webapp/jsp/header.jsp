@@ -14,7 +14,7 @@
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
 				 <img alt="Project Team Logo" src="${cpath.logo}" id="team-logo"/>&nbsp;
-				 <c:out value="${cpath.name} Web Service ${cpath.version}"/>&nbsp;
+				 <c:out value="${cpath.name} v${cpath.version}"/>&nbsp;
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
@@ -38,9 +38,9 @@
 					<li><a href="<spring:url value='/datasources'/>">Providers</a></li>
 					<li><a href="${cpath.url}/archives/">Downloads</a></li>
                   </ul>
-          	  </div> <!-- collapse -->
-      </div> <!-- container -->
+          	  </div> <%-- collapse --%>
+      </div> <%-- container --%>
  	</nav>
 </header>
-<!-- begin the #content container that will be closed in the footer.jsp-->
+<%-- begin the #content container that will be closed in the footer.jsp --%>
 <div id="content" class="container nav-target">

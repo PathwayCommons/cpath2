@@ -8,7 +8,6 @@ import org.biopax.paxtools.model.level3.Pathway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -25,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles({"web"})
 @WebMvcTest(controllers = {HelpController.class, BiopaxModelController.class})
 @Import({WebApplication.class, Settings.class})
-@AutoConfigureRestDocs
 public class ControllersTest {
 	@Autowired
 	private MockMvc mvc;
@@ -55,7 +53,7 @@ public class ControllersTest {
 
   @Test
 	public void testGetTypes() throws Exception {
-    mvc.perform(get("/help/types")) // default accept/expect json
+    mvc.perform(get("/help/types")) // default json
       .andExpect(status().isOk())
       .andExpect(content().contentType(MediaType.APPLICATION_JSON))
 			.andExpect(content().string(
@@ -65,20 +63,17 @@ public class ControllersTest {
 	}
 
   @Test
+  public void testGetTypesXml() throws Exception {
+    mvc.perform(get("/help/types").accept(MediaType.APPLICATION_XML))
+        .andExpect(status().is4xxClientError()); // only application/json is supported now
+  }
+
+  @Test
   public void testGetTypeJson() throws Exception {
     mvc.perform(get("/help/types/Gene").accept(MediaType.APPLICATION_JSON))
       .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
       .andExpect(content().json("{\"id\":\"Gene\",\"title\":\"Gene\",\"info\":\"See: biopax.org, " +
         "https://www.biopax.org/owldoc/Level3/\",\"example\":null,\"output\":null,\"members\":[],\"empty\":false}"));
-  }
-
-  @Test
-  public void testGetTypeXml() throws Exception {
-    mvc.perform(get("/help/types/Gene").accept(MediaType.APPLICATION_XML))
-      .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_XML))
-      .andExpect(content().xml("<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-        "standalone=\"yes\"?><help><id>Gene</id><info>See: biopax.org, " +
-        "https://www.biopax.org/owldoc/Level3/</info><title>Gene</title></help>"));
   }
 
 	@Test

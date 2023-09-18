@@ -159,14 +159,6 @@ public interface Service {
    */
   Set<String> map(Collection<String> fromIds, String toDb);
 
-  /**
-   * Record web service and data access events.
-   * @param ip IP address
-   * @param category log event category
-   * @param name event name
-   */
-  void track(String ip, String category, String name);
-
   Mappings mapping();
 
   Metadata metadata();

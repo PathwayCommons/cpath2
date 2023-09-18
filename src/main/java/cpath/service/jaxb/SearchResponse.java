@@ -1,11 +1,11 @@
 package cpath.service.jaxb;
 
+import jakarta.xml.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import javax.xml.bind.annotation.*;
 
 
 @XmlRootElement(name="searchResponse")
@@ -35,7 +35,7 @@ public class SearchResponse extends ServiceResponse {
 	public SearchResponse() {
 	}
     
-    public String getComment() {
+  public String getComment() {
 		return comment;
 	}
 	

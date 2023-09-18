@@ -3,43 +3,54 @@ package cpath.web.args;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 
-import io.swagger.v3.oas.annotations.Parameter;
+import cpath.web.args.binding.BiopaxTypeEditor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.biopax.paxtools.model.BioPAXElement;
 
 import java.util.Arrays;
 
 public class Search extends ServiceQuery {
   @NotBlank(message = "Parameter 'q' (a Lucene query string) is blank (not specified).")
-  @Parameter(
+  @Schema(
     description = "Query string (full-text search supports Lucene query syntax).",
     required = true,
     example = "xrefid:FGF*"
   )
   private String q;
 
-  @Parameter(
-    description = "Filter by BioPAX L3 class name (case-insensitive).",
+  @Schema(
+    description = "Filter by BioPAX L3 class name (BioPAX interface name, case-insensitive).",
     example = "pathway"
   )
-  private Class<? extends BioPAXElement> type;
+  private String type;
 
-  @Parameter(
+  public String getType() {
+    return type;
+  }
+  public void setType(String type) {
+    this.type = type;
+    this.biopaxClass = BiopaxTypeEditor.getSearchableBiopaxClassByName(type);
+  }
+
+  //this is set from request using custom property editor
+  private Class<? extends BioPAXElement> biopaxClass;
+
+  @Schema(
     description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
     example = "9606"
   )
   private String[] organism;
 
-  @Parameter(
+  @Schema(
     description = "Filter by data source name, id or uri.",
     example = "reactome"
   )
   private String[] datasource;
 
   @Min(0)
-  @Parameter(
+  @Schema(
     description = "Pagination: page number (>=0) of the full-text search results.",
-    example = "0",
-    required = false
+    example = "0"
   )
   private Integer page;
 
@@ -55,12 +66,15 @@ public class Search extends ServiceQuery {
     this.q = q;
   }
 
-  public Class<? extends BioPAXElement> getType() {
-    return type;
+  public Class<? extends BioPAXElement> getBiopaxClass() {
+    return biopaxClass;
   }
 
-  public void setType(Class<? extends BioPAXElement> type) {
-    this.type = type;
+  public void setBiopaxClass(Class<? extends BioPAXElement> biopaxClass) {
+    this.biopaxClass = biopaxClass;
+    if(biopaxClass != null) {
+      this.type = biopaxClass.getSimpleName();
+    }
   }
 
   public String[] getOrganism() {
@@ -90,8 +104,8 @@ public class Search extends ServiceQuery {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(super.toString()).append(" q:").append(q).append("; p:").append(page);
-    if (type != null)
-      sb.append("; t:").append(type.getSimpleName());
+    if (biopaxClass != null)
+      sb.append("; t:").append(biopaxClass.getSimpleName());
     if (organism != null && organism.length > 0)
       sb.append("; org:").append(Arrays.toString(organism));
     if (datasource != null && datasource.length > 0)
@@ -104,8 +118,4 @@ public class Search extends ServiceQuery {
     return "search";
   }
 
-  @Override
-  public String outputFormat() {
-    return "xml"; //default
-  }
 }

@@ -4,7 +4,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 import org.biopax.paxtools.query.algorithm.Direction;
 
@@ -17,7 +17,7 @@ import java.util.Set;
 
 public class Graph extends ServiceQuery {
   @NotNull(message = "Parameter 'kind' is required.")
-  @Parameter(
+  @Schema(
     description = "BioPAX graph traversal type.",
     required = true,
     example = "PATHSBETWEEN"
@@ -25,14 +25,14 @@ public class Graph extends ServiceQuery {
   private GraphType kind; //required!
 
   @NotEmpty(message = "Provide at least one source URI.")
-  @Parameter(
+  @Schema(
     description = "Source BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
     example = "TP53"
   )
   private String[] source;
 
-  @Parameter(
+  @Schema(
     description = "Target BioPAX entity URIs or standard identifiers (e.g., gene symbols); " +
       "this parameter works only with kind=PATHSFROMTO graph queries.",
     example = "TP53"
@@ -40,42 +40,42 @@ public class Graph extends ServiceQuery {
   private String[] target;
 
   @Min(1) //note: this allows for null
-  @Parameter(
+  @Schema(
     description = "Graph search distance limit (default: 1)"
   )
   private Integer limit;
 
-  @Parameter(
+  @Schema(
     description = "Graph search direction (default: UNDIRECTED)",
     example = "BOTHSTREAM"
   )
   private Direction direction;
 
   @NotNull(message = "Illegal Output Format")
-  @Parameter(
+  @Schema(
     description = "Output format name (default: BIOPAX)"
   )
   private OutputFormat format;
 
-  @Parameter(
+  @Schema(
     description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
     example = "9606"
   )
   private String[] organism;
 
-  @Parameter(
+  @Schema(
     description = "Filter by data source name, id or uri.",
     example = "reactome"
   )
   private String[] datasource;
 
-  @Parameter(
+  @Schema(
     description = "If format is SIF or TXT, one can specify interaction types to apply",
     example = "interacts-with"
   )
   private SIFEnum[] pattern;
 
-  @Parameter(
+  @Schema(
     description = "For the 'get' and 'graph' queries, whether to skip or not traversing " +
       "into sub-pathways in the result BioPAX sub-model."
   )
@@ -214,8 +214,4 @@ public class Graph extends ServiceQuery {
     return (kind != null) ? kind.toString() : "graph";
   }
 
-  @Override
-  public String outputFormat() {
-    return format.name().toLowerCase();
-  }
 }

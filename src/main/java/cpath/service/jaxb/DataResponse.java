@@ -5,7 +5,7 @@ import cpath.service.api.OutputFormat;
 import java.util.Collections;
 import java.util.Set;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 /**
  * An internal service bean, any-data response type.
