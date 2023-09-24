@@ -23,7 +23,6 @@ import static org.springframework.http.MediaType.*;
 @Profile("web")
 @Hidden
 @RestController
-@RequestMapping(method = {RequestMethod.GET})
 public class MetadataController extends BasicController {
 
   private static final Logger log = LoggerFactory.getLogger(MetadataController.class);
@@ -33,7 +32,7 @@ public class MetadataController extends BasicController {
     binder.registerCustomEditor(Datasource.METADATA_TYPE.class, new MetadataTypeEditor());
   }
 
-  @RequestMapping(value = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
+  @GetMapping(path = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
   public byte[] queryForLogo(@PathVariable String identifier)
     throws IOException {
     Datasource ds = service.metadata().findByIdentifier(identifier);
@@ -54,7 +53,7 @@ public class MetadataController extends BasicController {
     return bytes;
   }
 
-  @RequestMapping(value = "/metadata", produces = {APPLICATION_JSON_VALUE})
+  @GetMapping(path = "/metadata", produces = {APPLICATION_JSON_VALUE})
   public Map<String, Object> queryForMetadata() {
     TreeMap<String, Object> props = new TreeMap();
 
@@ -70,7 +69,7 @@ public class MetadataController extends BasicController {
   }
 
   // to return a xml or json data http response
-  @RequestMapping(value = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
+  @GetMapping(path = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
   public List<Datasource> queryForDatasources() {
     log.debug("Getting pathway datasources info.");
     //pathway/interaction data sources
@@ -93,7 +92,7 @@ public class MetadataController extends BasicController {
     return ds;
   }
 
-  @RequestMapping(value = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
+  @GetMapping(path = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
   public Datasource datasource(@PathVariable String identifier) {
     Datasource m = service.metadata().findByIdentifier(identifier);
     if (m == null)

@@ -6,7 +6,7 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
-<title>cPath2::Formats (${cpath.name})</title>
+<title>${cpath.name} formats</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp" />

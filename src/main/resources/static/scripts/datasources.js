@@ -3,7 +3,6 @@
 var dsApp = angular.module('dsApp', ['ngRoute']);
 
 dsApp.service('MyPubmed', ['$http', function ($http) {
-	
 	var euroPmcUrlPrefix = "https://www.ebi.ac.uk/europepmc/webservices/rest/search/query=EXT_ID:";
 	var euroPmcUrlSuffix = "&format=json&callback=JSON_CALLBACK";
 	
@@ -18,8 +17,7 @@ dsApp.service('MyPubmed', ['$http', function ($http) {
         			+ " " + res.journalTitle + ". " + res.pubYear 
         			+ ";" + res.journalVolume 
         			+ "(" + res.issue + "):" + res.pageInfo;
-        		
-//        		console.log(res.pmid + ": " + res.title);      		
+//        		console.log(res.pmid + ": " + res.title);
         		ds.citation = cite;
         	})
         	.error(function(data, status){
@@ -27,7 +25,6 @@ dsApp.service('MyPubmed', ['$http', function ($http) {
         	});
     };
 }]);
-
 
 dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyPubmed) {
 // data for a quick off-line test	
@@ -38,14 +35,11 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyPub
 //	];
 	
 	$http.get('metadata/datasources').success(function(datasources) {
-		
 		$scope.datasources = datasources;
-		
 		for(var i=0; i<datasources.length; i++) {
 			//get citation by PMID (ds.pubmedId) using PubMed web service:
 			MyPubmed.updateCitation(datasources[i]);
 		}
-		
 	});	
 	
 	//cPath2 Metadata types and license options

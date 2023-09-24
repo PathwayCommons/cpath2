@@ -7,9 +7,11 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
+import cpath.service.Settings;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -20,6 +22,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Hidden //from swagger/openapi
 @RequestMapping(method = RequestMethod.GET)
 public class PagesController extends BasicController {
+
+  @ModelAttribute("cpath")
+  public Settings instance() {
+    return service.settings();
+  }
 
   @RequestMapping({"/api", "/swagger"})
   public String swagger() {
