@@ -170,7 +170,7 @@ public class ConsoleApplicationIT
   @DirtiesContext
   public void premergeAndMerge() throws IOException {
     //test env. sanity quick-test
-    assertEquals("PathwayCommonsDemo0", service.settings().exportArchivePrefix());
+    assertEquals("Pc0", service.settings().exportArchivePrefix());
 
     //should not fail:
     assertDoesNotThrow(

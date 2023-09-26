@@ -25,8 +25,8 @@ public class OpenApiConfig {
 
   private Info apiInfo() {
     return new Info()
-      .title(settings.getName() + " " + settings.getVersion())
-      .description("Pathway Commons Web Services (pc2/cpath2)")
+      .title("Bio pathway services")
+      .description(settings.getDescription() + "</br>&copy; " + settings.getOrganization())
       .version(settings.getVersion())
       .contact(apiContact())
       .license(apiLicence());
@@ -34,15 +34,14 @@ public class OpenApiConfig {
 
   private License apiLicence() {
     return new License()
-      .name("MIT Licence")
-      .url("https://opensource.org/licenses/mit-license.php");
+      .name("MIT Licence").url("https://opensource.org/licenses/mit-license.php");
   }
 
   private Contact apiContact() {
     return new Contact()
-      .name("Pathway Commons")
-      .email("pathway-commons-help@googlegroups.com")
-      .url("https://www.pathwaycommons.org");
+      .name(settings.getOrganization())
+      .email(settings.getEmail())
+      .url(settings.getUrl());
   }
 
 }

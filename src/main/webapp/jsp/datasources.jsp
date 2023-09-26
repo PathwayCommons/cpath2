@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <!DOCTYPE html>
@@ -44,9 +43,10 @@
 					<img alt="provider's logo" class="datasource-logo" ng-src="{{ds.iconUrl}}">&nbsp;
 					<a ng-href='{{ds.homepageUrl}}'>{{ds.name[1] || ds.name[0]}}</a>
 				</h3>
-				<p><strong>{{ds.description}}&nbsp;<code>({{ds.type}})</code></strong></p>
+				<p><strong>{{ds.description}}</code></strong></p>
+				<p><var>Type: </var><code>{{ds.type}}</code></p>
 				<p ng-hide="ds.notPathwayData"><var>URI: </var><code>${cpath.xmlBase}{{ds.identifier}}</code></p>
-				<p><var>All names: </var><code>{{uniqueStrings(ds.name) + ""}}</code></p>
+				<p><var>Names: </var><code>{{uniqueStrings(ds.name) + ""}}</code></p>
 				<p ng-hide="ds.notPathwayData">
 					<var>Contains: </var>
 					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span>

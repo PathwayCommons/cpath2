@@ -29,11 +29,14 @@ public class ServiceIT {
   @Test
   public final void settings() {
     Settings s = service.settings();
-    assertNotNull(s);
-    assertEquals("http://test/", s.getXmlBase());
-    assertEquals("Pathway Commons Demo",s.getName());
-    assertEquals(1, s.getOrganismTaxonomyIds().size());
-    assertEquals(Integer.valueOf(100),s.getMaxHitsPerPage());
+    assertAll(
+        () -> assertNotNull(s),
+        () -> assertEquals("http://test/", s.getXmlBase()),
+        () -> assertEquals("pc",s.getName()),
+        () -> assertEquals("Pathway Commons",s.getOrganization()),
+        () -> assertEquals(1, s.getOrganismTaxonomyIds().size()),
+        () -> assertEquals(Integer.valueOf(100),s.getMaxHitsPerPage())
+    );
   }
 
   @Test

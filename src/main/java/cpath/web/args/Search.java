@@ -10,16 +10,29 @@ import org.biopax.paxtools.model.BioPAXElement;
 import java.util.Arrays;
 
 public class Search extends ServiceQuery {
-  @NotBlank(message = "Parameter 'q' (a Lucene query string) is blank (not specified).")
+  @NotBlank(message = "Parameter 'q' (a Lucene query string) is blank.")
   @Schema(
-    description = "Query string (full-text search supports Lucene query syntax).",
+    description = """
+        a keyword, name, identifier, or a Lucene query string;
+        the index field names are: <var>uri, keyword, name, pathway, xrefid, datasource, organism</var>;
+        e.g. <var>keyword</var> is the default search field that includes most of BioPAX element's properties
+        and nested properties (e.g. a Complex can be found by one of its member's names or ECNumber).
+        Search results, specifically the URIs, can be starting point for the graph, get, traverse queries.
+        Search strings are case insensitive, except for <var>xrefid, uri</var>, or when it's enclosed in quotes.
+        """,
     required = true,
-    example = "xrefid:FGF*"
+    example = "xrefid:P*"
   )
   private String q;
 
   @Schema(
-    description = "Filter by BioPAX L3 class name (BioPAX interface name, case-insensitive).",
+    description = """
+        BioPAX class filter (<a href="/home#biopax_types" target="_blank">values</a>; case-insensitive).
+        Note that some query filters, such as <code>&amp;type=biosource</code>
+        (for most BioPAX UtilityClass, such as Score, Evidence), will not return any hits.
+        So, use Entity (e.g., Pathway, Control, Protein) or EntityReference types
+        (e.g. ProteinReference, SmallMoleculeReference) instead.
+        """,
     example = "pathway"
   )
   private String type;
@@ -36,20 +49,32 @@ public class Search extends ServiceQuery {
   private Class<? extends BioPAXElement> biopaxClass;
 
   @Schema(
-    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
+    description = """
+        by-organism filter; values can be either the canonical names, e.g.
+        <var>homo sapiens</var> or NCBI Taxon IDs, <var>9606</var>. If multiple values
+        are provided, then the union of hits is returned; e.g.,
+        <code>organism=9606&amp;organism=10016</code> results in both human and mouse related hits.
+        See also: <a href="/home#organisms" target="_blank">supported species</a> (other organisms data,
+        such as viruses and model organisms, can go together with e.g. human models that we integrated).
+        """,
     example = "9606"
   )
   private String[] organism;
 
   @Schema(
-    description = "Filter by data source name, id or uri.",
+    description = """
+        filter by data source (an array of names, URIs
+        of the <a href="/datasources" target="_blank">data sources</a> or any <var>Provenance</var>).
+        If multiple data source values are specified, a union of hits from specified sources is returned;
+        e.g., <code>datasource=reactome&amp;datasource=pid</code>.
+        """,
     example = "reactome"
   )
   private String[] datasource;
 
   @Min(0)
   @Schema(
-    description = "Pagination: page number (>=0) of the full-text search results.",
+    description = "Pagination: the search result page number, N&gt;=0; default is 0.",
     example = "0"
   )
   private Integer page;

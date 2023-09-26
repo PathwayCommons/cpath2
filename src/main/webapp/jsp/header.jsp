@@ -14,7 +14,7 @@
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
 				 <img alt="Project Team Logo" src="${cpath.logo}" id="team-logo"/>&nbsp;
-				 <c:out value="${cpath.name} v${cpath.version}"/>&nbsp;
+				 <c:out value="${cpath.organization}"/>&nbsp;
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
@@ -28,7 +28,7 @@
                   		 <li><a href="home" class="smooth-scroll">About</a></li>
                   		 <li><a href="swagger" target="_blank">API</a></li>
                   		 <li><a href="datasources">Datasources</a></li>
-                         <li><a href="${cpath.url}/archives/PC2/" target="_blank">Downloads</a></li>
+                         <li><a href="${cpath.downloads}" target="_blank">Downloads</a></li>
                   		 <li class="divider"></li>
                			 <li><a href="home#search" class="smooth-scroll">/search</a></li>
                			 <li><a href="home#get" class="smooth-scroll">/get</a></li>

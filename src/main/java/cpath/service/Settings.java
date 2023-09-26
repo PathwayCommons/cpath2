@@ -64,6 +64,8 @@ public class Settings
   private String logo;
   private String species;
   private String downloads;
+  private String email;
+  private String organization;
 
   public Settings() {
     LOG.info("Working ('home') directory: " + homeDir());
@@ -102,6 +104,22 @@ public class Settings
 
   public void setSbgnLayoutEnabled(Boolean sbgnLayoutEnabled) {
     this.sbgnLayoutEnabled = sbgnLayoutEnabled;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getOrganization() {
+    return organization;
+  }
+
+  public void setOrganization(String organization) {
+    this.organization = organization;
   }
 
   public String getName() {

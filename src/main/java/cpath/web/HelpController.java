@@ -60,7 +60,7 @@ public class HelpController extends BasicController {
     Help help = new Help();
     help.setId("formats");
     help.setTitle("Output Formats");
-    help.setInfo("cPath2 can convert BioPAX to several text formats");
+    help.setInfo("can convert BioPAX to several text formats");
     help.setExample("help/formats/sif");
     for (OutputFormat f : OutputFormat.values())
       help.addMember(getFormat(f));
@@ -84,8 +84,9 @@ public class HelpController extends BasicController {
 
     for (Class<? extends BioPAXElement> t :
       SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) {
-      if (BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null)
+      if (BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
         help.addMember(new Help(t.getSimpleName()));
+      }
     }
     help.setId("types");
     help.setTitle("BioPAX classes");
@@ -182,7 +183,7 @@ public class HelpController extends BasicController {
     }
     help.setId("kinds");
     help.setTitle("Advanced Graph Query Types");
-    help.setInfo("cPath2 has the following built-in algorithms:");
+    help.setInfo("has the following built-in algorithms:");
     help.setExample("help/kinds/neighborhood");
     return help;
   }

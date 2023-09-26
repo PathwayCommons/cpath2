@@ -10,6 +10,7 @@ import cpath.web.args.*;
 import cpath.service.jaxb.*;
 import cpath.web.args.binding.*;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.model.level3.Protein;
@@ -56,11 +57,12 @@ public class BiopaxModelController extends BasicController {
   }
 
   // Get by ID (URI) command
-  @PostMapping("/get")
+  @PostMapping(path = "/get",
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
   @Operation(
-    summary = "HTTP POST for a BioPAX sub-model by URI/IDs (but not too many)",
-    description = "Retrieve pathways/interactions/entities by their BioPAX URIs " +
-        "(values must be URL-encoded); optionally, convert the result to other <a href='/#formats'>output formats</a>."
+    summary = "HTTP POST to retrieve a BioPAX sub-model by URIs/IDs (accepts JSON request body)",
+    description = "Retrieve pathways/interactions/entities by their BioPAX URIs; " +
+        "optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
   public void elementById(@Valid @RequestBody Get args, BindingResult bindingResult,
                              HttpServletRequest request, HttpServletResponse response)
@@ -80,9 +82,10 @@ public class BiopaxModelController extends BasicController {
     }
   }
 
-  @GetMapping("/get")
+  @GetMapping(path = "/get",
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
   @Operation(
-      summary = "HTTP POST to retrieve a BioPAX sub-model by element URI/IDs (using JSON request body).",
+      summary = "HTTP GET to retrieve a BioPAX sub-model by URIs/IDs (must be URL-encoded and not too many).",
       description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
           "optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
@@ -177,9 +180,10 @@ public class BiopaxModelController extends BasicController {
     return null;
   }
 
-  @GetMapping("/graph")
+  @GetMapping(path = "/graph",
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX graph query.",
+      summary = "HTTP GET BioPAX Graph Query (request parameters must be URL-encoded and not too many).",
       description = "Find connections of bio network elements, such as the shortest path between " +
           "two proteins or the neighborhood for a particular protein state or all states. " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
@@ -197,9 +201,10 @@ public class BiopaxModelController extends BasicController {
   }
 
 
-  @PostMapping("/graph")
+  @PostMapping(path = "/graph",
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
   @Operation(
-    summary = "BioPAX graph query.",
+    summary = "HTTP POST BioPAX graph query (accepts JSON request body).",
     description = "Find connections of bio network elements, such as the shortest path between " +
       "two proteins or the neighborhood for a particular protein state or all states. " +
       "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
@@ -257,16 +262,21 @@ public class BiopaxModelController extends BasicController {
 
   @GetMapping(path="/search", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-    summary = "A full-text search in the BioPAX database using Lucene query syntax",
-    description = "Index fields (case-sensitive): uri, keyword, name, pathway, xrefid, datasource, " +
-      "and organism can be optionally used in a query string. For example, the 'pathway' field " +
-      "helps find entities and interactions by keywords or uris matching their parent pathways'; " +
-      "'xrefid' helps find objects by direct or nested Xref; 'keyword' (default search field) " +
-      "aggregates most of BioPAX properties of each element and child elements (e.g. a Complex " +
-      "can be found by one of its member's name or EC Number). " +
-      "Filters by <a href='datasources'>datasource</a>, organism " +
-      "and BioPAX type can be also used. Search can be used to select starting points (seeds) " +
-      "for a graph query (see: '/graph','/traverse','/get')."
+    summary = "Full-text search in the BioPAX database with Lucene query syntax",
+    description = """
+        <p>
+        The index field names are: <var>uri, keyword, name, pathway, xrefid, datasource, organism</var>.
+        E.g., <var>keyword</var> is the default aggregate field that includes most of BioPAX element's properties
+        and nested properties (e.g. a Complex can be found by one of its member's names or EC Number).
+        Search results, specifically the URIs, can be starting point for the graph, get, traverse queries.
+        Search strings are case insensitive, except for <var>xrefid, uri</var>, or when it's enclosed in quotes.
+        </p>
+        <p>
+        Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or 
+        <a href="/help/schema" target="_blank">XML</a> depending on 'Accept: application/json' or 
+        'Accept: application/xml' request header.
+        </p>
+        """
   )
   public SearchResponse search(@Valid Search args, BindingResult bindingResult,
                                HttpServletRequest request, HttpServletResponse response)

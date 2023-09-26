@@ -1,7 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <!DOCTYPE html>
@@ -17,23 +15,9 @@
 
 <div class="row" id="about">
     <div class="jumbotron">
-      <p><em><c:out value="${cpath.description}"/></em></p>
-      <blockquote>
-        <h2>Service endpoints:</h2>
-        <ul id="commands" title="Service endpoints">
-          <li><a href="#search"><code>/search</code></a></li>
-          <li><a href="#get"><code>/get</code></a></li>
-          <li><a href="#graph"><code>/graph</code></a></li>
-          <li><a href="#traverse"><code>/traverse</code></a></li>
-          <li><a href="#top_pathways"><code>/top_pathways</code></a></li>
-        </ul>
-      </blockquote>
-      <blockquote>
-        <p>See also:</p>
-        <ul title="See also">
-          <li><a href="swagger">API (Swagger)</a></li>
-        </ul>
-      </blockquote>
+      <h2>About <c:out value="${cpath.name} v${cpath.version}"/>:</h2>
+      <p><c:out value="${cpath.description}"/></p>
+      <p>Explore the <a href="swagger" target="_blank">Swagger API docs</a> and examples below.</p>
     </div>
 </div>
 
@@ -69,71 +53,52 @@
 <div class="row nav-target" id="search">
     <h2>/search</h2>
     <blockquote><p>
-        A full-text search in this BioPAX database using <a href="http://lucene.apache.org">Lucene query syntax</a>.
-        Index fields (case-sensitive): <em>uri, keyword, name, pathway, xrefid, datasource, organism</em>
-        (some of these are BioPAX properties, while others are composite relationships), can be optionally used in a
-        query string.
-        For example, the <em>pathway</em> index field helps find pathway participants by keywords that match their
-        parent pathway
-        names or identifiers; <em>xrefid</em> finds objects by matching its direct or 'attached to a child element'
-        Xrefs;
-        <em>keyword</em>, the default search field, is a large aggregate that includes all BioPAX properties of an
-        element
-        and nested elements' properties (e.g. a Complex can be found by one of its member's name or EC Number).
-        Search results can be filtered by data provider (<em>datasource</em> parameter), <em>organism</em>,
-        and instantiable BioPAX class (<em>type</em>). Search can be used to select starting points for graph traversal
-        queries
-        (with '/graph', '/traverse', '/get' commands). Search strings are case insensitive unless put inside quotes.
+      A full-text search in the BioPAX database with <a href="http://lucene.apache.org">Lucene syntax</a>.
+      The index field names are: <var>uri, keyword, name, pathway, xrefid, datasource, organism</var>.
+      E.g., <var>keyword</var> is the default search field that includes most of BioPAX element's properties
+      and nested properties (e.g. a Complex can be found by one of its member's names or ECNumber).
+      Search results, specifically the URIs, can be starting point for the graph, get, traverse queries.
+      Search strings are case insensitive, except for <var>xrefid, uri</var>, or when it's enclosed in quotes.
     </p></blockquote>
-    <h3>Returns:</h3>
-    <p>ordered list of BioPAX individuals that match the search criteria
-        (the page size, 'maxHitsPerpage' is configured on the server).
-        The results (hits) are returned either as JSON or XML document (<a href="help/schema">Search Response XML Schema</a>),
-        requested by using HTTP request header, either 'Accept: application/json' or 'Accept: application/xml'.
-    </p>
-    <h3 id="search_parameters">Parameters:</h3>
+    <h3 id="search_parameters">input:</h3>
     <ul>
-        <li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string.</li>
-        <li><em>page=N</em> [Optional] (N&gt;=0, default is 0). Search results are paginated to avoid
-            overloading the search response. This sets the search result page number.
+        <li><code>q=</code> [Required] a keyword, name, identifier, or a Lucene query string.</li>
+        <li><code>page=N</code>  the search result page number (N&gt;=0, default is 0).</li>
+        <li><code>datasource=</code>  filter by data source (an array of names, URIs
+            of the <a href="datasources" target="_blank">data sources</a> or any <var>Provenance</var>).
+            If multiple data source values are specified, a union of hits from specified sources is returned.
+            For example, <var>datasource=reactome&amp;datasource=pid</var>.
         </li>
-        <li><em>datasource=</em> [Optional] filjsonter by data source (use names or URIs
-            of <a href="datasources">pathway data sources</a> or of any existing Provenance object).
-            If multiple data source values are specified, a union of hits from specified sources is returned. For
-            example,
-            <em>datasource=reactome&amp;datasource=pid</em> returns hits associated with Reactome or PID.
+        <li><code>organism=</code>  organism filter; can be either the canonical name, e.g.
+            <var>homo sapiens</var> or NCBI Taxon ID, <var>9606</var>. If multiple values
+            are provided, then the union of hits is returned; e.g.,
+            <var>organism=9606&amp;organism=10016</var> results in both human and mouse related hits.
+            See also: <a href="#organisms">supported species</a> (other organisms data,
+            such as viruses and model organisms, can go together with e.g. human models that we integrated).
         </li>
-        <li><em>organism=</em> [Optional] organism filter. The organism can be specified either by official name, e.g.
-            "homo sapiens" or by NCBI taxonomy identifier, e.g. "9606". Similar to data sources, if multiple organisms
-            are
-            declared, a union of all hits from specified organisms is returned. For example
-            'organism=9606&amp;organism=10016' returns results for both human and mouse.
-            Note the <a href="#organisms">officially supported species</a>.
-        </li>
-        <li><em>type=</em> [Optional] BioPAX class filter (<a href="#biopax_types">values</a>).
-            NOTE: queries using &amp;type=biosource (or any BioPAX UtilityClass, such as Score, Evidence)
-            filter won't not return any hits; use Entity (e.g., Pathway, Control,
-            Protein) or EntityReference type (e.g., ProteinReference) instead.
+        <li><code>type=</code> BioPAX class filter (<a href="#biopax_types">values</a>; case-insensitive).
+            Note that some query filters, such as <var>&amp;type=biosource</var>
+            (for most BioPAX UtilityClass, such as Score, Evidence), will not return any hits.
+            So, use Entity (e.g., Pathway, Control, Protein) or EntityReference types
+            (e.g. ProteinReference, SmallMoleculeReference) instead.
         </li>
     </ul>
-    <h3>Examples:</h3> <br/>
+    <h3>output:</h3>
+    <p>An ordered list of hits (the maximum number of hits per page is <var><c:out value="${cpath.maxHitsPerPage}"/></var>)
+       as JSON or <a href="/help/schema" target="_blank">XML</a> depending on 'Accept: application/json'
+       or 'Accept: application/xml' request header.</p>
+    <h3>examples:</h3> <br/>
     <ol>
-        <li><a rel="nofollow" href="search?q=FGFR2" >Find things that contain "FGFR2" keyword</a>
-        </li>
-        <li><a rel="nofollow"
-               href='search?q=FGFR2&type=pathway'>Find pathways by FGFR2 keyword in any index field</a></li>
-        <li><a rel="nofollow"
-               href="search?q=xrefid:FGFR2&type=proteinreference">Search in 'xrefid' index, filter by protein reference
-            type</a></li>
-        <li><a rel="nofollow" href="search?q=*&page=2">Pagination example: get the third page of all indexed
-            elements</a></li>
-        <li><a rel="nofollow"
-               href="search?q=+binding%20NOT%20transcription*&type=control">Finds Control
-            interactions that contain the word "binding" but not "transcription" in their indexed fields</a></li>
-        <li><a rel="nofollow" href="search?q=pathway:immune*&type=conversion">Find all
-            interactions that directly or indirectly participate in a pathway that has a keyword match for "immune"</a>
-        </li>
-        <li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">All Reactome pathways</a></li>
+        <li><a rel="nofollow" href="search?q=FGFR2" >Find things by keyword:"FGFR2"</a></li>
+        <li><a rel="nofollow" href='search?q=FGFR2&type=pathway'>Find pathways by keyword:"FGFR2"</a></li>
+        <li><a rel="nofollow" href="search?q=xrefid:FGFR2&type=proteinreference">Find protein references by xref id</a></li>
+        <li><a rel="nofollow" href="search?q=*&page=1">Pagination: find everything, the second result page</a></li>
+        <li><a rel="nofollow" href="search?q=+binding%20NOT%20transcription*&type=control">Find Control interactions
+          that contain "binding" but not "transcription" word</a></li>
+        <li><a rel="nofollow" href="search?q=pathway:immune*&type=conversion">Find the interactions
+          which pathway contains a keyword:"immune*" ('*' means any ending)</a></li>
+        <li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome&datasource=pid">Find all Reactome or PID
+          pathways</a></li>
     </ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -141,39 +106,38 @@
 <div class="row nav-target" id="get">
     <h2>/get</h2>
     <blockquote><p>
-        Retrieves an object model for one or several BioPAX elements, such as pathway,
-        interaction or physical entity, given their URIs. Get commands only retrieve the specified
-        and all the child BioPAX elements (one can use the <a href="#traverse">traverse</a> query
-        to obtain parent elements).</p></blockquote>
-    <h3>Parameters:</h3>
+        Retrieves a BioPAX sub-model (one or several pathways, entities), the requested and child/nested elements,
+        given the source URIs (one can use a /search or /traverse query first to find the input URIs for this query).</p>
+    </blockquote>
+    <h3>input:</h3>
     <ul>
-        <li><em>uri=</em> [Required] valid/existing BioPAX element's absolute URI
+        <li><code>uri=</code> [Required] valid/existing BioPAX element's absolute URI
             (for utility classes that were "normalized", such as entity
             references and controlled vocabularies, it is usually an
             Identifiers.org URL. Multiple identifiers are allowed per query, for
             example, 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
             <a href="#about_uris">See also</a> note about URIs and IDs.
         </li>
-        <li><em>format=</em> [Optional] output format (<a
+        <li><code>format=</code>  output format (<a
                 href="#output_formats">values</a>)
         </li>
-        <li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+        <li><code>pattern=</code>  array of built-in BioPAX patterns to apply (SIF types - inference rule names;
             see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
             by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
         </li>
         <li>
-            <em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways when we
+            <code>subpw=</code>  'true' or 'false' (default) - whether to include or skip sub-pathways when we
             auto-complete and clone the requested BioPAX element(s) into a reasonable sub-model.
         </li>
     </ul>
-    <h3>Output:</h3>
+    <h3>output:</h3>
     BioPAX (default) representation for the record(s) pointed to by the given URI(s) is returned.
     Other output formats are produced on demand by converting from the BioPAX and can be specified using the optional
     format parameter.
     With some output formats, it might return no data (empty result) if the conversion is not applicable
     to the BioPAX model. For example, SIF output is only possible if there are some interactions, complexes, or pathways
     in the retrieved set.
-    <h3>Examples:</h3>
+    <h3>examples:</h3>
     <ol>
         <li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609&format=JSONLD">
             Gets the JSON-LD representation of Q06609</a> ProteinReference.
@@ -202,49 +166,49 @@
         two objects of the same type are equivalent. We, however, do not merge physical entities and processes
         from different sources, as accurately matching and aligning pathways at that level is still an
         open research problem.</p></blockquote>
-    <h3>Parameters:</h3>
+    <h3>input:</h3>
     <ul>
-        <li><em>kind=</em> [Required] graph query (<a
+        <li><code>kind=</code> [Required] graph query (<a
                 href="#graph_kinds">values</a>)
         </li>
-        <li><em>source=</em> [Required] source object's URI/ID. Multiple source URIs/IDs are allowed per query, for
+        <li><code>source=</code> [Required] source object's URI/ID. Multiple source URIs/IDs are allowed per query, for
             example
             'source=http://identifiers.org/uniprot/Q06609&amp;source=http://identifiers.org/uniprot/Q549Z0'.
             See <a href="#about_uris">note about URIs and IDs</a>.
         </li>
-        <li><em>target=</em> [Required for PATHSFROMTO graph query]
+        <li><code>target=</code> [Required for PATHSFROMTO graph query]
             target URI/ID. Multiple target URIs are allowed per query; for
             example 'target=http://identifiers.org/uniprot/Q06609&amp;target=http://identifiers.org/uniprot/Q549Z0'.
             See <a href="#about_uris">note about URIs and IDs</a>.
         </li>
-        <li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM algorithms] - graph search direction (<a
+        <li><code>direction=</code> [Optional, for NEIGHBORHOOD and COMMONSTREAM algorithms] - graph search direction (<a
                 href="#graph_directions">values</a>).
         </li>
-        <li><em>limit=</em> [Optional] graph query search distance limit (default = 1).
+        <li><code>limit=</code>  graph query search distance limit (default = 1).
         </li>
-        <li><em>format=</em> [Optional] output format (<a
+        <li><code>format=</code>  output format (<a
                 href="#output_formats">values</a>)
         </li>
-        <li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+        <li><code>pattern=</code>  array of built-in BioPAX patterns to apply (SIF types - inference rule names;
             see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
             by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
         </li>
-        <li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
+        <li><code>datasource=</code>  datasource filter (same as for <a href="#search_parameters">'search'</a>).
         </li>
-        <li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
+        <li><code>organism=</code>  organism filter (same as for <a href="#search_parameters">'search'</a>).
         </li>
         <li>
-            <em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways;
+            <code>subpw=</code>  'true' or 'false' (default) - whether to include or skip sub-pathways;
             it does not affect the graph search algorithm, but - only how we auto-complete and clone BioPAX elements
             to make a reasonable sub-model from the result set.
         </li>
     </ul>
-    <h3>Output:</h3>
+    <h3>output:</h3>
     By default, it returns a BioPAX representation of the sub-network matched by the algorithm.
     Other output formats are available as specified by the optional format parameter.
     Some output format choices result in no data if the conversion is not applicable to the result BioPAX model
     (e.g., BINARY_SIF output fails if there are no interactions, complexes, nor pathways in the retrieved set).
-    <h3>Examples:</h3>
+    <h3>examples:</h3>
     Neighborhood of COL5A1 (P20908):
     <ol>
         <li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=SIF">
@@ -274,15 +238,15 @@
     <blockquote><p>
         XPath-like access to our BioPAX db. With '/traverse', users can
         explicitly state the paths they would like to access. The format of the path parameter value:
-        <em>[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...</em>
+        <var>[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...</var>
         A "*" sign after the property instructs the path accessor to transitively traverse that property.
         For example, the following path accessor will traverse through all physical entity components a complex,
         including components of nested complexes, if any:
-        <em>Complex/component*/entityReference/xref:UnificationXref</em>.
+        <var>Complex/component*/entityReference/xref:UnificationXref</var>.
         The following will list the display names of all participants of interactions,
         which are pathway components of a pathway:
-        <em>Pathway/pathwayComponent:Interaction/participant*/displayName</em>.
-        Optional <em>classRestriction</em> allows to limit the returned property values to a certain subclass of the
+        <var>Pathway/pathwayComponent:Interaction/participant*/displayName</var>.
+        Optional <var>classRestriction</var> allows to limit the returned property values to a certain subclass of the
         property's range.
         In the first example above, this is used to get only the unification xrefs.
         <a href="https://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
@@ -290,9 +254,9 @@
         and parameters, such as inverse parameters and interfaces that represent anonymous union classes in BioPAX OWL.
         (See <a href="https://www.biopax.org/paxtools/">Paxtools documentation</a> for more details).
     </p></blockquote>
-    <h3>Parameters:</h3>
+    <h3>input:</h3>
     <ul>
-        <li><em>path=</em> [Required] a BioPAX property path in the form of
+        <li><code>path=</code> [Required] a BioPAX property path in the form of
             type0/property1[:type1]/property2[:type2]; see BioPAX
             <a href="#biopax_types">types</a>,
             <a href="#biopax_properties">properties</a>,
@@ -301,7 +265,7 @@
             <a href="https://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
                 org.biopax.paxtools.controller.PathAccessor</a>.
         </li>
-        <li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
+        <li><code>uri=</code> [Required] a BioPAX element URI - specified similarly to the
             <a href="#get">'GET' command above</a>). Multiple URIs are
             allowed (uri=...&amp;uri=...&amp;uri=...). Standard gene/chemical IDs can now be used along with absolute
             URIs,
@@ -311,7 +275,7 @@
             the path.
         </li>
     </ul>
-    <h3>Output:</h3>
+    <h3>output:</h3>
     XML result according to the <a href="help/schema">Search Response XML
     Schema</a>&nbsp;(TraverseResponse type; pagination is disabled to return all values at once)<br/>
     <h3>Examples (using human data):</h3>
@@ -342,20 +306,20 @@
     <blockquote><p>
         Finds root pathways - that are neither 'controlled' nor a 'pathwayComponent' of another biological process,
         excluding trivial ones.</p></blockquote>
-    <h3>Parameters:</h3>
+    <h3>input:</h3>
     <ul>
-        <li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string,
+        <li><code>q=</code> [Required] a keyword, name, external identifier, or a Lucene query string,
             like in <a href="#search_parameters">'search'</a>, but the default is '*' (match all).
         </li>
-        <li><em>datasource=</em> [Optional] filter by data source (same as for <a href="#search_parameters">'search'</a>).
+        <li><code>datasource=</code> filter by data source (same as for <a href="#search_parameters">'search'</a>).
         </li>
-        <li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
+        <li><code>organism=</code> organism filter (same as for <a href="#search_parameters">'search'</a>).
         </li>
     </ul>
-    <h3>Output:</h3>
+    <h3>output:</h3>
     XML document described by <a href="help/schema">Search Response XML
     Schema</a>&nbsp;(SearchResponse type; pagination is disabled to return all top pathways at once)<br/>
-    <h3>Examples:</h3>
+    <h3>examples:</h3>
     <ol>
         <li><a rel="nofollow" href="top_pathways?q=TP53">
             get top pathways related to 'TP53'</a></li>
@@ -366,7 +330,7 @@
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 
 <div class="row nav-target" id="parameter_values">
-    <h2>Parameters</h2>
+    <h2>Parameter Values</h2>
     <div class="parameters" id="organisms">
         <h3>Organisms</h3>
         <p>We intend to integrate pathway data only for the following species:</p>
