@@ -31,7 +31,7 @@
                          <li><a href="${cpath.downloads}" target="_blank">Downloads</a></li>
                   		 <li class="divider"></li>
                			 <li><a href="home#search" class="smooth-scroll">/search</a></li>
-               			 <li><a href="home#get" class="smooth-scroll">/get</a></li>
+               			 <li><a href="home#fetch" class="smooth-scroll">/fetch</a></li>
                			 <li><a href="home#traverse" class="smooth-scroll">/traverse</a></li>
                			 <li><a href="home#graph" class="smooth-scroll">/graph</a></li>
                			 <li><a href="home#top_pathways" class="smooth-scroll">/top_pathways</a></li>

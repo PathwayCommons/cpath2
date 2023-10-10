@@ -16,6 +16,7 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import cpath.service.metadata.Mappings;
 import cpath.service.metadata.Metadata;
 import cpath.service.jaxb.ServiceResponse;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.api.beans.Validation;
 
 
@@ -103,8 +104,8 @@ public interface Service {
    * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
    */
   ServiceResponse getPathsFromTo(OutputFormat format, Map<String, String> formatOptions,
-                                 String[] sources, String[] targets, Integer limit, String[] organisms,
-                                 String[] datasources, boolean subPathways);
+                                 String[] sources, String[] targets, LimitType limitType, Integer limit,
+                                 String[] organisms, String[] datasources, boolean subPathways);
 
   /**
    * Runs a common upstream or downstream query

@@ -1,124 +1,66 @@
 package cpath.web.args;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.biopax.paxtools.pattern.miner.SIFEnum;
-import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.service.api.GraphType;
-import cpath.service.api.OutputFormat;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Graph extends ServiceQuery {
+public class Graph extends BaseGraph {
   @NotNull(message = "Parameter 'kind' is required.")
   @Schema(
     description = "BioPAX graph traversal type.",
     required = true,
-    example = "PATHSBETWEEN"
+    example = "neighborhood"
   )
-  private GraphType kind; //required!
-
-  @NotEmpty(message = "Provide at least one source URI.")
-  @Schema(
-    description = "Source BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
-    required = true,
-    example = "TP53"
-  )
-  private String[] source;
+  private GraphType kind;
 
   @Schema(
-    description = "Target BioPAX entity URIs or standard identifiers (e.g., gene symbols); " +
-      "this parameter works only with kind=PATHSFROMTO graph queries.",
-    example = "TP53"
-  )
-  private String[] target;
-
-  @Min(1) //note: this allows for null
-  @Schema(
-    description = "Graph search distance limit (default: 1)"
-  )
-  private Integer limit;
-
-  @Schema(
-    description = "Graph search direction (default: UNDIRECTED)",
-    example = "BOTHSTREAM"
+      description = "Graph search direction (default: UNDIRECTED)",
+      example = "undirected"
   )
   private Direction direction;
 
-  @NotNull(message = "Illegal Output Format")
   @Schema(
-    description = "Output format name (default: BIOPAX)"
+    description = "Target BioPAX entity URIs/IDs; optional - only for PATHSFROMTO graph " +
+        "(also when missing, then PATHSBETWEEN is there used).",
+    example = "[]"
   )
-  private OutputFormat format;
+  private String[] target;
 
   @Schema(
-    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
-    example = "9606"
+      description = "Limit Type: 'normal', 'shortest-plus-k'; only for PATHSFROMTO query (default: normal)",
+      example = "normal"
   )
-  private String[] organism;
-
-  @Schema(
-    description = "Filter by data source name, id or uri.",
-    example = "reactome"
-  )
-  private String[] datasource;
-
-  @Schema(
-    description = "If format is SIF or TXT, one can specify interaction types to apply",
-    example = "interacts-with"
-  )
-  private SIFEnum[] pattern;
-
-  @Schema(
-    description = "For the 'get' and 'graph' queries, whether to skip or not traversing " +
-      "into sub-pathways in the result BioPAX sub-model."
-  )
-  private boolean subpw;
+  private LimitType limitType;
 
   public Graph() {
-    format = OutputFormat.BIOPAX; // default
-    limit = 1;
-    subpw = false;
-  }
-
-  public OutputFormat getFormat() {
-    return format;
-  }
-
-  public void setFormat(OutputFormat format) {
-    this.format = format;
+    super();
+    limitType = LimitType.NORMAL; //for pathsfromto only
+    direction = Direction.UNDIRECTED;
   }
 
   public GraphType getKind() {
     return kind;
   }
 
-  public void setKind(GraphType kind) {
-    this.kind = kind;
+  public void setKind(String kind) {
+    this.kind = GraphType.typeOf(kind); //null when illegal value (also handles empty/null and register/case)
   }
 
-  public String[] getSource() {
-    return source;
+  public Direction getDirection() {
+    return direction;
   }
 
-  public void setSource(String[] source) {
-    Set<String> uris = new HashSet<>(source.length);
-    for (String item : source) {
-      if (item.contains(",")) {
-        //split by ',' ignoring spaces and empty values (between ,,)
-        for (String id : item.split("\\s*,\\s*", -1))
-          uris.add(id);
-      } else {
-        uris.add(item);
-      }
-    }
-    this.source = uris.toArray(new String[uris.size()]);
+  public void setDirection(String direction) {
+    Direction dir = Direction.typeOf(direction); //null when illegal value (also handles empty/null and register/case)
+    this.direction = (dir != null) ? dir : Direction.UNDIRECTED;
   }
 
   public String[] getTarget() {
@@ -139,73 +81,24 @@ public class Graph extends ServiceQuery {
     this.target = uris.toArray(new String[uris.size()]);
   }
 
-  public Integer getLimit() {
-    return limit;
+  public LimitType getLimitType() {
+    return limitType;
   }
 
-  public void setLimit(Integer limit) {
-    this.limit = limit;
-  }
-
-  public Direction getDirection() {
-    return direction;
-  }
-
-  public void setDirection(Direction direction) {
-    this.direction = direction;
-  }
-
-  public String[] getOrganism() {
-    return organism;
-  }
-
-  public void setOrganism(String[] organism) {
-    this.organism = organism;
-  }
-
-  public String[] getDatasource() {
-    return datasource;
-  }
-
-  public void setDatasource(String[] datasource) {
-    this.datasource = datasource;
-  }
-
-  //SIF Types
-  public SIFEnum[] getPattern() {
-    return pattern;
-  }
-
-  public void setPattern(SIFEnum[] pattern) {
-    this.pattern = pattern;
-  }
-
-  public boolean getSubpw() {
-    return subpw;
-  }
-
-  public void setSubpw(boolean subpw) {
-    this.subpw = subpw;
+  public void setLimitType(String limitType) {
+     LimitType limt = LimitType.typeOf(limitType);
+     this.limitType = (limt != null) ? limt : LimitType.NORMAL;
   }
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder(super.toString())
-      .append(" for:").append(format)
-      .append("; spw:").append(subpw)
-      .append("; src:").append(Arrays.toString(source));
+    StringBuilder sb = new StringBuilder(super.toString());
+    if (limitType != null)
+      sb.append("; limt:").append(limitType);
     if (target != null && target.length > 0)
       sb.append("; tgt:").append(Arrays.toString(target));
-    if (limit != null)
-      sb.append("; lim:").append(limit);
-    if (organism != null && organism.length > 0)
-      sb.append("; org:").append(Arrays.toString(organism));
-    if (datasource != null && datasource.length > 0)
-      sb.append("; dts:").append(Arrays.toString(datasource));
     if (direction != null)
       sb.append("; dir:").append(direction);
-    if (pattern != null && pattern.length > 0)
-      sb.append("; pat:").append(Arrays.toString(pattern));
     return sb.toString();
   }
 

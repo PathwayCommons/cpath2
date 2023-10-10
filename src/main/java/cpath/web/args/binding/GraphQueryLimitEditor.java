@@ -14,8 +14,6 @@ public class GraphQueryLimitEditor extends PropertyEditorSupport {
 	@Override
 	public void setAsText(String arg0)
 	{
-		LimitType value = null;
-		value = LimitType.valueOf(arg0.trim().toUpperCase());
-		setValue(value);
+		setValue(LimitType.typeOf(arg0));
 	}
 }

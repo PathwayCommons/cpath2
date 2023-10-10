@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.BDDMockito.given;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -76,10 +77,23 @@ public class ControllersTest {
         "https://www.biopax.org/owldoc/Level3/\",\"example\":null,\"output\":null,\"members\":[],\"empty\":false}"));
   }
 
-	@Test
-	public void testSearchPathway() throws Exception {
-    mvc.perform(get("/search?type=Pathway&q=Gly*"))
-      .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
-    .andExpect(content().string(containsString("MockPathway")));
-	}
+//	@Test
+//	public void getSearchPathway() throws Exception {
+//    mvc.perform(get("/search?type=pathway&q=Gly*"))
+//      .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//    .andExpect(content().string(containsString("MockPathway")));
+//	}
+
+  @Test
+  public void postSearchPathway() throws Exception {
+    mvc.perform(post("/search").content("""
+        {
+          "type": "pathway",
+          "q": "Gly*"
+        }
+        """).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(content().string(containsString("MockPathway")));
+  }
 }

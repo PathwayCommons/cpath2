@@ -228,8 +228,10 @@ public class BiopaxConverter {
       String[] sifNames = options.get("pattern").split(",");
       sifTypes = new SIFType[sifNames.length];
       int i = 0;
-      for (String t : sifNames)
-        sifTypes[i++] = SIFEnum.typeOf(t);
+      for (String t : sifNames) {
+        SIFEnum p = SIFEnum.typeOf(t);
+        if(p != null) sifTypes[i++] = p;
+      }
     } else {
       //default: apply all SIF rules but neighbor_of
       Collection<SIFType> c = new HashSet<>(Arrays.asList(SIFEnum.values()));

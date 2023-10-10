@@ -16,7 +16,7 @@ public class GraphTypeEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) {
-		setValue(GraphType.valueOf(arg0.trim().toUpperCase()));
+		setValue(GraphType.typeOf(arg0));
 	}
 	
 }

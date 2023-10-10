@@ -57,7 +57,7 @@ public class Search extends ServiceQuery {
         See also: <a href="/home#organisms" target="_blank">supported species</a> (other organisms data,
         such as viruses and model organisms, can go together with e.g. human models that we integrated).
         """,
-    example = "9606"
+    example = "[\"9606\"]"
   )
   private String[] organism;
 
@@ -68,7 +68,7 @@ public class Search extends ServiceQuery {
         If multiple data source values are specified, a union of hits from specified sources is returned;
         e.g., <code>datasource=reactome&amp;datasource=pid</code>.
         """,
-    example = "reactome"
+    example = "[\"reactome\"]"
   )
   private String[] datasource;
 

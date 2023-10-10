@@ -16,7 +16,7 @@ public class DirectionEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) {
-		setValue(Direction.valueOf(arg0.trim().toUpperCase()));
+		setValue(Direction.typeOf(arg0));
 	}
 	
 }

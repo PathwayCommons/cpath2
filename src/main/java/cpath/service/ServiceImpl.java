@@ -229,13 +229,13 @@ public class ServiceImpl implements Service {
     return m;
   }
 
-  public ServiceResponse getNeighborhood(final OutputFormat format,
+  public ServiceResponse getNeighborhood(OutputFormat format,
                                          Map<String, String> formatOptions,
-                                         final String[] sources,
+                                         String[] sources,
                                          Integer limit,
                                          Direction direction,
-                                         final String[] organisms,
-                                         final String[] datasources,
+                                         String[] organisms,
+                                         String[] datasources,
                                          boolean subPathways)
   {
     if(modelNotReady())
@@ -263,9 +263,13 @@ public class ServiceImpl implements Service {
     }
   }
 
-  public ServiceResponse getPathsBetween(final OutputFormat format,
-                                         Map<String, String> formatOptions, final String[] sources, final Integer limit,
-                                         final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getPathsBetween(OutputFormat format,
+                                         Map<String, String> formatOptions,
+                                         String[] sources,
+                                         Integer limit,
+                                         String[] organisms,
+                                         String[] datasources,
+                                         boolean subPathways)
   {
     if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -289,9 +293,15 @@ public class ServiceImpl implements Service {
     }
   }
 
-  public ServiceResponse getPathsFromTo(final OutputFormat format, Map<String, String> formatOptions,
-                                        final String[] sources, final String[] targets, final Integer limit,
-                                        final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getPathsFromTo(OutputFormat format,
+                                        Map<String, String> formatOptions,
+                                        String[] sources,
+                                        String[] targets,
+                                        LimitType limitType,
+                                        Integer limit,
+                                        String[] organisms,
+                                        String[] datasources,
+                                        boolean subPathways)
   {
     if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -309,7 +319,7 @@ public class ServiceImpl implements Service {
         Set<BioPAXElement> elements = (target == null || target.isEmpty())
           ? QueryExecuter.runPathsBetweenMultiSet(source, paxtoolsModel, limit,
           createFilters(organisms, datasources))
-          : QueryExecuter.runPathsFromToMultiSet(source, target, paxtoolsModel, LimitType.NORMAL, limit,
+          : QueryExecuter.runPathsFromToMultiSet(source, target, paxtoolsModel, limitType, limit,
           createFilters(organisms, datasources));
 
         m = autoCompleteAndClone(elements,subPathways);
@@ -356,13 +366,18 @@ public class ServiceImpl implements Service {
     return biopaxConverter.convert(m, format, options);
   }
 
-  public ServiceResponse getCommonStream(final OutputFormat format,
-                                         Map<String, String> formatOptions, final String[] sources,
-                                         final Integer limit, Direction direction,
-                                         final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getCommonStream(OutputFormat format,
+                                         Map<String, String> formatOptions,
+                                         String[] sources,
+                                         Integer limit,
+                                         Direction direction,
+                                         String[] organisms,
+                                         String[] datasources,
+                                         boolean subPathways)
   {
-    if(modelNotReady())
-      return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
+    if(modelNotReady()) {
+      return new ErrorResponse(MAINTENANCE, "Waiting for the initialization to complete (try again later)...");
+    }
 
     if (direction == Direction.BOTHSTREAM) {
       return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
@@ -381,7 +396,8 @@ public class ServiceImpl implements Service {
       Model m = autoCompleteAndClone(result, subPathways);
       if(m != null) {
         String desc = Arrays.toString(sources);
-        m.setUri("PC_graph_commonstream_" + desc.hashCode());
+        //m.setXmlBase(settings().getXmlBase()); //already set in autoCompleteAndClone
+        m.setUri(m.getXmlBase() + "commonstream_" + desc.hashCode());
         m.setName(desc);
       }
       return convert(m, format, null);
@@ -609,11 +625,8 @@ public class ServiceImpl implements Service {
       }
     }
 
-    // final touches...
     topPathways.setNumHits((long)hits.size());
-    topPathways.setComment("Top Pathways (technically, each has empty index " +
-      "field 'pathway'; that also means, they are neither components of " +
-      "other pathways nor controlled of any process)");
+    topPathways.setComment("Top Pathways (neither components of other pathways nor controlled by any process)");
     topPathways.setMaxHitsPerPage(hits.size());
     topPathways.setPageNo(0);
 

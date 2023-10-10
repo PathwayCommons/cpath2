@@ -17,14 +17,14 @@ public class TopPathways extends ServiceQuery {
   private String q;
 
   @Schema(
-    description = "Filter by organism, e.g., taxonomy ID (recommended) or name.",
-    example = "9606"
+    description = "Filter by organism, e.g., taxonomy id (recommended) or name.",
+    example = "[\"9606\"]"
   )
   private String[] organism;
 
   @Schema(
     description = "Filter by data source name, id or uri.",
-    example = "reactome"
+    example = "[\"reactome\"]"
   )
   private String[] datasource;
 

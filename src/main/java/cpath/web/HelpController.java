@@ -3,7 +3,6 @@ package cpath.web;
 import cpath.service.api.GraphType;
 import cpath.service.api.OutputFormat;
 import cpath.service.jaxb.*;
-import cpath.web.args.binding.*;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import org.biopax.paxtools.controller.EditorMap;
@@ -12,10 +11,10 @@ import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.util.ResourceUtils;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,26 +26,13 @@ import java.nio.file.Paths;
 /**
  * Help Controller (returns JSON docs).
  * {@link Help} bean.
+ * @see GlobalControllerAdvice
  */
 @Profile("web")
 @Hidden
 @RestController
 @RequestMapping(method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
 public class HelpController extends BasicController {
-
-  /**
-   * Customizes request parameters conversion to proper internal types,
-   * e.g., "network of interest" is recognized as GraphType.NETWORK_OF_INTEREST, etc.
-   *
-   * @param binder
-   */
-  @InitBinder
-  public void initBinder(WebDataBinder binder) {
-    binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-    binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-    binder.registerCustomEditor(Direction.class, new DirectionEditor());
-    binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-  }
 
   @RequestMapping("/help/schema")
   public void getSchema(HttpServletResponse response) throws Exception {
@@ -218,6 +204,28 @@ public class HelpController extends BasicController {
     help.setTitle(direction.name());
     help.setId(direction.name());
     help.setInfo(direction.getDescription());
+    return help;
+  }
+
+  @RequestMapping("/help/limits")
+  public Help getLimitTypes() {
+    Help help = new Help();
+    for (LimitType limitType : LimitType.values()) {
+      help.addMember(getLimitType(limitType));
+    }
+    help.setId("limits");
+    help.setTitle("PathsFromTo Graph Query Limit Types");
+    help.setInfo("Following are possible Limit Types:");
+    help.setExample("help/limits/normal");
+    return help;
+  }
+
+  @RequestMapping("/help/limits/{limitType}")
+  public Help getLimitType(@PathVariable LimitType limitType) {
+    if (limitType == null) return getLimitTypes();
+    Help help = new Help();
+    help.setTitle(limitType.name());
+    help.setId(limitType.name());
     return help;
   }
 

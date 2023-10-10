@@ -4,36 +4,39 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 
 import cpath.service.api.OutputFormat;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
-public class Get extends ServiceQuery {
+public class Fetch extends ServiceQuery {
 
   @NotNull(message = "Illegal Output Format")
   @Schema(
     description = "Output format name (default: BIOPAX)",
-    example = "JSONLD"
+    example = "jsonld"
   )
   private OutputFormat format;
 
   // required at least one value
   @NotEmpty(message = "Provide at least one URI.")
   @Schema(
-    description = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
+    description = "BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
-    example = "TP53"
+    example = "[\"TP53\"]"
   )
   private String[] uri;
 
   @Schema(
     description = "If format is SIF or TXT, one can specify interaction types to apply " +
       "(by default, it uses all the build-in patterns but 'neighbor-of')",
-    example = "interacts-with" //custom editor maps this to "INTERACTS_WITH" and then to the SIFEnum instance
+    example = "[\"interacts-with\"]" //custom editor maps this to "INTERACTS_WITH" and then to the SIFEnum instance
   )
   private SIFEnum[] pattern;
 
@@ -44,7 +47,7 @@ public class Get extends ServiceQuery {
   )
   private boolean subpw;
 
-  public Get() {
+  public Fetch() {
     format = OutputFormat.BIOPAX; // default
     subpw = false;
     uri = new String[]{};
@@ -54,8 +57,9 @@ public class Get extends ServiceQuery {
     return format;
   }
 
-  public void setFormat(OutputFormat format) {
-    this.format = format;
+  public void setFormat(String format) {
+    OutputFormat f = OutputFormat.typeOf(format.trim().toUpperCase());
+    this.format = (f != null) ? f : OutputFormat.BIOPAX;
   }
 
   public String[] getUri() {
@@ -76,13 +80,17 @@ public class Get extends ServiceQuery {
     this.uri = uris.toArray(new String[uris.size()]);
   }
 
-  //SIF Types
   public SIFEnum[] getPattern() {
     return pattern;
   }
 
-  public void setPattern(SIFEnum[] pattern) {
-    this.pattern = pattern;
+  public void setPattern(String[] pattern) {
+    if(pattern != null && pattern.length > 0)
+      this.pattern = Arrays.stream(pattern)
+        .distinct().map(p -> SIFEnum.typeOf(p.trim().toUpperCase()))// skip null (bad pattern name)
+        .filter(Predicate.not(Objects::isNull)).toArray(SIFEnum[]::new);
+    else
+      this.pattern = null;
   }
 
   public boolean getSubpw() {

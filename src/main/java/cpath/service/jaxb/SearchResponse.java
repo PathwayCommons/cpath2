@@ -108,7 +108,7 @@ public class SearchResponse extends ServiceResponse {
 	 * Calculates the total number of search result
 	 * pages using current  {@link #getMaxHitsPerPage()} and {@link #numHits}
 	 * 
-	 * @return no. pages or 0 (if there're no hits yet, or it's a wrong state)
+	 * @return no. pages or 0 (if there are no hits yet, or it's a wrong state)
 	 */
 	public int numPages() {
 		if(numHits > 0 && maxHitsPerPage > 0)

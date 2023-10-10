@@ -162,11 +162,10 @@ class ChebiOboConverter extends BaseConverter
 			String[] synonyms = entry.split("\t");
 			for (String sy : synonyms) {
 				Matcher matcher = namePattern.matcher(sy);
-				if (!matcher.find())
+				if (!matcher.find()) {
 					throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);
-
-				String name = matcher.group(1); //get the name/value only
-
+				}
+				String name = matcher.group(1);
 				if (sy.contains("IUPAC_NAME")) {
 					smr.setStandardName(name);
 				} else if (sy.contains("InChIKey")) {

@@ -17,8 +17,8 @@ public enum Cmd {
 		"/search?q=brca*&organism=9606",
 		"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search?')",
 		q, page, type, organism, datasource, user),
-	GET("Gets a BioPAX element or sub-model by ID(s).",
-        "/get?uri=http://identifiers.org/uniprot/P38398",
+	FETCH("Fetches a BioPAX sub-model by URIs or IDs.",
+        "/fetch?uri=http://identifiers.org/uniprot/P38398",
         "BioPAX by default, other formats as specified by the format parameter.",
         uri, format, user, pattern, subpw, layout),
 	GRAPH("Executes an advanced graph query on the data within pathway commons. " +

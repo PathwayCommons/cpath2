@@ -23,7 +23,7 @@ public class Traverse extends ServiceQuery {
   @Schema(
     description = "Known BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
-    example = "TP53"
+    example = "[\"TP53\"]"
   )
 	private String[] uri;
 	
