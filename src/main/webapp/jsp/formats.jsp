@@ -20,7 +20,7 @@ The GET and GRAPH web service commands return data in several formats explained 
 
 <h3>BioPAX (RDF/XML)</h3>
 <p>
-<a target="_blank" href="https://www.biopax.org">BioPAX</a> is the default
+<a href="https://www.biopax.org">BioPAX</a> is the default
 and most complete output format of ${cpath.name} that offers
 access to all the details of the biological network model stored in the system. 
 This format is ideal for users wishing to to access specific data not
@@ -31,13 +31,13 @@ the database are available in BioPAX Level 3.  Due to the richness
 of representation in BioPAX, reading and using such a large BioPAX
 document requires knowledge of the format and software development
 tools available for processing it, such as 
-<a target="_blank" href="https://www.biopax.org/paxtools">Paxtools</a>,
+<a href="https://www.biopax.org/paxtools">Paxtools</a>,
 a Java library for working with BioPAX as object model, or Jena, SPARQL.
 </p>
 
 <h3 id="jsonld">JSON-LD</h3>
 <p>
-    <a target="_blank" href="https://json-ld.org/">JSON-LD</a> is a lightweight Linked Data format.
+    <a href="https://json-ld.org/">JSON-LD</a> is a lightweight Linked Data format.
     It is easy for humans to read and write. It is based on the already successful JSON format and provides a way
     to help JSON data interoperate at Web-scale. JSON-LD is an ideal data format for programming environments,
     REST Web services, and unstructured databases such as CouchDB and MongoDB.
@@ -56,7 +56,7 @@ lists is Gene Set Enrichment Analysis (GSEA).  The Gene sets used by
 GSEA are stored for convenience in the Molecular Signature Database
 (MSigDB) in the Gene Matrix Transposed file format (*.gmt).  This is
 the main tab-delimited file format specified by the 
-<a target="_blank" href="http://www.broad.mit.edu/gsea/msigdb/">Broad Molecular Signature Database</a>.
+<a href="http://www.broad.mit.edu/gsea/msigdb/">Broad Molecular Signature Database</a>.
 </p><p>Each gene set is described by a name, a description, and the genes in the gene set: 
 participants in a pathway are specified with one or several HGNC symbols 
 (we can also provide another file using UniProt accession numbers instead).
@@ -67,7 +67,7 @@ Exporting to the MSigDB format will enable computational biologists to use pathw
 within gene set enrichment algorithms, such as GSEA. Available for all
 pathways within Pathway Commons (only from pathway database sources,
 not interaction database sources). Full data format details are available at 
-<a target="_blank" href="http://www.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats#GMT:_Gene_Matrix_Transposed_file_format_.28.2A.gmt.29">Broad GSEA Wiki</a>.
+<a href="http://www.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats#GMT:_Gene_Matrix_Transposed_file_format_.28.2A.gmt.29">Broad GSEA Wiki</a>.
 We used the <strong>normalized and merged</strong> BioPAX Level3 model and our 
 simple GSEA converter from the Paxtools library to generate the GSEA (.gmt) archives.
 (Note: to effectively enforce cross-species check, BioSources must have 
@@ -88,7 +88,7 @@ Since SIF interactions are always binary it is not possible to fully
 represent all of BioPAX, thus this translation is lossy in general. 
 Nonetheless, the SIF network is useful for those applications that require pairwise
 interaction input.  SIF format can be easily imported into popular network analysis tools, 
-such as <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats#SIF_Format">Cytoscape</a>.
+such as <a href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats#SIF_Format">Cytoscape</a>.
 </p><p>
 In this output format, all participants are specified as chemical or gene 
 names or identifiers. This format does not contain any cross-species
@@ -231,7 +231,7 @@ interactions within Pathway Commons.
 
 <h3 id="sbgn">SBGN</h3>
 <p>
-The Systems Biology Graphical Notation (<a target="_blank" href="http://www.sbgn.org">SBGN</a>)
+The Systems Biology Graphical Notation (<a href="http://www.sbgn.org">SBGN</a>)
 is a standard visual notation for network diagrams in biology. 
 SBGN markup language (SBGN-ML) is an associated standard XML format that can be loaded into available 
 software to visualize a diagram of a pathway. BioPAX can be converted to SBGN-ML format, following the 

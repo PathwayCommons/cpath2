@@ -44,8 +44,9 @@ public class PathsFromTo extends BaseGraph {
     for (String item : target) {
       if (item.contains(",")) {
         //split by ',' ignoring spaces and empty values (between ,,)
-        for (String id : item.split("\\s*,\\s*", -1))
+        for (String id : item.split("\\s*,\\s*", -1)) {
           uris.add(id);
+        }
       } else {
         uris.add(item.trim());
       }

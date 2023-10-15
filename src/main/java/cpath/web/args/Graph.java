@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+@Deprecated
 public class Graph extends BaseGraph {
   @NotNull(message = "Parameter 'kind' is required.")
   @Schema(

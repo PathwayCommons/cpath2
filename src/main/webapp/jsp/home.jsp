@@ -1,59 +1,38 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-
 <!DOCTYPE html>
 <html>
+
 <head>
     <jsp:include page="head.jsp"/>
     <script src="<spring:url value='/scripts/help.js'/>"></script>
     <title>${cpath.name} home</title>
 </head>
-<body data-spy="scroll" data-target=".navbar">
 
+<body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp"/>
 
 <div class="row" id="about">
     <div class="jumbotron">
       <h2>About <c:out value="${cpath.name} v${cpath.version}"/>:</h2>
       <p><c:out value="${cpath.description}"/></p>
-      <p>Explore the <a href="swagger" target="_blank">Swagger API docs</a> and examples below.</p>
+      <p>Explore the <a href="swagger">Swagger API docs:</a></p>
+      <blockquote>
+      <ul>
+      <li><a href="swagger#/biopax-model-controller/searchQuery"><code>/search</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/topPathwaysQuery"><code>/top_pathways</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/traverseQuery"><code>/traverse</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/neighborhoodQuery"><code>/neighborhood</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/pathsbetweenQuery"><code>/pathsbetween</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/pathsfromtoQuery"><code>/pathsfromto</code></a></li>
+      <li><a href="swagger#/biopax-model-controller/commonstreamQuery"><code>/commonstream</code></a></li>
+      </ul>
+      </blockquote>
     </div>
 </div>
 
-<div class="row" id="notes">
-    <h3><a id="about_uris"></a>URIs or IDs</h3>
-    <p>
-    Query parameters: <var>source, uri, target</var> accept an array of URIs of the BioPAX elements,
-    which look like <var>bioregistry.io/&lt;prefix&gt;:&lt;identifier&gt;</var>
-    (reference bio entities and vocabularies) or <var>${cpath.xmlBase}&lt;unique_id&gt;</var>
-    (bio processes and participants). BioPAX URIs are not to guess; instead, they should be discovered with
-    <code>/search</code> or <code>/top_pathways</code> queries. However, IDs from the following gene/protein or
-    small molecule collections are also acceptable in place of URIs in the fetch and graph queries:
-    <ul title="These are" style="line-height:85%">
-      <li>HUGO Gene Symbol</li>
-      <li>NCBI Gene ID</li>
-      <li>Uniprot AC</li>
-      <li>RefSeq</li>
-      <li>Ensembl</li>
-      <li>ChEBI</li>
-      <li>ChEMBL</li>
-      <li>KEGG Compound</li>
-      <li>DrugBank</li>
-      <li>PharmGKB Drug</li>
-      <li>PubChem Compound/Substance (must prefix with <var>CID:</var> or <var>SID:</var>, respectively,
-      to distinguish from each other and Gene ID)</li>
-    </ul>
-    As a rule, using full URIs makes a precise query, whereas using the IDs makes a
-    more exploratory one, which also depends on the full-text search (index) and id-mapping.</p>
-    <p>
-    We integrated multiple <a href='/#datasources'>data sources</a> and consistently normalized Xref,
-    EntityReference, Provenance, BioSource, and ControlledVocabulary objects. We did not merge physical entities (states)
-    and processes from different sources automatically, as accurately matching and aligning pathways at that level
-    is still an open research problem.
-    </p>
-</div>
-
+<%--
 <div class="row nav-target" id="search">
     <h2><code>/search</code></h2>
     <blockquote><p>
@@ -64,13 +43,12 @@
       Search results, specifically the URIs, can be starting point for the graph, fetch, traverse queries.
       Search strings are case insensitive, except for <var>xrefid, uri</var>, or when it's enclosed in quotes.
     </p></blockquote>
-<%--
     <h3 id="search_parameters">input:</h3>
     <ul>
         <li><code>q=</code> [Required] a keyword, name, identifier, or a Lucene query string.</li>
         <li><code>page=N</code>  the search result page number (N&gt;=0, default is 0).</li>
         <li><code>datasource=</code>  filter by data source (an array of names, URIs
-            of the <a href="datasources" target="_blank">data sources</a> or any <var>Provenance</var>).
+            of the <a href="datasources">data sources</a> or any <var>Provenance</var>).
             If multiple data source values are specified, a union of hits from specified sources is returned.
             For example, <var>datasource=reactome&amp;datasource=pid</var>.
         </li>
@@ -88,12 +66,10 @@
             (e.g. ProteinReference, SmallMoleculeReference) instead.
         </li>
     </ul>
---%>
     <h3>output:</h3>
     <p>An ordered list of hits (the maximum number of hits per page is <var><c:out value="${cpath.maxHitsPerPage}"/></var>)
-       as JSON or <a href="/help/schema" target="_blank">XML</a> depending on 'Accept: application/json'
+       as JSON or <a href="/help/schema">XML</a> depending on 'Accept: application/json'
        or 'Accept: application/xml' request header.</p>
-<%--
     <h3>examples:</h3> <br/>
     <ol>
         <li><a rel="nofollow" href="search?q=FGFR2" >Find things by keyword:"FGFR2"</a></li>
@@ -107,9 +83,7 @@
         <li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome&datasource=pid">Find all Reactome or PID
           pathways</a></li>
     </ol>
---%>
 </div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 
 <div class="row nav-target" id="fetch">
     <h2><code>/fetch</code></h2>
@@ -117,7 +91,6 @@
         Retrieves a BioPAX sub-model (pathways, entities and nested elements),
         given the source URIs (one can use a /search or /traverse query first to find the input URIs).</p>
     </blockquote>
-<%--
     <h3>input:</h3>
     <ul>
         <li><code>uri=</code> [Required] valid BioPAX element's absolute URI
@@ -138,13 +111,11 @@
             auto-complete and clone the requested BioPAX element(s) into a reasonable sub-model.
         </li>
     </ul>
---%>
     <h3>output:</h3>
         <p>BioPAX (by default) representation of the sub-network matched by the algorithm.
         Conversion to other output formats can be requested with <code>format</code> parameter (no data is returned
         when the algorithm is not applicable to the resulting BioPAX model; e.g., SIF/TXT is not applicable
         if there are no interactions, complexes, pathways in the resulting sub-model).</p>
-<%--
     <h3>examples:</h3>
     <ol>
         <li><a rel="nofollow" href="fetch?uri=http://identifiers.org/uniprot/Q06609&format=JSONLD">
@@ -160,9 +131,7 @@
             format: BioPAX, source: Reactome, human).
         </li>
     </ol>
---%>
 </div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 
 <div class="row nav-target" id="graph">
     <h2>graph: <code>/neighborhood,/pathsbetween,/pathsfromto,/commonstream</code></h2>
@@ -175,7 +144,6 @@
         two objects of the same type are equivalent. We, however, do not merge physical entities and processes
         from different sources, as accurately matching and aligning pathways at that level is still an
         open research problem.</p></blockquote>
-<%--
     <h3>input:</h3>
     <ul>
         <li><code>kind=</code> [Required] graph query (<a
@@ -214,13 +182,11 @@
             to make a reasonable sub-model from the result set.
         </li>
     </ul>
---%>
     <h3>output:</h3>
         <p>BioPAX (by default) representation of the sub-network matched by the algorithm.
         Conversion to other output formats can be requested with <code>format</code> parameter (no data is returned
         when the algorithm is not applicable to the resulting BioPAX model; e.g., SIF/TXT is not applicable
         if there are no interactions, complexes, pathways in the resulting sub-model).</p>
-<%--
     <h3>examples:</h3>
     Neighborhood of COL5A1 (P20908):
     <ol>
@@ -243,9 +209,7 @@
             other identifier types may also work. See: <a href="#about_uris">about URIs and IDs</a>.
         </li>
     </ol>
---%>
 </div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 
 <div class="row nav-target" id="traverse">
     <h2><code>/traverse</code></h2>
@@ -268,7 +232,6 @@
         and parameters, such as inverse parameters and interfaces that represent anonymous union classes in BioPAX OWL.
         (See <a href="https://www.biopax.org/paxtools/">Paxtools documentation</a> for more details).
     </p></blockquote>
-<%--
     <h3>input:</h3>
     <ul>
         <li><code>path=</code> [Required] a BioPAX property path in the form of
@@ -290,11 +253,9 @@
             the path.
         </li>
     </ul>
---%>
     <h3>output:</h3>
     <p>XML result according to the <a href="help/schema">XML Schema</a>&nbsp;
     (TraverseResponse type; pagination is disabled to return all values at once)</p>
-<%--
     <h3>Examples (using human data):</h3>
     <ol>
         <li><a rel="nofollow"
@@ -315,9 +276,7 @@
             This query returns the names of several different objects (using abstract type 'Named' from Paxtools
             API)</a></li>
     </ol>
---%>
 </div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 
 <div class="row nav-target" id="top_pathways">
     <h2><code>/top_pathways</code></h2>
@@ -325,7 +284,6 @@
         Finds root pathways - that are neither 'controlled' nor a 'pathwayComponent' of another biological process,
         excluding trivial ones.</p>
     </blockquote>
-<%--
     <h3>input:</h3>
     <ul>
         <li><code>q=</code> [Required] a keyword, name, external identifier, or a Lucene query string,
@@ -336,11 +294,9 @@
         <li><code>organism=</code> organism filter (same as for <a href="#search_parameters">'search'</a>).
         </li>
     </ul>
---%>
     <h3>output:</h3>
     <p>XML document described by <a href="help/schema">XML Schema</a>&nbsp;
     (SearchResponse type; pagination is disabled to return all top pathways at once)</p>
-<%--
     <h3>examples:</h3>
     <ol>
         <li><a rel="nofollow" href="top_pathways?q=TP53">
@@ -348,16 +304,49 @@
         <li><a rel="nofollow" href="top_pathways?q=insulin&datasource=reactome">
             find top pathways from Reactome, matching 'insulin'; request JSON format</a></li>
     </ol>
---%>
 </div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
+--%>
 
 <div class="row nav-target" id="parameter_values">
     <h2>Parameter Values</h2>
-    <p>Note that enumeration values, such as those for Type, Format, Direction, Limit, Pattern, are case-insensitive -
-    can also use e.g. "interacts-with" instead of "INTERACTS_WITH" (both '-' and '_' are acceptable),
-    "jsonld" instead "JSONLD", "neighborhood" instead of "NEIGHBORHOOD", etc.
+    <h3><a id="about_uris"></a>About URIs or IDs</h3>
+    <p>
+        Query parameters: <var>source, uri, target</var> accept an array of URIs of the BioPAX elements,
+        which look like <var>bioregistry.io/&lt;prefix&gt;:&lt;identifier&gt;</var>
+        (reference bio entities and vocabularies) or <var>${cpath.xmlBase}&lt;unique_id&gt;</var>
+        (bio processes and participants). BioPAX URIs are not to guess; instead, they should be discovered with
+        <code>/search</code> or <code>/top_pathways</code> queries. However, IDs from the following gene/protein or
+        small molecule collections are also acceptable in place of URIs in the fetch and graph queries:
+        <ul title="These are" style="line-height:85%">
+          <li>HUGO Gene Symbol</li>
+          <li>NCBI Gene ID</li>
+          <li>Uniprot AC</li>
+          <li>RefSeq</li>
+          <li>Ensembl</li>
+          <li>ChEBI</li>
+          <li>ChEMBL</li>
+          <li>KEGG Compound</li>
+          <li>DrugBank</li>
+          <li>PharmGKB Drug</li>
+          <li>PubChem Compound/Substance (must prefix with <var>CID:</var> or <var>SID:</var>, respectively,
+          to distinguish from each other and Gene ID)</li>
+        </ul>
+        As a rule, using full URIs makes a precise query, whereas using the IDs makes a
+        more exploratory one, which also depends on the full-text search (index) and id-mapping.
     </p>
+    <p>
+        We integrated multiple <a href='datasources'>data sources</a> and consistently normalized Xref,
+        EntityReference, Provenance, BioSource, and ControlledVocabulary objects. We did not merge physical entities (states)
+        and processes from different sources automatically, as accurately matching and aligning pathways at that level
+        is still an open research problem.
+    </p>
+    <h3><a id="about_enum"></a>About Enumerations</h3>
+    <p>
+    Note that enumeration parameter values, such as those for Type, Format, Direction, Limit, Pattern,
+    are case-insensitive and can also use e.g. "interacts-with" instead of "INTERACTS_WITH" (both '-' and '_'
+    are acceptable), "jsonld" instead "JSONLD", "neighborhood" instead of "NEIGHBORHOOD", etc.
+    </p>
+
     <div class="parameters" id="organisms">
         <h3>Organisms</h3>
         <p>We intend to integrate pathway data only for the following species:</p>
@@ -371,8 +360,8 @@
             This means that we don’t comprehensively collect information for
             unsupported organisms and we have not cleaned or converted
             such data due to the high risk of introducing errors and artifacts.
-            All BioSource objects can be found by using
-            <a rel="nofollow" href="search?q=*&type=biosource">this search query</a>.
+            All BioSource objects can be found by using a <code>/search</code> query
+            with parameters: <var>{"q":"*", "type":"biosource"}</var>.
         </p>
     </div>
         <div class="parameters" id="output_formats">
@@ -401,7 +390,7 @@
         <div class="parameters" id="biopax_types">
             <h3>BioPAX class ('type'):</h3>
             <p><a href="#" class="hider" hide-id="types">Click here</a> to show/hide the list
-                (see also: <a href="https://www.biopax.org/owldoc/Level3/" target="_blank">BioPAX Classes</a>).
+                (see also: <a href="https://www.biopax.org/owldoc/Level3/">BioPAX Classes</a>).
             </p>
             <%-- items are to be added here by a javascript --%>
             <ul class="dropdown hidden" id="types"></ul>
@@ -410,25 +399,25 @@
         <div class="parameters" id="biopax_properties">
             <h3>BioPAX Properties and Restrictions:</h3>
             <p>Listed below are BioPAX properties' summary as defined
-                in the Paxtools model: domain, property name, range and restrictions (if any).
-                For example, <em>XReferrable xref Xref D:ControlledVocabulary=UnificationXref
-                    D:Provenance=UnificationXref,PublicationXref</em> means that
-                values of ControlledVocabulary.xref can only be of <em>UnificationXref</em> type.</p>
+            in the Paxtools model: domain, property name, range and restrictions (if any).
+            For example, <em>XReferrable xref Xref D:ControlledVocabulary=UnificationXref
+            D:Provenance=UnificationXref,PublicationXref</em> means that
+            values of ControlledVocabulary.xref can only be of <em>UnificationXref</em> type.</p>
             <p><a href="#" class="hider" hide-id="properties">Click here</a>
                 to show/hide the list of properties</p>
             <!-- items will be added here by the javascript -->
             <ul id="properties" class="hidden"></ul>
         </div>
         <div class="parameters" id="biopax_inverse_properties">
-            <h3>Inverse BioPAX Object Properties (a feature of the <a href="http://biopax.org/paxtools">Paxtools
-                library</a>):</h3>
-            <p>Some of the BioPAX object properties can be traversed in the inverse direction, e.g, 'xref' - 'xrefOf'.
-                Unlike for the standard <em>xref</em> property, e.g., the restriction <em>XReferrable xref
-                    Xref D:ControlledVocabulary=UnificationXref D:Provenance=UnificationXref,PublicationXref</em>
-                below must be read <em>right-to-left</em> as it is actually about Xref.xrefOf:
-                RelationshipXref.xrefOf cannot contain neither <em>ControlledVocabulary</em>
-                (any sub-class) nor <em>Provenance</em> objects
-                (in other words, vocabularies and provenance may not have any relationship xrefs).</p>
+            <h3>Inverse BioPAX Object Properties:</h3>
+            <p>Thanks to <a href="http://biopax.org/paxtools">Paxtools</a>, some of the BioPAX object properties
+            can be traversed in the inverse direction, e.g, 'xref' - 'xrefOf'.
+            Unlike for the standard <em>xref</em> property, e.g., the restriction <em>XReferrable xref
+            Xref D:ControlledVocabulary=UnificationXref D:Provenance=UnificationXref,PublicationXref</em>
+            below must be read <em>right-to-left</em> as it is actually about Xref.xrefOf:
+            RelationshipXref.xrefOf cannot contain neither <em>ControlledVocabulary</em>
+            (any sub-class) nor <em>Provenance</em> objects
+            (in other words, vocabularies and provenance may not have any relationship xrefs).</p>
             <p><a href="#" class="hider" hide-id="inverse_properties">Click here</a>
                 to show/hide the list of properties</p>
             <%-- items are to be added here by a javascript --%>
@@ -436,6 +425,8 @@
         </div>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
+
 <jsp:include page="footer.jsp"/>
 </body>
+
 </html>

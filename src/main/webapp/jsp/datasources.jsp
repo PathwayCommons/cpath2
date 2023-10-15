@@ -55,7 +55,7 @@
 				</p>
 				<p>
 					<var>Publication: </var>{{ds.citation}}
-					<a target="_blank" ng-href="https://bioregistry.io/pubmed:{{ds.pubmedId}}">(PMID:{{ds.pubmedId}})</a>
+					<a ng-href="https://bioregistry.io/pubmed:{{ds.pubmedId}}">(PMID:{{ds.pubmedId}})</a>
 				</p>
 				<p><var>Availability: </var><code>{{ds.availability}}</code></p>
 			</div>

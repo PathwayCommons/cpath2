@@ -4,7 +4,6 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 
 import cpath.service.api.OutputFormat;
@@ -36,7 +35,7 @@ public class Fetch extends ServiceQuery {
   @Schema(
     description = "If format is SIF or TXT, one can specify interaction types to apply " +
       "(by default, it uses all the build-in patterns but 'neighbor-of')",
-    example = "[\"interacts-with\"]" //custom editor maps this to "INTERACTS_WITH" and then to the SIFEnum instance
+    example = "[\"interacts-with\"]" //editor/setter maps this to "INTERACTS_WITH" SIFEnum instance
   )
   private SIFEnum[] pattern;
 

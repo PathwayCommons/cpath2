@@ -73,7 +73,7 @@ public class BiopaxModelController extends BasicController {
 //      summary = "HTTP GET, search for top pathways.",
 //      description = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
 //          "nor a 'pathwayComponent' of another biological process; trivial pathways are excluded from the results;" +
-//          " can filter by <a href='datasources'>datasource</a> and organism."
+//          " can filter by <a href='/datasources'>datasource</a> and organism."
 //  )
 //  public SearchResponse topPathwaysQueryGet(@Valid TopPathways args, BindingResult bindingResult,
 //                                    HttpServletRequest request, HttpServletResponse response)
@@ -84,9 +84,9 @@ public class BiopaxModelController extends BasicController {
   @PostMapping(path = "/top_pathways", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
     summary = "Search for top-level bio pathways.",
-    description = "Find root/parent Pathway objects that are neither 'controlled' " +
-      "nor a 'pathwayComponent' of another biological process; trivial pathways are excluded from the results;" +
-      " can filter by <a href='datasources'>datasource</a> and organism."
+    description = "Find root/parent Pathway objects that are neither <code>controlled</code> " +
+      "nor a <code>pathwayComponent</code> of another biological process; trivial pathways are excluded from the results;" +
+      " can filter by <a href='/datasources'>datasource</a> and organism."
   )
   public SearchResponse topPathwaysQuery(@Valid @RequestBody TopPathways args, BindingResult bindingResult,
                                     HttpServletRequest request, HttpServletResponse response)
@@ -252,7 +252,7 @@ public class BiopaxModelController extends BasicController {
 //        </p>
 //        <p>
 //        Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or
-//        <a href="/help/schema" target="_blank">XML</a> depending on 'Accept: application/json' or
+//        <a href="/help/schema">XML</a> depending on 'Accept: application/json' or
 //        'Accept: application/xml' request header.
 //        </p>
 //        """
@@ -276,7 +276,7 @@ public class BiopaxModelController extends BasicController {
         </p>
         <p>
         Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or 
-        <a href="/help/schema" target="_blank">XML</a> depending on 'Accept: application/json' or 
+        <a href="/help/schema">XML</a> depending on 'Accept: application/json' or 
         'Accept: application/xml' request header.
         </p>
         """
@@ -296,9 +296,8 @@ public class BiopaxModelController extends BasicController {
 
       if(results instanceof ErrorResponse) {
         errorResponse(args, (ErrorResponse) results, request, response);
-      }
-      else { //if, due to a bug, results==null, it'll throw a NullPointerException
-        // log/track one data access event for each data provider listed in the result
+      } else if(results != null) {
+        // log data access event for each data provider listed in the result
         audit(request, args, ((SearchResponse)results).getProviders(), null);
         searchResponse = (SearchResponse) results;
         searchResponse.setVersion(service.settings().getVersion());

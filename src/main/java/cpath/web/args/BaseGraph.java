@@ -51,7 +51,7 @@ public abstract class BaseGraph extends ServiceQuery {
 
   @Schema(
     description = "If format is SIF or TXT, one can specify interaction types to apply",
-    example = "[\"interacts-with\",\"used-to-produce\"]"
+    example = "[\"interacts-with\",\"used-to-produce\"]" //editor/setter maps this to "INTERACTS_WITH","USED_TO_PRODUCE" SIFEnum instances
   )
   private SIFEnum[] pattern;
 
