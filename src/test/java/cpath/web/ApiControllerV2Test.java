@@ -23,9 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles({"web"})
-@WebMvcTest(controllers = {HelpController.class, BiopaxModelController.class})
+@WebMvcTest(controllers = {ApiControllerV2.class})
 @Import({WebApplication.class, Settings.class})
-public class ControllersTest {
+public class ApiControllerV2Test {
 	@Autowired
 	private MockMvc mvc;
 
@@ -50,43 +50,18 @@ public class ControllersTest {
     mockRes.setComment("mock search result");
 
     given(service.search("Gly*",0, Pathway.class, null, null)).willReturn(mockRes);
+
+    //todo: mock data and add tests for: fetch, top_pathways, and graph queries
   }
 
   @Test
-	public void testGetTypes() throws Exception {
-    mvc.perform(get("/help/types")) // default json
-      .andExpect(status().isOk())
-      .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-			.andExpect(content().string(
-			  containsString("{\"id\":\"types\",\"title\":\"BioPAX classes\",\"info\":\"These BioPAX Level3 classes")))
-      .andExpect(content().string(
-        containsString("{\"id\":\"TissueVocabulary\",\"title\":null,\"info\":null,\"example\":null,\"output\":null,\"members\":[],")));
+	public void getSearchPathway() throws Exception {
+    mvc.perform(get("/v2/search?type=pathway&q=Gly*")).andExpect(status().isMethodNotAllowed());
 	}
 
   @Test
-  public void testGetTypesXml() throws Exception {
-    mvc.perform(get("/help/types").accept(MediaType.APPLICATION_XML))
-        .andExpect(status().is4xxClientError()); // only application/json is supported now
-  }
-
-  @Test
-  public void testGetTypeJson() throws Exception {
-    mvc.perform(get("/help/types/Gene").accept(MediaType.APPLICATION_JSON))
-      .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
-      .andExpect(content().json("{\"id\":\"Gene\",\"title\":\"Gene\",\"info\":\"See: biopax.org, " +
-        "https://www.biopax.org/owldoc/Level3/\",\"example\":null,\"output\":null,\"members\":[],\"empty\":false}"));
-  }
-
-//	@Test
-//	public void getSearchPathway() throws Exception {
-//    mvc.perform(get("/search?type=pathway&q=Gly*"))
-//      .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
-//    .andExpect(content().string(containsString("MockPathway")));
-//	}
-
-  @Test
   public void postSearchPathway() throws Exception {
-    mvc.perform(post("/search").content("""
+    mvc.perform(post("/v2/search").content("""
         {
           "type": "pathway",
           "q": "Gly*"
@@ -96,4 +71,5 @@ public class ControllersTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(content().string(containsString("MockPathway")));
   }
+
 }

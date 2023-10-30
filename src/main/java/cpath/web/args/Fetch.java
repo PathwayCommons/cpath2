@@ -19,7 +19,7 @@ public class Fetch extends ServiceQuery {
   @NotNull(message = "Illegal Output Format")
   @Schema(
     description = "Output format name (default: BIOPAX)",
-    example = "jsonld"
+    example = "biopax"
   )
   private OutputFormat format;
 
@@ -28,7 +28,7 @@ public class Fetch extends ServiceQuery {
   @Schema(
     description = "BioPAX entity URIs or standard identifiers (e.g., gene symbols)",
     required = true,
-    example = "[\"TP53\"]"
+    example = "[\"CALCRL\"]"
   )
   private String[] uri;
 

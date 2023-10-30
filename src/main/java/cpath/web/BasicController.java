@@ -154,8 +154,7 @@ public abstract class BasicController
         errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
       }
     } else { //it's a bug -
-      String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ",
-        result.getClass().getSimpleName(), result);
+      String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ", result, result);
       errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
     }
   }

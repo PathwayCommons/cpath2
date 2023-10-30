@@ -13,6 +13,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Deprecated
+/**
+ * @deprecated - migrating to @{@link Neighborhood}, @{@link PathsBetween}, etc.
+ */
 public class Graph extends BaseGraph {
   @NotNull(message = "Parameter 'kind' is required.")
   @Schema(
