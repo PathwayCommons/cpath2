@@ -8,9 +8,14 @@
     <!-- To enable JMX Management -->
     <jmxConfigurator/>
 
-    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <!--Daily rolling file appender -->
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>cpath2.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>cpath2.%d{yyyy-ww}.log.gz</FileNamePattern>
+        </rollingPolicy>
         <encoder>
-            <pattern>%d %-5level [%thread] %logger{25} - %msg%n</pattern>
+            <pattern>%d %-5level %logger{25} - %msg%n</pattern>
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
@@ -20,7 +25,7 @@
     <logger name="org.biopax.paxtools.util.BPCollections" level="info"/>
     <logger name="org.biopax.paxtools.normalizer.Resolver" level="info"/>
     <root level="info">
-        <appender-ref ref="console"/>
+        <appender-ref ref="file"/>
     </root>
 
 </configuration>
