@@ -159,10 +159,11 @@ final class PreMerger {
 
     //clear all id-mapping tables
     log.warn("buildWarehouse(), removing all previous id-mapping db entries...");
-
     service.initIndex(null, service.settings().indexDir(), false);
+
     // Using the just built Warehouse BioPAX model, generate the id-mapping tables:
     buildIdMappingFromWarehouse(warehouse);
+
     // Process all MAPPING data - save in the id-mapping repository
     for (Datasource datasource : service.metadata().getDatasources()) {
       //skip not "mapping" data
