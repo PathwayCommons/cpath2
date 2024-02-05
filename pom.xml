@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.3</version>
+    <version>3.2.2</version>
   </parent>
 
   <name>cPath2</name>
@@ -39,8 +39,8 @@
   </issueManagement>
 
   <ciManagement>
-    <system>Travis CI</system>
-    <url>https://travis-ci.org/PathwayCommons/cpath2</url>
+    <system>GitHub</system>
+    <url>https://github.com/PathwayCommons/cpath2/actions/workflows/maven.yml</url>
   </ciManagement>
 
   <organization>

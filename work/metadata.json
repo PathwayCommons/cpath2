@@ -10,7 +10,7 @@
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
-      "description": "ChEBI Ontology v179, 29-aug-2019",
+      "description": "ChEBI Ontology v227, 27-Oct-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -26,7 +26,7 @@
         "UniProtKB"
       ],
       "converterClass": "cpath.converter.UniprotConverter",
-      "description": "UniProtKB/Swiss-Prot (human), 12-Sep-2019",
+      "description": "UniProtKB/Swiss-Prot (human), 12-Nov-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/uniprot.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -39,7 +39,7 @@
       "name": [
         "UniChem"
       ],
-      "description": "Selected whole-source id-mapping files (to ChEBI) from UniChem (fixed with a script), 01-sep-2019",
+      "description": "Selected whole-source id-mapping files (to ChEBI) from UniChem, 12-Nov-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/UniChem_logo2_255.png",
       "availability": "free",
       "type": "MAPPING",
@@ -53,7 +53,7 @@
       "name": [
         "Reactome"
       ],
-      "description": "Reactome v69 (only 'Homo_sapiens.owl') 28-May-2019",
+      "description": "Reactome v86 (only 'Homo_sapiens.owl') 07-Sep-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/reactome.png",
       "availability": "free",
       "type": "BIOPAX",
@@ -81,11 +81,11 @@
         "PhosphoSite",
         "PhosphoSitePlus"
       ],
-      "description": "PhosphoSite Kinase-substrate information; 19-Aug-2019",
+      "description": "PhosphoSite Kinase-substrate information; 17-Nov-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/psp.png",
       "availability": "free",
       "type": "BIOPAX",
-      "pubmedId": "25514926"
+      "pubmedId": "22135298"
     },
     {
       "dataUrl": "https://humancyc.org/download.shtml",
@@ -97,7 +97,7 @@
         "HumanCyc",
         "BioCyc"
       ],
-      "description": "HumanCyc 21; 2017; under license from SRI International, www.biocyc.org",
+      "description": "HumanCyc 27.5; 2023; under license from SRI International, www.biocyc.org",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/humancyc.png",
       "availability": "academic",
       "type": "BIOPAX",
@@ -119,16 +119,16 @@
       "pubmedId": "18988627"
     },
     {
-      "dataUrl": "ftp://ftp.pantherdb.org/pathway/3.6.3/BioPAX.tar.gz",
+      "dataUrl": "http://data.pantherdb.org/ftp/pathway/3.6.7/BioPAX.tar.gz",
       "identifier": "panther",
-      "homepageUrl": "http://www.pantherdb.org",
+      "homepageUrl": "https://www.pantherdb.org",
       "cleanerClass": "cpath.cleaner.PantherCleaner",
       "name": [
         "PANTHER",
         "PANTHER Pathway",
         "PantherDB"
       ],
-      "description": "PANTHER Pathways 3.6.3 on 25-Mar-2019 (auto-converted to human-only model)",
+      "description": "PANTHER Pathways 3.6.7 on 01-Aug-2023 (auto-converted to human-only model)",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/panther.png",
       "availability": "free",
       "type": "BIOPAX",
@@ -143,49 +143,49 @@
         "Database of Interacting Proteins"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "DIP (human - converted Hsapi20170205.mif25.gz to BioPAX), 05-02-2017",
+      "description": "DIP (human - converted Hsapi20170205.mif25.gz to BioPAX), 05-Feb-2017",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/dip_logo.png",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "14681454"
     },
     {
-      "dataUrl": "https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-3.5.175/BIOGRID-ORGANISM-3.5.175.psi25.zip",
+      "dataUrl": "https://downloads.thebiogrid.org/File/BioGRID/Release-Archive/BIOGRID-4.4.227/BIOGRID-ORGANISM-4.4.227.psi25.zip",
       "identifier": "biogrid",
       "homepageUrl": "https://thebiogrid.org/",
       "name": [
         "BioGRID"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "BioGRID Release 3.5.175 (only BIOGRID-ORGANISM-Homo_sapiens-3.5.175.psi25.xml), 25-Jul-2019",
+      "description": "BioGRID Release 4.4.227 (only BIOGRID-ORGANISM-Homo_sapiens-4.4.227.psi25.xml), 25-Oct-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/favicon_bigger.png",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "16381927"
     },
     {
-      "dataUrl": "ftp://ftp.ebi.ac.uk/pub/databases/intact/2019-08-28/psi25/species/human.zip",
+      "dataUrl": "https://ftp.ebi.ac.uk/pub/databases/intact/2023-10-06/psi25/species/human.zip",
       "identifier": "intact",
       "homepageUrl": "https://www.ebi.ac.uk/intact/",
       "name": [
         "IntAct"
       ],
       "converterClass": "cpath.converter.PsimiConverter",
-      "description": "IntAct (human), except 'negative', 28-Aug-2019",
+      "description": "IntAct (human), except 'negative', 06-Oct-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/logo_intact_small.gif",
       "availability": "free",
       "type": "PSI_MI",
       "pubmedId": "24234451"
     },
     {
-      "dataUrl": "ftp://ftp.ebi.ac.uk/pub/databases/intact/complex/2019-08-28/psi25/Homo_sapiens.zip",
+      "dataUrl": "https://ftp.ebi.ac.uk/pub/databases/intact/complex/2023-10-06/psi25/Homo_sapiens.zip",
       "identifier": "intact_complex",
       "homepageUrl": "https://www.ebi.ac.uk/intact/",
       "name": [
         "IntAct"
       ],
       "converterClass": "cpath.converter.PsimiToComplexesConverter",
-      "description": "IntAct Complex (human), 28-Aug-2019",
+      "description": "IntAct Complex (human), 06-Oct-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/logo_intact_small.gif",
       "availability": "free",
       "type": "PSI_MI",
@@ -256,7 +256,7 @@
       "name": [
         "DrugBank"
       ],
-      "description": "DrugBank v5.1.4, 02-Jul-2019, converted to BioPAX with our http://github.com/PathwayCommons/drugbank-to-biopax",
+      "description": "DrugBank v5.1.11, 03-Jan-2024, converted to BioPAX with our http://github.com/PathwayCommons/drugbank-to-biopax",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/drugbanklogo.png",
       "availability": "academic",
       "type": "BIOPAX",
@@ -285,7 +285,7 @@
         "Comparative Toxicogenomics Database",
         "ctdbase"
       ],
-      "description": "Curated chemical-gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 26-Jun-2019; converted with http://github.com/PathwayCommons/ctd-to-biopax",
+      "description": "Curated chemical-gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 31-Jan-2024; converted with http://github.com/PathwayCommons/ctd-to-biopax",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/ctdlogo.png",
       "availability": "academic",
       "type": "BIOPAX",
@@ -315,7 +315,7 @@
         "INOH",
         "Integrating Network Objects with Hierarchies"
       ],
-      "description": "INOH 4.0 (signal transduction and metabolic data), 22-MAR-2011",
+      "description": "INOH 4.0 (signal transduction and metabolic data), 22-MAR-2011, archive",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/inoh_logo.png",
       "availability": "free",
       "type": "BIOPAX",
@@ -343,11 +343,11 @@
       "name": [
         "Pathbank"
       ],
-      "description": "Pathbank BioPAX data (primary, human pathway data only)",
+      "description": "Pathbank 2.0 BioPAX data (primary pathways, human data only), 16-Aug-2019",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/pathbank.png",
       "availability": "free",
       "type": "BIOPAX",
-      "pubmedId": ""
+      "pubmedId": "31602464"
     },
     {
       "dataUrl": "https://www.innatedb.ca/download/interactions/innatedb_all.mitab.gz",
