@@ -10,7 +10,7 @@
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
-      "description": "ChEBI Ontology v227, 27-Oct-2023",
+      "description": "ChEBI Ontology v230, 29-Jan-2024",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -26,7 +26,7 @@
         "UniProtKB"
       ],
       "converterClass": "cpath.converter.UniprotConverter",
-      "description": "UniProtKB/Swiss-Prot (human), 12-Nov-2023",
+      "description": "UniProtKB/Swiss-Prot (human), v246, 24-Jan-2024",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/uniprot.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -357,7 +357,7 @@
         "InnateDB"
       ],
       "converterClass": "cpath.converter.PsimiTabConverter",
-      "description": "InnateDB Curated Interactions (human), downloaded 2019-09-01",
+      "description": "InnateDB Curated Interactions (human) 2017-06-18 (downloaded 2023-02-10)",
       "iconUrl": "https://www.innatedb.com/images/Innatedb-2010-large.png",
       "availability": "free",
       "type": "PSI_MITAB",
@@ -370,7 +370,7 @@
   	  "name": [
   	    "Biofactoid"
   	  ],
-  	  "description": "Biofactoid data",
+  	  "description": "Biofactoid BioPAX data, 2024-02-07",
   	  "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/biofactoid.png",
   	  "availability": "free",
   	  "type": "BIOPAX",
