@@ -53,7 +53,7 @@
       "name": [
         "Reactome"
       ],
-      "description": "Reactome v86 (only 'Homo_sapiens.owl') 07-Sep-2023",
+      "description": "Reactome v87 (only 'Homo_sapiens.owl') 04-Dec-2023",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/reactome.png",
       "availability": "free",
       "type": "BIOPAX",
