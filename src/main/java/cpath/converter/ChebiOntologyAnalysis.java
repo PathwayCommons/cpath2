@@ -47,12 +47,11 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		// get SMR for entry out of Warehouse
 		Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
 		if (childChebiIDs.size() != 1) {
-			log.error("processOBOEntry(), got none or >1 ID in: " + entryBuffer.toString() + "; skipped.");
+			log.error("processOBOEntry(), got none or >1 ID in: " + entryBuffer + "; skipped.");
 			return;
 		}
 		final String thisID = childChebiIDs.iterator().next();
-		SmallMoleculeReference thisSMR = (SmallMoleculeReference) model
-			.getByID("http://identifiers.org/chebi/CHEBI:" + thisID);
+		SmallMoleculeReference thisSMR = (SmallMoleculeReference) model.getByID("bioregistry.io/chebi:" + thisID.toLowerCase());
 		if (thisSMR == null) {
 			log.debug("processOBOEntry(), Skipped (not found): " + thisID);
 			return;
@@ -62,8 +61,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
 		for (String parentChebiID : parentChebiIDs) {
 			RelationshipXref xref = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE,
-						"chebi", "CHEBI:"+parentChebiID, model, false);
-			thisSMR.addComment("is_a CHEBI:" + parentChebiID);
+						"chebi", parentChebiID, model);
 			thisSMR.addXref(xref);
 		}
 
@@ -72,26 +70,22 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		for (String relationship : relationships) {
 			String[] parts = relationship.split(_COLON);
 			RelationshipXref xref = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION,
-						"chebi", "CHEBI:"+parts[1], model, false);
-			thisSMR.addComment(parts[0].toLowerCase() + " CHEBI:" + parts[1]);
+						"chebi", parts[1], model);
+			thisSMR.addComment(parts[0].toLowerCase() + " " + parts[1]);
 			thisSMR.addXref(xref);
 		}
 	}
 
 	/**
 	 * Given an OBO entry, returns the values matched by the given regex. If
-	 * regex contains more that one capture group, a ":" will be used to delimit
+	 * regex contains more than one capture group, a ":" will be used to delimit
 	 * them.
 	 */
 	private Collection<String> getValuesByREGEX(StringBuilder entryBuffer,
-			Pattern regex) throws IOException {
+			Pattern regex) {
 
 		Collection<String> toReturn = new ArrayList<>();
 		Scanner scanner = new Scanner(entryBuffer.toString());
-
-		if (log.isDebugEnabled()) {
-			log.debug("getValue(), key: " + regex.toString());
-		}
 
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
@@ -101,7 +95,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 				for (int lc = 1; lc <= matcher.groupCount(); lc++) {
 					toAdd += matcher.group(lc) + _COLON;
 				}
-				toReturn.add(toAdd.substring(0, toAdd.length() - 1));//to remove ending ':'
+				toReturn.add(toAdd.substring(0, toAdd.length() - 1)); //to remove ending ':'
 			}
 		}
 

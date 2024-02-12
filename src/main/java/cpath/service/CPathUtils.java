@@ -3,20 +3,20 @@ package cpath.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cpath.service.api.Cleaner;
 import cpath.service.api.Converter;
 import cpath.service.api.RelTypeVocab;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Metadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,23 +29,17 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
-import cpath.service.jpa.Metadata;
-
 public final class CPathUtils {
   private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
   private static final String dataFileSuffixRegex = "[^.]+\\.gz$";
 
-  // LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
+  // LOADER can handle file://, ftp://, http://  resources
   public static final ResourceLoader LOADER = new DefaultResourceLoader();
 
   private CPathUtils() {
@@ -71,40 +65,28 @@ public final class CPathUtils {
     }
   }
 
-  /**
-   * For the given url, returns a collection of Metadata Objects.
-   *
-   * @param url String
-   * @return Collection<Metadata>
-   */
-  static Collection<Metadata> readMetadata(final String url) {
-    // order of lines/records in the Metadata table does matter (since 2013/03);
-    // so List is used here instead of HashSet
-    List<Metadata> toReturn = new ArrayList<>();
-
-    // check args
-    if (url == null) {
-      throw new IllegalArgumentException("url must not be null");
-    }
-
-    // get data from service
+  static Metadata readMetadata(String url) {
     try {
-      JSONObject jo = (JSONObject) new JSONParser().parse(new InputStreamReader(LOADER.getResource(url).getInputStream()));
-      for (JSONObject ds : (Iterable<JSONObject>) jo.get("datasources")) {
-        Metadata.METADATA_TYPE type = Metadata.METADATA_TYPE.valueOf((String) ds.get("type"));
-        List<String> names = (List<String>) ((JSONArray) ds.get("name")).stream().collect(Collectors.toList());
-        Metadata metadata = new Metadata((String) ds.get("identifier"), names, (String) ds.get("description"),
-          (String) ds.get("dataUrl"), (String) ds.get("homepageUrl"), (String) ds.get("iconUrl"),
-          type, (String) ds.get("cleanerClass"), (String) ds.get("converterClass"),
-          (String) ds.get("pubmedId"), (String) ds.get("availability"));
-        LOGGER.info("readMetadata(): adding Metadata: " + metadata.getIdentifier());
-        toReturn.add(metadata);
-      }
-    } catch (ParseException | IOException e) {
+      return new ObjectMapper().readValue(LOADER.getResource(url).getInputStream(), Metadata.class);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
 
-    return toReturn;
+  static void saveMetadata(Metadata metadata, String path) {
+    //path fix-up for metadata location property, e.g., file:metadata.json, classpath:metadata.json (test/demo)
+    if(StringUtils.startsWithIgnoreCase(path, "classpath:")) {
+      path = StringUtils.replaceIgnoreCase(path, "classpath:", "target/"); //for test/demo
+    } else if(StringUtils.startsWithIgnoreCase(path, "file:")) {
+      path = StringUtils.replaceIgnoreCase(path, "file:", "");
+    } else if (StringUtils.containsIgnoreCase(path, ":")) { //duh... to be safe
+      path = StringUtils.substringAfter(path, ":");
+    }
+    try {
+      new ObjectMapper().writeValue(Files.newOutputStream(Paths.get(path)), metadata);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -166,74 +148,95 @@ public final class CPathUtils {
   }
 
   /**
-   * From a warehouse (normalized) ER or CV URI,
-   * extract the identifier (e.g., UniProt or ChEBI).
-   * It depends on Normalizer and cPath2 Premerge
-   * using 'http://identifiers.org/*' URIs for such objects.
+   * From a normalized ER/CV URI, extract the id (uniprot, chebi,..)
    *
-   * @param uri URI
-   * @return local part URI - ID
+   * @param uri some (preferably normalized) ER or CV URI
+   * @return identifier; null when the URI is nothing like *identifiers.org/* or *bioregistry.io/*
    */
   static String idFromNormalizedUri(String uri) {
-    Assert.isTrue(uri.contains("http://identifiers.org/"),"Not a Identifiers.org URI");
-    return uri.substring(uri.lastIndexOf('/') + 1);
+    if(Stream.of("identifiers.org/", "bioregistry.io/")
+        .anyMatch(s -> StringUtils.containsIgnoreCase(uri, s))) {
+
+      String id = uri.substring(uri.lastIndexOf('/') + 1);
+      //remove prefix/banana for now
+      if(StringUtils.contains(id,":")) {
+        id = StringUtils.substringAfter(id, ":");
+      }
+      //add CID:/SID:/CHEBI: prefix to the id before id-mapping due to our id-mapping/index implementation
+      if(StringUtils.containsIgnoreCase(uri,"substance")) //contains 'substance' or 'pubchem...substance'...
+        id = "SID:" + id;
+      else if(StringUtils.containsIgnoreCase(uri,"compound") || StringUtils.containsIgnoreCase(uri,"pubchem"))
+        id = "CID:" + id;
+      else if(StringUtils.containsIgnoreCase(uri,"chebi"))
+        id = "CHEBI:" + id;
+
+      return id;
+    }
+
+    return null;
   }
 
   /**
-   * Auto-fix an ID of particular type before using it
-   * for id-mapping. This helps to map e.g., RefSeq versions ID and
-   * UniProt isoforms to primary UniProt accessions despite our id-mapping db
-   * does not have such records as e.g. "NP_12345.1 maps to P01234".
+   * Auto-fix some ID types before searching or saving in the id-mapping index.
+   * This helps to map e.g. a RefSeq version or UniProt isoform ID to the primary UniProt AC,
+   * despite our id-mapping index/table does not have records like "NP_12345.1 maps to P01234".
    *
-   * @param fromDb type of the identifier (standard resource name, e.g., RefSeq)
-   * @param fromId identifier
+   * @param db type of the identifier (standard resource name, e.g., RefSeq)
+   * @param id identifier
    * @return "fixed" ID
    */
-  public static String fixSourceIdForMapping(String fromDb, String fromId) {
-    Assert.hasText(fromId, "fromId is empty");
-    Assert.hasText(fromDb, "fromDb is empty");
+  public static String fixIdForMapping(String db, String id) {
+    Assert.hasText(id, "fromId is empty");
+    Assert.hasText(db, "fromDb is empty");
 
-    String id = fromId;
-    String db = fromDb.toUpperCase();
+    db = db.toUpperCase();
 
-    if (db.startsWith("UNIPROT") || db.contains("SWISSPROT") || db.contains("TREMBL")) {
+    if (db.startsWith("UNIPROT")) {
       //always use UniProt ID instead of the isoform ID for mapping
-      if (id.contains("-"))
+      if (id.contains("-")) {
         id = id.replaceFirst("-\\d+$", "");
-    } else if (db.equals("REFSEQ") && id.contains(".")) {
+      }
+    }
+    else if (db.equals("CHEBI")) {
+      //by design of this app, chebi id must always have 'CHEBI:' (banana+peel) prefix for id-mapping/indexing/searching
+      id = id.toUpperCase(); //converts ChEBI:*, chebi:*, etc. => CHEBI:*
+      if (!StringUtils.startsWith(id, "CHEBI:")) {
+        id = "CHEBI:" + id;
+      }
+    }
+    else if (db.equals("REFSEQ") && id.contains(".")) {
       //strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
       id = id.replaceFirst("\\.\\d+$", "");
-    } else if (db.startsWith("KEGG") && id.matches(":\\d+$")) {
-      id = id.substring(id.lastIndexOf(':') + 1); //it's NCBI Gene ID;
-    } else if (db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
+    }
+    else if (db.startsWith("KEGG") && id.matches(":\\d+$")) {
+      id = id.substring(id.lastIndexOf(':') + 1); //it's a NCBI Gene ID!
+    }
+    else if (db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
       id = id.toUpperCase(); //ok for a SID
       //add prefix if not present
       if (!id.startsWith("SID:") && id.matches("^\\d+$"))
         id = "SID:" + id;
-    } else if (db.contains("PUBCHEM") && (db.contains("COMPOUND") || db.contains("CID"))) {
+    }
+    else if (db.contains("PUBCHEM") && (db.contains("COMPOUND") || db.contains("CID"))) {
       id = id.toUpperCase(); //ok for a CID
       //add prefix if not present
-      if (!id.startsWith("CID:") && id.matches("^\\d+$"))
+      if (!id.startsWith("CID:") && id.matches("^\\d+$")) {
         id = "CID:" + id;
+      }
     }
 
     return id;
   }
 
   /**
-   * Whether a string starts with any of the prefixes (case insensitive).
+   * Whether a string starts with any of the prefixes (case-insensitive).
    *
-   * @param s a string
+   * @param str a string
    * @param prefixes optional array of prefix terms to match
    * @return true/false
    */
-  public static boolean startsWithAnyIgnoreCase(String s, String... prefixes) {
-    for (String prefix : prefixes) {
-      if (StringUtils.startsWithIgnoreCase(s, prefix)) {
-        return true;
-      }
-    }
-    return false;
+  public static boolean startsWithAnyIgnoreCase(String str, String... prefixes) {
+    return Arrays.stream(prefixes).anyMatch(p -> StringUtils.startsWithIgnoreCase(str, p));
   }
 
   /**
@@ -243,17 +246,21 @@ public final class CPathUtils {
    * Note: the corresponding CV does not have a unification xref
    * (this method won't validate; so, non-standard CV terms can be used).
    *
-   * @param vocab       relationship xref type
-   * @param model       a biopax model where to find/add the xref
-   * @param isPrimaryId whether it's a primary ID/AC (then adds a comment)
+   * @param vocab relationship xref type
+   * @param model a biopax model where to find/add the xref
    */
   public static RelationshipXref findOrCreateRelationshipXref(
-    RelTypeVocab vocab, String db, String id, Model model, boolean isPrimaryId) {
+    RelTypeVocab vocab, String db, String id, Model model) {
     Assert.notNull(vocab, "vocab is null");
 
     RelationshipXref toReturn;
 
-    String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab.toString(), RelationshipXref.class);
+    //if chebi, make sure 'CHEBI:' is present
+    if(StringUtils.equalsIgnoreCase(db, "chebi") && !StringUtils.startsWithIgnoreCase(id, "chebi:")) {
+      id = "CHEBI:" + id;
+    }
+
+    String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab, RelationshipXref.class);
     if (model.containsID(uri)) {
       return (RelationshipXref) model.getByID(uri);
     }
@@ -262,8 +269,6 @@ public final class CPathUtils {
     toReturn = model.addNew(RelationshipXref.class, uri);
     toReturn.setDb(db.toLowerCase());
     toReturn.setId(id);
-    if (isPrimaryId)
-      toReturn.addComment("PRIMARY");
 
     // create/add the relationship type vocabulary
     String relTypeCvUri = vocab.uri; //identifiers.org standard URI
@@ -286,6 +291,11 @@ public final class CPathUtils {
     return toReturn;
   }
 
+  /**
+   * Recursively extracts all unification and relationship xrefs from the BioPAX object and its children.
+   * @param bpe
+   * @return
+   */
   static Set<String> getXrefIds(BioPAXElement bpe) {
     final Set<String> ids = new HashSet<>();
 
@@ -295,21 +305,28 @@ public final class CPathUtils {
     fetcher.setSkipSubPathways(true);
     //fetch all children of (implicit) type XReferrable, which means - either
     //BioSource or ControlledVocabulary or Evidence or Provenance or Entity or EntityReference
-    //(we actually want only the latter two types and their sub-types; will skip the rest later on):
+    //(we actually want only the latter two types and their subtypes; will skip the rest later on):
     Set<XReferrable> children = fetcher.fetch(bpe, XReferrable.class);
     //include itself (- for fetcher only gets child elements)
     if (bpe instanceof XReferrable)
       children.add((XReferrable) bpe);
 
     for (XReferrable child : children) {
-      //skip for unwanted utility class child elements, such as Evidence,CV,Provenance
-      if (!(child instanceof Entity || child instanceof EntityReference))
+      //skip unwanted utility class elements, such as Evidence, CV, Provenance
+      if (!(child instanceof Entity || child instanceof EntityReference)) {
         continue;
+      }
       // collect standard bio IDs (skip publications);
       // (we will use id-mapping later to associate more IDs)
       for (Xref x : child.getXref()) {
         if (!(x instanceof PublicationXref) && x.getId() != null && x.getDb() != null) {
-          ids.add(x.getId());
+          String id = x.getId();
+          //add 'CHEBI:' ("banana and peel" prefix) if it's missing
+          if(StringUtils.equalsIgnoreCase("chebi", x.getDb()) &&
+              !StringUtils.startsWithIgnoreCase(id, "chebi:")) {
+            id = "CHEBI:" + id;
+          }
+          ids.add(id);
         }
       }
     }
@@ -333,8 +350,8 @@ public final class CPathUtils {
    *
    * @return URI
    */
-  static String getMetadataUri(Model model, Metadata metadata) {
-    return model.getXmlBase() + metadata.getIdentifier();
+  static String getMetadataUri(Model model, Datasource datasource) {
+    return model.getXmlBase() + datasource.getIdentifier();
   }
 
   /**
@@ -382,7 +399,7 @@ public final class CPathUtils {
 
   /*
    * Generate a sanitized file name for an original source zip entry;
-   * this path will be stored in the corresponding Metadata.files collection
+   * this path will be stored in the corresponding Datasource.files collection
    * and then processed during premerge (clean, convert, normalize) and merge steps (ETL).
    */
   static String originalFile(String dataSubDir, String zipEntryName) {

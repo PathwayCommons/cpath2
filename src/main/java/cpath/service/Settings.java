@@ -6,7 +6,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cpath.service.api.Scope;
 import org.apache.commons.text.WordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,22 +26,17 @@ public class Settings
   public static final String HOME_DIR = "CPATH2_HOME";
 
   /**
-   * Name for a cpath2 data sub-directory (under cpath2 home dir.)
+   * Name for a cpath2 data subdirectory (under cpath2 home dir.)
    */
   public static final String DATA_SUBDIR = "data";
 
   /**
-   * The sub-directory (under cpath2 Home dir.) to organize user downloadable data.
+   * The subdirectory (under cpath2 Home dir.) to organize user downloadable data.
    */
   public static final String DOWNLOADS_SUBDIR = "downloads";
 
   /**
-   * The cache sub-directory (under cpath2 home dir.)
-   */
-  public static final String CACHE_SUBDIR = "cache";
-
-  /**
-   * The index sub-directory (under cpath2 home dir.)
+   * The index subdirectory (under cpath2 home dir.)
    */
   public static final String INDEX_SUBDIR = "index";
 
@@ -55,14 +49,14 @@ public class Settings
   public static final String EXPORT_SCRIPT_FILE ="export.sh";
 
   /**
-   * Metadata configuration default file name.
+   * Datasource configuration default file name.
    */
   public static final String METADATA_FILE = "metadata.json";
 
   private Boolean sbgnLayoutEnabled;
   private String xmlBase;
   private Integer maxHitsPerPage;
-  private String metadataLocation = "file:" + Paths.get(homeDir(), METADATA_FILE).toString();
+  private String metadataLocation = "file:" + Paths.get(homeDir(), METADATA_FILE);
   private String name;
   private String description;
   private String version;
@@ -70,6 +64,8 @@ public class Settings
   private String logo;
   private String species;
   private String downloads;
+  private String email;
+  private String organization;
 
   public Settings() {
     LOG.info("Working ('home') directory: " + homeDir());
@@ -94,7 +90,7 @@ public class Settings
     this.maxHitsPerPage = maxHitsPerPage;
   }
 
-  public String getMetadataLocation() {
+  public String getMetadataLocation() { //uri string
     return metadataLocation;
   }
 
@@ -108,6 +104,22 @@ public class Settings
 
   public void setSbgnLayoutEnabled(Boolean sbgnLayoutEnabled) {
     this.sbgnLayoutEnabled = sbgnLayoutEnabled;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getOrganization() {
+    return organization;
+  }
+
+  public void setOrganization(String organization) {
+    this.organization = organization;
   }
 
   public String getName() {
@@ -223,7 +235,7 @@ public class Settings
    * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
    */
   public Map<String,String> getOrganismsAsTaxonomyToNameMap() {
-    Map<String,String> m = new HashMap<String,String>();
+    Map<String,String> m = new HashMap<>();
     final Pattern taxIdPattern = Pattern.compile("([a-zA-Z0-9\\. ]+)\\s*\\(\\s*(\\d+)\\s*\\)");
     for(String org : getOrganisms()) {
       Matcher matcher = taxIdPattern.matcher(org);
@@ -319,19 +331,9 @@ public class Settings
 
 
   /**
-   * Gets the full path to query cache directory.
-   * @deprecated
-   * @return
-   */
-  public String cacheDir() {
-    return subDir(CACHE_SUBDIR);
-  }
-
-
-  /**
    * Full path to the archive file where a BioPAX sub-model is exported.
    *
-   * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
+   * @param name - a Datasource's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
    * @return
    * @see #downloadsDir()
    */
@@ -342,7 +344,7 @@ public class Settings
   /**
    * Local name of the BioPAX sub-model file (in the batch downloads directory).
    *
-   * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
+   * @param name - a Datasource's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
    * @return
    * @see #downloadsDir()
    */
@@ -383,4 +385,26 @@ public class Settings
     return biopaxFileNameFull(Scope.WAREHOUSE.toString());
   }
 
+  /**
+   * Predefined large pathway data submodels
+   * that are generated and used by the application.
+   * (toString method here is to get the part of the
+   * corresponding sub-model filename, such as 'All' in '*.All.*.gz').
+   *
+   * In addition, by-organism and by-source archives
+   * are also created in the batch downloads directory,
+   * but those filenames do not require this enum.
+   *
+   * @author rodche
+   */
+  enum Scope {
+      ALL,
+      DETAILED,
+      WAREHOUSE;
+
+      @Override
+      public String toString() { //e.g. "All"
+          return name().substring(0, 1).toUpperCase() + name().substring(1).toLowerCase();
+      }
+  }
 }

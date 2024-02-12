@@ -57,6 +57,11 @@ Expect that most queries or example links won't return any result as there are n
 instance; try to find e.g. all the pathways there with `http://localhost:8080/search?q=*&type=pathway` 
 (remove `type` parameter to list all the objects; use "Accept:application/xml" header to get XML instead of JSON result).
 
+Alternatively, can run/debug the demo/dev app as:
+
+    mvn spring-boot:run
+
+
 ## Configuration
 
 ### Working directory
@@ -94,7 +99,8 @@ Copy the latest paxtools.jar into this current directory and run -
     sh export.sh 2>&1 >console.out & 
     
 (- which takes overnight or a day and night); upload/copy/move (but keep at least blacklist.txt, *All.BIOPAX.owl.gz)
-all the files from this here and ../data/ directories to the file server, or configure so that they can be downloaded from e.g. `http://www.pathwaycommons.org/archives/PC2/v{version_number}` (or else).
+all the files from this here and ../data/ directories to the file server, or configure so that they can be downloaded 
+from e.g. `http://www.pathwaycommons.org/archives/PC2/v{version_number}` (or else).
 
 Once the instance is configured and data processed, run the web service using the same 
 script as follows:
@@ -116,7 +122,7 @@ simply include to the cpath2.sh Java options like:
 ### Data
 
 One (a data manager) has to find, download, re-pack (zip) and put original 
-biological pathway data files to the data/ sub-directory.
+biological pathway data files to the data/ subdirectory.
 
 #### Warehouse data
 
@@ -138,3 +144,21 @@ Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder 
  - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
  - extract what you need (e.g. some species data only)
  - create a new zip archive using name like `<IDENTIFIER>.zip` (datasource identifier, e.g., `reactome_human.zip`).
+
+
+## Docker
+
+### build the project and image from sources
+```
+mvn clean install
+mvn dockerfile:build
+#mvn dockerfile:tag
+#mvn dockerfile:push
+```
+
+### run
+Run with docker (can also do with compose or terraform).
+Have to bind /work dir (test/demo instance data is in the target/work)
+```
+docker run --rm --name cpath2 -v '<fullpath_to>/target/work:/work' -p 8080:8080 -it pathwaycommons/cpath2
+```

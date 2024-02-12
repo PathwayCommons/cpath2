@@ -2,7 +2,6 @@ package cpath.web;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.MediaType;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
@@ -12,27 +11,6 @@ import org.springframework.web.servlet.view.JstlView;
 @Profile({"web"})
 public class WebApplication implements WebMvcConfigurer
 {
-  // Enable content negotiation via
-  // content-type (application/json, application/xml)
-  @Override
-  public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
-    configurer
-      .favorParameter(false)
-      .ignoreAcceptHeader(false)
-      .useRegisteredExtensionsOnly(true)
-      .defaultContentType(MediaType.APPLICATION_JSON)
-      .mediaType("json", MediaType.APPLICATION_JSON)
-      .mediaType("xml", MediaType.APPLICATION_XML)
-    ;
-  }
-
-// if needed, CORS header will be set via the (Nginx) proxy config.
-//  // Enable CORS globally; by default - all origins, GET, HEAD, POST
-//  @Override
-//  public void addCorsMappings(CorsRegistry registry) {
-//    registry.addMapping("/**");
-//  }
-
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
     registry.addResourceHandler("/**")

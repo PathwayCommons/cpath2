@@ -16,7 +16,7 @@ public class SIFTypeEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) {
-		setValue(SIFEnum.typeOf(arg0.trim()));
+		setValue(SIFEnum.typeOf(arg0.trim().toUpperCase()));
 	}
 	
 }

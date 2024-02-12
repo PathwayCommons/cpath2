@@ -208,8 +208,9 @@ public class BiopaxConverter {
   private void convertToSIF(Model m, OutputStream out,
                             boolean extended, Map<String, String> options) {
     String db;
-    if ((db = options.get("db")) == null)
+    if ((db = options.get("db")) == null) {
       db = "hgnc symbol"; //default
+    }
 
     ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
     idFetcher.chemDbStartsWithOrEquals("chebi");
@@ -227,8 +228,10 @@ public class BiopaxConverter {
       String[] sifNames = options.get("pattern").split(",");
       sifTypes = new SIFType[sifNames.length];
       int i = 0;
-      for (String t : sifNames)
-        sifTypes[i++] = SIFEnum.typeOf(t);
+      for (String t : sifNames) {
+        SIFEnum p = SIFEnum.typeOf(t);
+        if(p != null) sifTypes[i++] = p;
+      }
     } else {
       //default: apply all SIF rules but neighbor_of
       Collection<SIFType> c = new HashSet<>(Arrays.asList(SIFEnum.values()));
@@ -258,7 +261,7 @@ public class BiopaxConverter {
     Set<String> names = null;
 
     if (m != null) {
-      Set<Provenance> provs = m.getObjects(Provenance.class);
+      Collection<Provenance> provs = m.getObjects(Provenance.class);
       if (provs != null && !provs.isEmpty()) {
         names = new TreeSet<>();
         for (Provenance prov : provs) {

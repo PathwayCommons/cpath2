@@ -35,7 +35,6 @@ class ChebiOboConverter extends BaseConverter
 {
 	private static Logger log = LoggerFactory.getLogger(ChebiOboConverter.class);
 
-	private final String _IDENTIFIERS_ORG = "http://identifiers.org/";
 	private final String _ENTRY_START = "[Term]";
 	private final String _ID = "id: ";
 	private final String _ALT_ID = "alt_id: ";
@@ -71,7 +70,7 @@ class ChebiOboConverter extends BaseConverter
 					continue;
 				}
 
-				Map<String, String> chebiEntryMap = new HashMap<String, String>();
+				Map<String, String> chebiEntryMap = new HashMap<>();
 
 				while (scanner.hasNextLine()) {
 					line = scanner.nextLine();
@@ -131,13 +130,13 @@ class ChebiOboConverter extends BaseConverter
 	//It now generates an SMR for every ChEBI entry, even those without InChIKey (top classes, pill/pharma terms)
 	private void buildSmallMoleculeReference(Model model, Map<String, String> chebiEntryMap) {
 		// create new URI, SMR, and primary xref:
-		String id = chebiEntryMap.get(_ID);
-		SmallMoleculeReference smr = model
-			.addNew(SmallMoleculeReference.class, _IDENTIFIERS_ORG+"chebi/"+id);
-		String xuri = Normalizer.uri(xmlBase, "ChEBI", id, UnificationXref.class);
+		String id = chebiEntryMap.get(_ID); //e.g. "CHEBI:422"
+		String ruri = Normalizer.uri(xmlBase, "chebi", id, SmallMoleculeReference.class);
+		SmallMoleculeReference smr = model.addNew(SmallMoleculeReference.class, ruri);
+		String xuri = Normalizer.uri(xmlBase, "chebi", id, UnificationXref.class);
 		UnificationXref x = model.addNew(UnificationXref.class, xuri);
 		x.setId(id);
-		x.setDb("ChEBI");
+		x.setDb("chebi");
 		smr.addXref(x);
 
 		// set displayName
@@ -150,7 +149,8 @@ class ChebiOboConverter extends BaseConverter
 			String[] alt = chebiEntryMap.get(_ALT_ID).split("\t");
 			for(String altid : alt) {
 				RelationshipXref rx = CPathUtils
-					.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model, false);
+					.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "chebi",
+							altid, model);
 				smr.addXref(rx);
 			}
 		}
@@ -162,11 +162,10 @@ class ChebiOboConverter extends BaseConverter
 			String[] synonyms = entry.split("\t");
 			for (String sy : synonyms) {
 				Matcher matcher = namePattern.matcher(sy);
-				if (!matcher.find())
+				if (!matcher.find()) {
 					throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);
-
-				String name = matcher.group(1); //get the name/value only
-
+				}
+				String name = matcher.group(1);
 				if (sy.contains("IUPAC_NAME")) {
 					smr.setStandardName(name);
 				} else if (sy.contains("InChIKey")) {
@@ -176,7 +175,7 @@ class ChebiOboConverter extends BaseConverter
 					}
 					//add RX because a InChIKey can map to several CHEBI IDs
 					RelationshipXref rx = CPathUtils
-						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model, false);
+						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
 					smr.addXref(rx);
 				} else if (sy.contains("InChI=")) {
 					String structureUri = Normalizer
@@ -190,11 +189,9 @@ class ChebiOboConverter extends BaseConverter
 					smr.setStructure(structure);
 				} else if (sy.contains("FORMULA")) {
 					smr.setChemicalFormula(name);
-					smr.addName(name); //add - possible helps mapping by name
+					smr.addName(name); //helps to map/search by name
 				} else if (sy.contains("MASS")) {
 					smr.setMolecularWeight(Float.parseFloat(name));
-				} else if (sy.contains("CHARGE") || sy.contains("MONOISOTOPIC_MASS")) {
-					// TODO: save charge, monoisotopic mass?
 				} else {
 					smr.addName(name); //incl. for SMILES
 				}
@@ -213,7 +210,7 @@ class ChebiOboConverter extends BaseConverter
 					// Skip all xrefs except CAS, KEGG (C*, D*), etc.,
 					// which are used for id-mapping, merging, full-text search, and graph queries.
 					if (DB.equals("CAS") || DB.equals("DRUGBANK") || DB.equals("HMDB")) {
-						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model, false);
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
 						smr.addXref(rx);
 					} else if (DB.startsWith("WIKIPEDIA")) {
 						smr.addName(id);
@@ -222,7 +219,7 @@ class ChebiOboConverter extends BaseConverter
 							xdb += " Compound";
 						else if(xid.startsWith("D"))
 							xdb += " Drug";
-						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model, false);
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
 						smr.addXref(rx);
 					}
 				} else {

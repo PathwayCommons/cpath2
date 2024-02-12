@@ -1,5 +1,6 @@
 package cpath.analysis;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,7 +42,7 @@ public final class EntityFeaturesSummary implements Analysis<Model> {
 			for(String id : javaPropertyDatasources.split(","))
 				providerURIs.add(model.getXmlBase()+id);
 		
-		final Set<ExperimentalForm> allExpForms = model.getObjects(ExperimentalForm.class);
+		final Collection<ExperimentalForm> allExpForms = model.getObjects(ExperimentalForm.class);
 				
 		for(EntityFeature ef : model.getObjects(EntityFeature.class)) {
 			Set<String> providers = new HashSet<>();

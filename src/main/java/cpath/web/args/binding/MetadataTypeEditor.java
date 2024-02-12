@@ -2,17 +2,15 @@ package cpath.web.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import cpath.service.jpa.Metadata;
-
+import cpath.service.metadata.Datasource.METADATA_TYPE;
 
 
 public class MetadataTypeEditor extends PropertyEditorSupport {
 	
 	@Override
 	public void setAsText(String arg0) {
-		Metadata.METADATA_TYPE value = null;
-			value = Metadata.METADATA_TYPE.valueOf(arg0.trim().toUpperCase());
-			setValue(value);
+		METADATA_TYPE value = METADATA_TYPE.valueOf(arg0.trim().toUpperCase());
+		setValue(value);
 	}
 	
 }

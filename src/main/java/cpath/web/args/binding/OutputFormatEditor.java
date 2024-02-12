@@ -16,6 +16,6 @@ public class OutputFormatEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String param) {
-		setValue(OutputFormat.valueOf(param.trim().toUpperCase()));
+		setValue(OutputFormat.typeOf(param));
 	}	
 }

@@ -8,33 +8,27 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import cpath.service.CPathUtils;
-import cpath.service.jpa.Metadata;
-import cpath.web.args.binding.MetadataTypeEditor;
+import cpath.service.metadata.Datasource;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.MediaType.*;
 
 @Profile("web")
+@Hidden
 @RestController
-@RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
 public class MetadataController extends BasicController {
 
   private static final Logger log = LoggerFactory.getLogger(MetadataController.class);
 
-  @InitBinder
-  public void initBinder(WebDataBinder binder) {
-    binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
-  }
-
-  @RequestMapping(value = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
+  @GetMapping(path = "/metadata/logo/{identifier}", produces = {IMAGE_GIF_VALUE})
   public byte[] queryForLogo(@PathVariable String identifier)
     throws IOException {
-    Metadata ds = service.metadata().findByIdentifier(identifier);
+    Datasource ds = service.metadata().findByIdentifier(identifier);
     byte[] bytes = null;
 
     if (ds != null) {
@@ -52,7 +46,7 @@ public class MetadataController extends BasicController {
     return bytes;
   }
 
-  @RequestMapping(value = "/metadata", produces = {APPLICATION_JSON_VALUE})
+  @GetMapping(path = "/metadata", produces = {APPLICATION_JSON_VALUE})
   public Map<String, Object> queryForMetadata() {
     TreeMap<String, Object> props = new TreeMap();
 
@@ -68,17 +62,17 @@ public class MetadataController extends BasicController {
   }
 
   // to return a xml or json data http response
-  @RequestMapping(value = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
-  public List<Metadata> queryForDatasources() {
+  @GetMapping(path = "/metadata/datasources", produces = {APPLICATION_JSON_VALUE})
+  public List<Datasource> queryForDatasources() {
     log.debug("Getting pathway datasources info.");
     //pathway/interaction data sources
-    List<Metadata> ds = new ArrayList<>();
+    List<Datasource> ds = new ArrayList<>();
     //warehouse data sources
-    List<Metadata> wh = new ArrayList<>();
+    List<Datasource> wh = new ArrayList<>();
 
-    for (Metadata m : service.metadata().findAll()) {
+    for (Datasource m : service.metadata().getDatasources()) {
       //set dynamic extra fields
-      if (m.isNotPathwayData()) {
+      if (m.getType().isNotPathwayData()) {
         wh.add(m);
       } else {
         ds.add(m);
@@ -91,9 +85,9 @@ public class MetadataController extends BasicController {
     return ds;
   }
 
-  @RequestMapping(value = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
-  public Metadata datasource(@PathVariable String identifier) {
-    Metadata m = service.metadata().findByIdentifier(identifier);
+  @GetMapping(path = "/metadata/datasources/{identifier}", produces = {APPLICATION_JSON_VALUE})
+  public Datasource datasource(@PathVariable String identifier) {
+    Datasource m = service.metadata().findByIdentifier(identifier);
     if (m == null)
       return null;
     return m;

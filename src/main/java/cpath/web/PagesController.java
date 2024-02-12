@@ -7,8 +7,11 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
+import cpath.service.Settings;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -16,8 +19,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @Profile("web")
+@Hidden //from swagger/openapi
 @RequestMapping(method = RequestMethod.GET)
 public class PagesController extends BasicController {
+
+  @ModelAttribute("cpath")
+  public Settings instance() {
+    return service.settings();
+  }
 
   @RequestMapping({"/api", "/swagger"})
   public String swagger() {
@@ -65,7 +74,7 @@ public class PagesController extends BasicController {
     // deny robots access to logs, web services and data files,
     // but allow - to web page resources (css, js, images)
     return "User-agent: *\n" +
-      "Disallow: /get\n" +
+      "Disallow: /fetch\n" +
       "Disallow: /search\n" +
       "Disallow: /graph\n" +
       "Disallow: /top_pathways\n" +

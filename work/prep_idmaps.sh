@@ -6,9 +6,7 @@
 # Usage: no parameters.
 ##
 
-# 1. From UniChem
-
-# download ChEMBL to ChEBI mapping file
+# download ChEMBL to ChEBI mapping file from UniChem
 IN="src1src7.txt.gz"
 if [ ! -f "$IN" ]; then
   wget ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/$IN
@@ -19,8 +17,7 @@ OUT=chembl-chebi.unichem.txt
 echo "ChEMBL	ChEBI" > "$OUT"
 # read from the second line
 gzip -cd $IN | sed 1d | while read ID1 ID2; do
-  # add 'CHEBI:' prefix to all ChEBI IDs
-  echo "$ID1	CHEBI:$ID2" >> "$OUT"
+  echo "$ID1	$ID2" >> "$OUT"
 done
 
 # download ChEBI to PharmGKB Drug mapping file
@@ -34,8 +31,8 @@ OUT=pharmgkbdrug-chebi.unichem.txt
 echo "PharmGKB Drug	ChEBI" > "$OUT"
 # read from the second line
 gzip -cd $IN | sed 1d | while read ID1 ID2; do
-  # add 'CHEBI:' prefix to all ChEBI IDs, swap columns
-  echo "$ID2	CHEBI:$ID1" >> "$OUT"
+  # swap columns
+  echo "$ID2	$ID1" >> "$OUT"
 done
 
 # download ChEBI to PubChem Compound mapping file
@@ -49,8 +46,8 @@ OUT=pubchemcid-chebi.unichem.txt
 echo "PubChem-compound	ChEBI" > "$OUT"
 # read from the second line
 gzip -cd $IN | sed 1d | while read ID1 ID2; do
-  # add 'CHEBI:' prefix to all ChEBI IDs and swap the columns
-  echo "$ID2	CHEBI:$ID1" >> "$OUT"
+  # swap columns
+  echo "$ID2	$ID1" >> "$OUT"
 done
 
 # zip, cleanup
@@ -58,4 +55,3 @@ zip unichem_mapping.zip *.unichem.txt
 rm *.unichem.txt
 rm src*.txt.gz
 echo "done."
-

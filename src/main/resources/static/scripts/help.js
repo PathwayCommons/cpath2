@@ -1,15 +1,14 @@
-//TODO switch to Angularjs app
 $(function() {
 		getCommandParameterDetails("help/formats", "formats");
 		getCommandParameterDetails("help/kinds", "kinds");
 		getCommandParameterDetails("help/directions", "directions");
+		getCommandParameterDetails("help/limits", "limits");
 		getCommandParameterDetails("help/types", "types");
 		getCommandParameterDetails("help/types/properties", "properties");
 		getCommandParameterDetails("help/types/inverse_properties", "inverse_properties");
 });
 
 // This function creates a body for the given command parameter output.
-//
 // @param helpWSPath - path to web service call
 // @param id - the id of the list ('ul') in the DOM
 function getCommandParameterDetails(helpWSPath, id) {
@@ -24,9 +23,9 @@ function getCommandParameterDetails(helpWSPath, id) {
                     		|| helpWSPath.indexOf("formats") != -1
                     		|| helpWSPath.indexOf("datasource") != -1
                     		){
-                    	$("#"+id).append('<li><em>'+member.id+'</em> - '+member.info+'</li>');
-                    }else {
-                    	$("#"+id).append('<li>'+member.id+'</li>');
+                    	$("#"+id).append('<li><var>'+member.id+'</var> - '+member.info+'</li>');
+                    } else {
+                    	$("#"+id).append('<li><var>'+member.id+'</var></li>');
                     }       
             });
     });

@@ -9,27 +9,28 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static cpath.service.api.Status.*;
 
-import cpath.service.api.CPathService;
+import cpath.service.api.Service;
 import cpath.service.ErrorResponse;
 import cpath.service.api.OutputFormat;
 import cpath.web.args.ServiceQuery;
-import cpath.web.args.Search;
-import cpath.web.args.TopPathways;
-import cpath.web.args.Traverse;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -42,10 +43,10 @@ public abstract class BasicController
 {
   private static final Logger log = LoggerFactory.getLogger(BasicController.class);
 
-  protected CPathService service;
+  protected Service service;
 
   @Autowired
-  public void setService(CPathService service) {
+  public void setService(Service service) {
     this.service = service;
   }
 
@@ -58,12 +59,12 @@ public abstract class BasicController
                                      HttpServletRequest request,
                                      HttpServletResponse response)
   {
-    //TODO: eventually switch to using @RestControllerAdvice and @ExceptionHandler
+    // TODO: switch to using @RestControllerAdvice and @ExceptionHandler
     try {
       //log/track using a shorter message
-      track(request, args, null, error);
+      audit(request, args, null, error);
       //return a long detailed message
-      response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error.toString());
+      response.sendError(error.getStatus().getCode(), error.getStatus().getCode() + "; " + error);
     } catch (IOException e) {
       log.error("FAILED sending an error response; " + e);
     }
@@ -73,7 +74,7 @@ public abstract class BasicController
   /*
    * Builds an error message from
    * the web parameters binding result
-   * if there're errors.
+   * if there are errors.
    */
   final String errorFromBindingResult(BindingResult bindingResult)
   {
@@ -87,8 +88,7 @@ public abstract class BasicController
           rejectedVal = "empty array";
         }
       }
-      sb.append(fe.getField()).append(" was '").append(rejectedVal).append("'; ")
-        .append(fe.getDefaultMessage()).append(". ");
+      sb.append(fe.getDefaultMessage()).append("; value: ").append(rejectedVal);
     }
 
     return sb.toString();
@@ -110,7 +110,7 @@ public abstract class BasicController
       final DataResponse dataResponse = (DataResponse) result;
 
       // log/track one data access event for each data provider listed in the result
-      track(request, command, dataResponse.getProviders(), null);
+      audit(request, command, dataResponse.getProviders(), null);
 
       if (dataResponse.getData() instanceof Path) {
         //get the temp file
@@ -123,8 +123,7 @@ public abstract class BasicController
             Files.copy(resultFile, response.getOutputStream());
           }
         } catch (IOException e) {
-          String msg = String.format("Failed to process the (temporary) result file %s; %s.",
-            resultFile, e.toString());
+          String msg = String.format("Failed to process the (temporary) result file %s; %s.", resultFile, e);
           errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
         } finally {
           try {
@@ -146,17 +145,16 @@ public abstract class BasicController
           }
           //else - SIF, GSEA formats do not allow for comment lines anyway
         } catch (IOException e) {
-          String msg = String.format("Failed writing a trivial response: %s.", e.toString());
+          String msg = String.format("Failed writing a trivial response: %s.", e);
           errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
         }
       } else { //it's probably a bug -
         String msg = String.format("BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
-          dataResponse.getData().getClass().getSimpleName(), dataResponse.toString());
+          dataResponse.getData().getClass().getSimpleName(), dataResponse);
         errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
       }
     } else { //it's a bug -
-      String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ",
-        result.getClass().getSimpleName(), result.toString());
+      String msg = String.format("BUG: Unknown ServiceResponse: %s, %s ", result, result);
       errorResponse(command, new ErrorResponse(INTERNAL_ERROR, msg), request, response);
     }
   }
@@ -192,75 +190,51 @@ public abstract class BasicController
   /*
    * Extracts the client's IP from the request headers.
    */
-  private static String clientIpAddress(HttpServletRequest request)
+//  private static String clientIpAddress(HttpServletRequest request)
+//  {
+//    String ip = request.getHeader("X-Forwarded-For");
+//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+//      ip = request.getHeader("Proxy-Client-IP");
+//    }
+//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+//      ip = request.getHeader("WL-Proxy-Client-IP");
+//    }
+//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+//      ip = request.getHeader("HTTP_CLIENT_IP");
+//    }
+//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+//      ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+//    }
+//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+//      ip = request.getRemoteAddr();
+//    }
+//    return ip;
+//  }
+
+  void audit(HttpServletRequest request, ServiceQuery command, Set<String> providers, ErrorResponse err)
   {
-    String ip = request.getHeader("X-Forwarded-For");
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getHeader("Proxy-Client-IP");
-    }
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getHeader("WL-Proxy-Client-IP");
-    }
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getHeader("HTTP_CLIENT_IP");
-    }
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-    }
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getRemoteAddr();
-    }
+    JsonObjectBuilder jb = Json.createObjectBuilder();
 
-    return ip;
-  }
+//get user-agent, IP, status, etc. from nginx/apache logs instead of here in the app...
+//    jb.add("ip", clientIpAddress(request));
 
-
-  // data access logging and tracking
-  void track(HttpServletRequest request, ServiceQuery command, Set<String> providers, ErrorResponse err)
-  {
-    final String ip = clientIpAddress(request);
-
-    String client = null;
-    if(command!=null)
-      client = command.getUser();
-    if (client == null || client.isEmpty()) {
-      //extract http client tool name/version part:
-      client = request.getHeader("User-Agent");
-      if (client != null && !client.isEmpty() && client.contains(" ")) {
-        client = client.substring(0, client.indexOf(" "));
-      }
-    }
-
-    Integer status = 200;
     if (err != null) {
-      status = err.getErrorCode();
-      service.track(ip, "error", err.getErrorMsg());
+      jb.add("error", err.toString());
     }
 
-    if(command!=null)
-      service.track(ip, "command", command.cmd());
-
-    service.track(ip, "client", client);
-
-    String msg = status.toString();
-    if(command!=null)
-      msg += ": " + command.toString();
-    if (providers != null) {
-      for (String provider : providers) service.track(ip, "provider", provider);
-      if (!providers.isEmpty()) msg += "; pro:" + String.join(",", providers);
+    if(command != null) {
+      // TODO: change if there is any use (now we just add truncated string, not json object here
+      //(can be very large if many URIs or SIF patterns are submitted in the request)
+      jb.add("query", StringUtils.truncate(command.toString(),128));
     }
 
-    service.track(ip, "all", msg);
-
-    if(command!=null) {
-      //a hack to properly detect resulting data format in some cases
-      String f = command.outputFormat().toLowerCase();
-      if (command instanceof Search || command instanceof TopPathways || command instanceof Traverse) {
-        if ((String.valueOf(request.getHeader("accept")).contains("application/json"))) {
-          f = "json";
-        }
-      }
-      service.track(ip, "format", f);
+    if (!CollectionUtils.isEmpty(providers)) {
+      jb.add("pro", Json.createArrayBuilder(providers));
     }
+
+//    jb.add("accept", request.getHeader("Accept"));
+
+    log.info(jb.build().toString());
   }
+
 }

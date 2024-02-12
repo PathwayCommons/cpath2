@@ -2,7 +2,7 @@ package cpath.service.jaxb;
 
 import java.io.Serializable;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 // not instantiable, basic cpath2 xml response type
 @XmlAccessorType(XmlAccessType.FIELD)

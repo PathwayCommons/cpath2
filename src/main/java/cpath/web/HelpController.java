@@ -3,49 +3,36 @@ package cpath.web;
 import cpath.service.api.GraphType;
 import cpath.service.api.OutputFormat;
 import cpath.service.jaxb.*;
-import cpath.web.args.binding.*;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.MediaType;
 import org.springframework.util.ResourceUtils;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 
 /**
- * Help Controller.
- *
- * Returns XML or JSON documents.
+ * Help Controller (returns JSON docs).
  * {@link Help} bean.
+ * @see GlobalControllerAdvice
  */
 @Profile("web")
+@Hidden
 @RestController
-@RequestMapping(method = RequestMethod.GET)
+@RequestMapping(method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
 public class HelpController extends BasicController {
-
-  /**
-   * Customizes request parameters conversion to proper internal types,
-   * e.g., "network of interest" is recognized as GraphType.NETWORK_OF_INTEREST, etc.
-   *
-   * @param binder
-   */
-  @InitBinder
-  public void initBinder(WebDataBinder binder) {
-    binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-    binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-    binder.registerCustomEditor(Direction.class, new DirectionEditor());
-    binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-  }
 
   @RequestMapping("/help/schema")
   public void getSchema(HttpServletResponse response) throws Exception {
@@ -54,24 +41,18 @@ public class HelpController extends BasicController {
     Files.copy(xsdPath, response.getOutputStream());
   }
 
-  /*
-   * List of formats that web methods return
-   *
-   * @return
-   */
   @RequestMapping("/help/formats")
   public Help getFormats() {
     Help help = new Help();
     help.setId("formats");
     help.setTitle("Output Formats");
-    help.setInfo("cPath2 can convert BioPAX to several text formats");
+    help.setInfo("can convert BioPAX to several text formats");
     help.setExample("help/formats/sif");
     for (OutputFormat f : OutputFormat.values())
       help.addMember(getFormat(f));
 
     return help;
   }
-
 
   @RequestMapping("/help/formats/{fmt}")
   public Help getFormat(@PathVariable OutputFormat fmt) {
@@ -83,27 +64,20 @@ public class HelpController extends BasicController {
     return help;
   }
 
-  /**
-   * List of BioPAX L3 Classes
-   *
-   * @return
-   */
   @RequestMapping("/help/types")
   public Help getBiopaxTypes() {
     Help help = new Help();
 
     for (Class<? extends BioPAXElement> t :
       SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) {
-      if (BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null)
+      if (BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
         help.addMember(new Help(t.getSimpleName()));
+      }
     }
     help.setId("types");
     help.setTitle("BioPAX classes");
-    help.setInfo("Objects of the following BioPAX L3 class " +
-      "(and some abstract ones) "
-      + System.getProperty("line.separator") +
-      "are persisted/indexed/searchable in the system " +
-      "(names are case insensitive):");
+    help.setInfo("These BioPAX Level3 classes (including some abstract) can be used in search/traverse queries " +
+        "(case insensitive):");
     help.setExample("search?type=pathway&q=b*");
     return help;
   }
@@ -115,7 +89,7 @@ public class HelpController extends BasicController {
 
     Help h = new Help(type.getSimpleName());
     h.setTitle(type.getSimpleName());
-    h.setInfo("See: biopax.org, http://www.biopax.org/webprotege");
+    h.setInfo("See: biopax.org, https://www.biopax.org/owldoc/Level3/");
 
     return h;
   }
@@ -135,7 +109,6 @@ public class HelpController extends BasicController {
 
     return h;
   }
-
 
   @RequestMapping("/help/types/properties")
   public Help getBiopaxTypesProperties() {
@@ -170,7 +143,6 @@ public class HelpController extends BasicController {
     return h;
   }
 
-
   @RequestMapping("/help/types/inverse_properties")
   public Help getBiopaxTypesInverseProperties() {
     Help h = new Help("inverse_properties");
@@ -189,11 +161,6 @@ public class HelpController extends BasicController {
     return h;
   }
 
-  /**
-   * List of graph query types.
-   *
-   * @return
-   */
   @RequestMapping("/help/kinds")
   public Help getGraphTypes() {
     Help help = new Help();
@@ -202,11 +169,10 @@ public class HelpController extends BasicController {
     }
     help.setId("kinds");
     help.setTitle("Advanced Graph Query Types");
-    help.setInfo("cPath2 has the following built-in algorithms:");
+    help.setInfo("has the following built-in algorithms:");
     help.setExample("help/kinds/neighborhood");
     return help;
   }
-
 
   @RequestMapping("/help/kinds/{kind}")
   public Help getGraphType(@PathVariable GraphType kind) {
@@ -218,12 +184,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-
-  /**
-   * List of graph directions.
-   *
-   * @return
-   */
   @RequestMapping("/help/directions")
   public Help getDirectionTypes() {
     Help help = new Help();
@@ -237,7 +197,6 @@ public class HelpController extends BasicController {
     return help;
   }
 
-
   @RequestMapping("/help/directions/{direction}")
   public Help getDirectionType(@PathVariable Direction direction) {
     if (direction == null) return getDirectionTypes();
@@ -245,6 +204,28 @@ public class HelpController extends BasicController {
     help.setTitle(direction.name());
     help.setId(direction.name());
     help.setInfo(direction.getDescription());
+    return help;
+  }
+
+  @RequestMapping("/help/limits")
+  public Help getLimitTypes() {
+    Help help = new Help();
+    for (LimitType limitType : LimitType.values()) {
+      help.addMember(getLimitType(limitType));
+    }
+    help.setId("limits");
+    help.setTitle("PathsFromTo Graph Query Limit Types");
+    help.setInfo("Following are possible Limit Types:");
+    help.setExample("help/limits/normal");
+    return help;
+  }
+
+  @RequestMapping("/help/limits/{limitType}")
+  public Help getLimitType(@PathVariable LimitType limitType) {
+    if (limitType == null) return getLimitTypes();
+    Help help = new Help();
+    help.setTitle(limitType.name());
+    help.setId(limitType.name());
     return help;
   }
 

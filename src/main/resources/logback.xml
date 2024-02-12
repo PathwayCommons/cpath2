@@ -5,24 +5,22 @@
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <!-- To enable JMX Management -->
+    <!-- To enable JMX Management (also prints additional logback initializing info)-->
     <jmxConfigurator/>
 
-    <!--Daily rolling file appender -->
-    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>cpath2.log</File>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <FileNamePattern>cpath2.%d{yyyy-ww}.log.gz</FileNamePattern>
-        </rollingPolicy>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d %-5level %logger{25} - %msg%n</pattern>
+            <pattern>%d %-5level [%thread] %logger{25} - %msg%n</pattern>
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
 
     <logger name="org.bbop" level="error"/>
+    <logger name="org.biopax" level="warn"/>
+    <logger name="org.biopax.paxtools.util.BPCollections" level="info"/>
+    <logger name="org.biopax.paxtools.normalizer.Resolver" level="info"/>
     <root level="info">
-        <appender-ref ref="file"/>
+        <appender-ref ref="console"/>
     </root>
 
 </configuration>

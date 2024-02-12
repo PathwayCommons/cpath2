@@ -9,28 +9,28 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.3</version>
+    <version>3.2.2</version>
   </parent>
 
-  <name>Pathway Commons builder and server</name>
+  <name>cPath2</name>
   <groupId>pathwaycommons</groupId>
   <artifactId>cpath2</artifactId>
-  <version>13.0.0-SNAPSHOT</version>
-  <description>Biological pathways/interactions data integration and services</description>
+  <version>14</version>
+  <description>Bio pathways/interactions integration and service (using BioPAX and Paxtools)</description>
   <url>https://pathwaycommons.github.io/cpath2</url>
   <inceptionYear>2009</inceptionYear>
 
   <properties>
-    <spring.version>5.3.22</spring.version>
     <start-class>cpath.Application</start-class>
     <license.licenseName>MIT</license.licenseName>
     <github.global.server>github</github.global.server>
-    <paxtools.version>5.3.0-SNAPSHOT</paxtools.version>
-    <validator.version>5.1.0-SNAPSHOT</validator.version>
+    <paxtools.version>6.0.0-SNAPSHOT</paxtools.version>
+    <validator.version>6.0.0-SNAPSHOT</validator.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <lucene.version>7.5.0</lucene.version>
-    <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvm.options>
-    <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring.version}/spring-instrument-${spring.version}.jar</agent>
+    <lucene.version>9.7.0</lucene.version>
+    <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</jvm.options>
+<!--    <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring-framework.version}/spring-instrument-${spring-framework.version}.jar</agent>-->
+    <agent>target/spring-instrument.jar</agent><!-- this copy is created by maven-dependency-plugin -->
   </properties>
 
   <issueManagement>
@@ -39,13 +39,13 @@
   </issueManagement>
 
   <ciManagement>
-    <system>Travis CI</system>
-    <url>https://travis-ci.org/PathwayCommons/cpath2</url>
+    <system>GitHub</system>
+    <url>https://github.com/PathwayCommons/cpath2/actions/workflows/maven.yml</url>
   </ciManagement>
 
   <organization>
     <name>Pathway Commons</name>
-    <url>http://www.pathwaycommons.org</url>
+    <url>https://www.pathwaycommons.org</url>
   </organization>
 
   <scm>
@@ -158,8 +158,9 @@
     <finalName>cpath2</finalName>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.11.0</version>
         <configuration>
           <release>17</release>
         </configuration>
@@ -172,10 +173,8 @@
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
           <useSystemClassLoader>false</useSystemClassLoader>
+          <runOrder>alphabetical</runOrder>
         </configuration>
       </plugin>
       <plugin>
@@ -186,57 +185,49 @@
           <systemPropertyVariables>
             <CPATH2_HOME>target/work</CPATH2_HOME>
           </systemPropertyVariables>
-          <runOrder>alphabetical</runOrder>
-          <includes>
-            <include>**/*IT.java</include>
-          </includes>
           <useSystemClassLoader>false</useSystemClassLoader>
+          <runOrder>alphabetical</runOrder>
         </configuration>
       </plugin>
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>1.4.4</version>
+        <version>1.4.13</version>
         <configuration>
           <repository>pathwaycommons/cpath2</repository>
           <buildArgs>
-            <JAR_FILE>target/${project.build.finalName}.war</JAR_FILE>
+            <APP_JAR>target/${project.build.finalName}.war</APP_JAR>
           </buildArgs>
         </configuration>
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<id>push-image</id>-->
-            <!--<phase>deploy</phase>-->
-            <!--<goals>-->
-              <!--<goal>build</goal>-->
-              <!--<goal>tag</goal>-->
-              <!--<goal>push</goal>-->
-            <!--</goals>-->
-            <!--<configuration>-->
-              <!--<tag>${project.version}</tag>-->
-            <!--</configuration>-->
-          <!--</execution>-->
-        <!--</executions>-->
+        <executions>
+          <execution>
+            <id>docker-image</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>build</goal>
+              <goal>tag</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <tag>${project.version}</tag>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <mainClass>${start-class}</mainClass>
-          <jvmArguments>${jvm.options}</jvmArguments>
+          <jvmArguments>${jvm.options} -Dpaxtools.model.safeset=list -Dpaxtools.normalizer.use-latest-registry=true</jvmArguments>
           <agents>
             <agent>${agent}</agent>
           </agents>
+          <arguments>-s</arguments>
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
@@ -245,33 +236,37 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.6.0</version>
         <executions>
           <execution>
-            <id>copy</id>
-            <phase>package</phase>
+            <id>copy-spring-instrument-jar</id>
             <goals>
               <goal>copy</goal>
             </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.springframework</groupId>
+                  <artifactId>spring-instrument</artifactId>
+                  <type>jar</type>
+                  <destFileName>spring-instrument.jar</destFileName>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <artifactItems>
-            <artifactItem>
-              <groupId>org.springframework</groupId>
-              <artifactId>spring-instrument</artifactId>
-              <type>jar</type>
-              <overWrite>false</overWrite>
-              <outputDirectory>${project.build.directory}</outputDirectory>
-              <destFileName>spring-instrument.jar</destFileName>
-            </artifactItem>
-          </artifactItems>
-        </configuration>
       </plugin>
     </plugins>
   </build>
 
   <dependencies>
+<!--    <dependency>-->
+<!--      <groupId>org.springframework.boot</groupId>-->
+<!--      <artifactId>spring-boot-properties-migrator</artifactId>-->
+<!--      <scope>runtime</scope>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>javax.validation</groupId>
       <artifactId>validation-api</artifactId>
@@ -288,24 +283,19 @@
       <version>1.3.2</version>
     </dependency>
     <dependency>
-      <groupId>com.sun.activation</groupId>
-      <artifactId>javax.activation</artifactId>
-      <version>1.2.0</version>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
+      <version>2.1.2</version>
     </dependency>
     <dependency>
-      <groupId>javax.transaction</groupId>
-      <artifactId>javax.transaction-api</artifactId>
-      <version>1.3</version>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>4.0.0</version>
     </dependency>
     <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.4.0-b180830.0359</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-      <version>2.4.0-b180830.0438</version>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+      <version>4.0.3</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -342,80 +332,11 @@
       <groupId>org.biopax.validator</groupId>
       <artifactId>biopax-validator</artifactId>
       <version>${validator.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-        <!--old servlet-api prevents newer embedded tomcat from starting (in spring boot 2.x app)-->
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.biopax.paxtools</groupId>
       <artifactId>json-converter</artifactId>
       <version>${paxtools.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jena</groupId>
-      <artifactId>apache-jena-libs</artifactId>
-      <type>pom</type>
-      <version>3.2.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.staxmate</groupId>
-          <artifactId>staxmate</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.hp.hpl.jena</groupId>
-      <artifactId>jena</artifactId>
-      <version>2.6.4</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>stax</groupId>
-          <artifactId>stax-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.staxmate</groupId>
-          <artifactId>staxmate</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-      <version>3.2.2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -426,12 +347,6 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
       <version>1.10.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>2.2.220</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
@@ -445,29 +360,23 @@
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-analyzers-common</artifactId>
+      <artifactId>lucene-queryparser</artifactId>
       <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
-      <artifactId>lucene-queryparser</artifactId>
+      <artifactId>lucene-analysis-common</artifactId>
       <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>pathwaycommons</groupId>
       <artifactId>reconx-to-biopax</artifactId>
-      <version>1.2.0-SNAPSHOT</version>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>2.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.sbml.jsbml</groupId>
       <artifactId>jsbml-core</artifactId>
-      <version>1.3.1</version>
+      <version>1.6.1</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.logging.log4j</groupId>
@@ -476,6 +385,14 @@
         <exclusion>
           <groupId>junit</groupId>
           <artifactId>junit</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.woodstox</groupId>
+          <artifactId>woodstox-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.thoughtworks.xstream</groupId>
+          <artifactId>xstream</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -509,23 +426,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <!--jackson-databind allows to use JAXB annotations for converting beans to JSON -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.transaction</groupId>
-          <artifactId>javax.transaction-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -535,12 +440,25 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>jstl</artifactId>
+      <groupId>jakarta.servlet.jsp.jstl</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
+      <groupId>org.glassfish.web</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+    <dependency>
+      <!-- to enable JSP -->
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-jasper</artifactId>
     </dependency>
@@ -562,14 +480,20 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.springframework.restdocs</groupId>
-      <artifactId>spring-restdocs-mockmvc</artifactId>
-      <scope>test</scope>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.2.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.springdoc</groupId>
-      <artifactId>springdoc-openapi-ui</artifactId>
-      <version>1.6.11</version>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.24</version>
     </dependency>
   </dependencies>
 

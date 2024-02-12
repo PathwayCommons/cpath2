@@ -7,18 +7,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import cpath.analysis.TraverseAnalysis;
-import cpath.service.api.*;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.normalizer.MiriamLink;
+import org.biopax.paxtools.normalizer.Resolver;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -27,23 +27,24 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
-
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import cpath.service.jpa.*;
+import cpath.analysis.TraverseAnalysis;
+import cpath.service.api.*;
+import cpath.service.metadata.*;
 import cpath.service.jaxb.*;
 
 import static cpath.service.api.Status.*;
-
 
 /**
  * Service tier class - to uniformly access 
@@ -52,22 +53,18 @@ import static cpath.service.api.Status.*;
  *
  * @author rodche
  */
-@Service
-public class CPathServiceImpl implements CPathService {
-  private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
+
+@org.springframework.stereotype.Service
+public class ServiceImpl implements Service {
+  private static final Logger log = LoggerFactory.getLogger(ServiceImpl.class);
   private static final Class<? extends BioPAXElement>[] DEFAULT_SEED_TYPES = new Class[]{PhysicalEntity.class, Gene.class};
 
-  private Searcher searcher;
+  IndexImpl index;
 
-  @Autowired
-  MetadataRepository metadataRepository;
-
-  @Autowired
-  MappingsRepository mappingsRepository;
+  Metadata metadata;
 
   @Autowired
   private Settings settings;
-
 
   private SimpleIOHandler simpleIO;
 
@@ -77,32 +74,46 @@ public class CPathServiceImpl implements CPathService {
   //on first access when proxy model mode is enabled (so do not use the var. directly!)
   private Model paxtoolsModel;
 
-  private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
-  private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
-  private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
+  private final Pattern isoformIdPattern = Pattern.compile(Resolver.getNamespace("uniprot.isoform", true).getPattern());
+  private final Pattern refseqIdPattern = Pattern.compile(Resolver.getNamespace("refseq", true).getPattern());
 
-  public CPathServiceImpl() {
+  public ServiceImpl() {
     this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
     this.simpleIO.mergeDuplicates(true);
   }
 
   /**
-   * Loads the main BioPAX model, etc.
-   * This is not required during the data import
-   * (in premerge, merge, index, etc.);
-   * call this only after the web service is up and running.
+   * Loads the main BioPAX model, full-text index, blacklist.
+   * Call this only after the web service is up and running.
    */
   synchronized public void init() {
     if(paxtoolsModel == null) {
       paxtoolsModel = loadMainModel();
       if (paxtoolsModel != null) {
-        paxtoolsModel.setXmlBase(settings.getXmlBase());
+        paxtoolsModel.setXmlBase(settings().getXmlBase());
         log.info("Main BioPAX model (in-memory) is now ready for queries.");
-        searcher = new SearchEngine(paxtoolsModel, settings.indexDir());
-        ((SearchEngine) searcher).setMaxHitsPerPage(settings.getMaxHitsPerPage());
       }
     }
-    loadBlacklist();
+    initIndex(paxtoolsModel, settings.indexDir(), true); //read-only (search) index
+    index.setMaxHitsPerPage(settings.getMaxHitsPerPage());
+    if(blacklist == null) {
+      loadBlacklist();
+    }
+  }
+
+  /**
+   * Init the index unless it's opened (if so, do nothing, ignore the parameters).
+   *
+   * @param model
+   * @param indexLocation
+   * @param readOnly
+   */
+  @Override
+  public void initIndex(Model model, String indexLocation, boolean readOnly) {
+    if(index != null) {
+      index.close();
+    }
+    index = new IndexImpl(model, indexLocation, readOnly);
   }
 
   public Settings settings() {return settings;}
@@ -116,25 +127,32 @@ public class CPathServiceImpl implements CPathService {
   }
   public void setModel(Model paxtoolsModel) {
     this.paxtoolsModel = paxtoolsModel;
+    if(index != null) {
+      index.setModel(paxtoolsModel);
+    }
+  }
+
+  IndexImpl getIndex() {
+    return index;
+  }
+
+  void setIndex(IndexImpl index) {
+    this.index = index;
   }
 
   public ServiceResponse search(String queryStr,
                                 int page, Class<? extends BioPAXElement> biopaxClass,
-                                String[] dsources, String[] organisms)
-  {
-    if(modelNotReady() || searcher == null)
-      return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
-
+                                String[] dsources, String[] organisms) {
+    if(modelNotReady() || index == null) {
+      return new ErrorResponse(MAINTENANCE, "Waiting for the initialization to complete (try later)...");
+    }
     try {
       // do search
-      SearchResponse hits = searcher.search(queryStr, page, biopaxClass, dsources, organisms);
-
+      SearchResponse hits = index.search(queryStr, page, biopaxClass, dsources, organisms);
       hits.setComment("Search '" + queryStr  + "' in " +
         ((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName())
         + "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
-
       return hits;
-
     } catch (Exception e) {
       log.error("search() failed - " + e);
       return new ErrorResponse(INTERNAL_ERROR, e);
@@ -205,26 +223,26 @@ public class CPathServiceImpl implements CPathService {
     completer.setSkipSubPathways(!includeSubPathways); //mind NOT (!) here
     Model m = cloner.clone(completer.complete(elements));
     if(m != null) {
-      m.setXmlBase(paxtoolsModel.getXmlBase());
+      m.setXmlBase(settings().getXmlBase());
     }
 
     return m;
   }
 
-  public ServiceResponse getNeighborhood(final OutputFormat format,
+  public ServiceResponse getNeighborhood(OutputFormat format,
                                          Map<String, String> formatOptions,
-                                         final String[] sources,
+                                         String[] sources,
                                          Integer limit,
                                          Direction direction,
-                                         final String[] organisms,
-                                         final String[] datasources,
+                                         String[] organisms,
+                                         String[] datasources,
                                          boolean subPathways)
   {
     if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     if(direction == null) {
-      direction = Direction.UNDIRECTED; //TODO: use BOTHSTREAM (less data as it ignores MIs)?
+      direction = Direction.UNDIRECTED;
     }
 
     // execute the paxtools graph query
@@ -245,9 +263,13 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  public ServiceResponse getPathsBetween(final OutputFormat format,
-                                         Map<String, String> formatOptions, final String[] sources, final Integer limit,
-                                         final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getPathsBetween(OutputFormat format,
+                                         Map<String, String> formatOptions,
+                                         String[] sources,
+                                         Integer limit,
+                                         String[] organisms,
+                                         String[] datasources,
+                                         boolean subPathways)
   {
     if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -271,9 +293,15 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  public ServiceResponse getPathsFromTo(final OutputFormat format, Map<String, String> formatOptions,
-                                        final String[] sources, final String[] targets, final Integer limit,
-                                        final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getPathsFromTo(OutputFormat format,
+                                        Map<String, String> formatOptions,
+                                        String[] sources,
+                                        String[] targets,
+                                        LimitType limitType,
+                                        Integer limit,
+                                        String[] organisms,
+                                        String[] datasources,
+                                        boolean subPathways)
   {
     if(modelNotReady())
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -291,7 +319,7 @@ public class CPathServiceImpl implements CPathService {
         Set<BioPAXElement> elements = (target == null || target.isEmpty())
           ? QueryExecuter.runPathsBetweenMultiSet(source, paxtoolsModel, limit,
           createFilters(organisms, datasources))
-          : QueryExecuter.runPathsFromToMultiSet(source, target, paxtoolsModel, LimitType.NORMAL, limit,
+          : QueryExecuter.runPathsFromToMultiSet(source, target, paxtoolsModel, limitType, limit,
           createFilters(organisms, datasources));
 
         m = autoCompleteAndClone(elements,subPathways);
@@ -317,9 +345,9 @@ public class CPathServiceImpl implements CPathService {
       options = new HashMap<>();
 
     if(format != OutputFormat.BIOPAX && m != null) {
-      // remove all Pathway objects from the result model (TODO: keep pathway name,uri somehow)
-      // (- pathways become incomplete after detaching from main PC model;
-      // these look confusing after converting to other format.)
+      // remove all Pathway objects from the result model as
+      // these become incomplete after detaching from main PC model
+      // and look confusing after converting to other formats.
       for(Pathway p : new HashSet<>(m.getObjects(Pathway.class))) {
         m.remove(p);
       }
@@ -338,13 +366,18 @@ public class CPathServiceImpl implements CPathService {
     return biopaxConverter.convert(m, format, options);
   }
 
-  public ServiceResponse getCommonStream(final OutputFormat format,
-                                         Map<String, String> formatOptions, final String[] sources,
-                                         final Integer limit, Direction direction,
-                                         final String[] organisms, final String[] datasources, boolean subPathways)
+  public ServiceResponse getCommonStream(OutputFormat format,
+                                         Map<String, String> formatOptions,
+                                         String[] sources,
+                                         Integer limit,
+                                         Direction direction,
+                                         String[] organisms,
+                                         String[] datasources,
+                                         boolean subPathways)
   {
-    if(modelNotReady())
-      return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
+    if(modelNotReady()) {
+      return new ErrorResponse(MAINTENANCE, "Waiting for the initialization to complete (try again later)...");
+    }
 
     if (direction == Direction.BOTHSTREAM) {
       return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
@@ -363,7 +396,8 @@ public class CPathServiceImpl implements CPathService {
       Model m = autoCompleteAndClone(result, subPathways);
       if(m != null) {
         String desc = Arrays.toString(sources);
-        m.setUri("PC_graph_commonstream_" + desc.hashCode());
+        //m.setXmlBase(settings().getXmlBase()); //already set in autoCompleteAndClone
+        m.setUri(m.getXmlBase() + "commonstream_" + desc.hashCode());
         m.setName(desc);
       }
       return convert(m, format, null);
@@ -398,27 +432,32 @@ public class CPathServiceImpl implements CPathService {
   }
 
   /**
-   * Mapping IDs to BioPAX entity URIs.
+   * Mapping from URL/IDs to the BioPAX entity URIs.
    *
-   * @param identifiers - a list of genes/protein or molecules as: \
+   * @param identifiers - a list of URIs or genes/protein/molecules IDs: \
    * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
    * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB.
-   * @param types filter search to get back URIs of given biopax types and sub-types
+   * @param types filter search to get back URIs of given biopax types and subtypes
    * @return URIs of matching Xrefs
    *
    * See also: issue #296
    */
   private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
   {
-    if (identifiers.length == 0)
+    if(identifiers == null) {
+      return new String[]{};
+    }
+    if (identifiers.length == 0) {
       return identifiers; //empty array
+    }
 
     Set<String> uris = new TreeSet<>();
 
     StringBuilder q = new StringBuilder();
-    for (String identifier : identifiers)
-    {
-      if(identifier.startsWith("http://")) {
+    for (String identifier : identifiers) {
+      if(identifier.startsWith(settings().getXmlBase())
+        || StringUtils.startsWithIgnoreCase(identifier, "http")
+        || StringUtils.containsAny(identifier, "bioregistry.io/", "identifiers.org/")) {
         // must be valid URI of some existing BioPAX object in our model
         uris.add(identifier);
       } else {
@@ -459,7 +498,7 @@ public class CPathServiceImpl implements CPathService {
 
     Set<String> uris = new TreeSet<>();
 
-    if(idOrUri.startsWith("http://")) {
+    if(idOrUri.startsWith(settings().getXmlBase())) {
       // must be valid URI of some existing BioPAX object in our model
       uris.add(idOrUri);
     } else {
@@ -520,13 +559,13 @@ public class CPathServiceImpl implements CPathService {
   /**
    * {@inheritDoc}
    *
-   * Collect "top" pathways pathways (sort of) such as those having
+   * Collect "top" pathways (sort of) such as those having
    * controlledOf, pathwayComponentOf and stepProcessOf properties empty, and
    * excluding pathways with less than three components unless there is a non-trivial sub-pathway.
    */
   public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
 
-    if(modelNotReady() || searcher == null)
+    if(modelNotReady() || index == null)
       return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 
     if(q==null || q.isEmpty()) //too much data
@@ -538,7 +577,7 @@ public class CPathServiceImpl implements CPathService {
 
     SearchResponse r;
     try {
-      r = searcher.search(q, page, Pathway.class, datasources, organisms);
+      r = index.search(q, page, Pathway.class, datasources, organisms);
     } catch(Exception e) {
       log.error("topPathways() failed", e);
       return new ErrorResponse(INTERNAL_ERROR, e);
@@ -579,18 +618,15 @@ public class CPathServiceImpl implements CPathService {
 
       // go next page
       try {
-        r = searcher.search(q, ++page, Pathway.class, datasources, organisms);
+        r = index.search(q, ++page, Pathway.class, datasources, organisms);
       } catch(Exception e) {
         log.error("topPathways() failed", e);
         return new ErrorResponse(INTERNAL_ERROR, e);
       }
     }
 
-    // final touches...
     topPathways.setNumHits((long)hits.size());
-    topPathways.setComment("Top Pathways (technically, each has empty index " +
-      "field 'pathway'; that also means, they are neither components of " +
-      "other pathways nor controlled of any process)");
+    topPathways.setComment("Top Pathways (neither components of other pathways nor controlled by any process)");
     topPathways.setMaxHitsPerPage(hits.size());
     topPathways.setPageNo(0);
 
@@ -655,11 +691,13 @@ public class CPathServiceImpl implements CPathService {
     return paxtoolsModel == null;
   }
 
-  public Set<String> map(String fromId, final String toDb) {
-    return map(Collections.singletonList(fromId), toDb);
-  }
-
-  public Set<String> map(Collection<String> fromIds, final String toDb) {
+  /**
+   * ID mapping from any ID but only to either CHEBI or UNIPROT primary id.
+   * @param fromIds the source IDs
+   * @param toDb only "CHEBI" or "UNIPROT" (case-insensitive)
+   * @return
+   */
+  public Set<String> map(Collection<String> fromIds, String toDb) {
     Assert.hasText(toDb,"toDb must be not null, empty or blank");
     Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb),
       "toDb is not CHEBI or UNIPROT");
@@ -671,140 +709,55 @@ public class CPathServiceImpl implements CPathService {
 
     List<String> sourceIds = new ArrayList<>();
     // let's guess the source db (id type) and take care of isoform ids;
-    // it's risky if a no-prefix integer ID type (pubchem cid, sid) is used and no srcDb is provided;
-    // nevertheless, for bio-polymers, we support the only 'NCBI Gene' (integer) ID type.
-    for(String fromId : fromIds)
-    {
-      if (fromId.matches("^\\d+$") && !toDb.equalsIgnoreCase("UNIPROT")) {
-        //an integer ID is expected to mean NCBI gene ID, and can be mapped only to UNIPROT;
-        //so, skip this one (won't map to anything anyway)
-        log.debug("map(), won't map " + fromId + " to " + toDb + " (ambiguous ID, unknown source)");
-        continue;
-      } else if (toDb.equalsIgnoreCase("UNIPROT") && isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
-        //it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
-        fromId = fromId.replaceFirst("-\\d+$", "");
-      } else if (toDb.equalsIgnoreCase("UNIPROT") && refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
-        //remove the versiovaluesn number, such as ".1"
-        fromId = fromId.replaceFirst("\\.\\d+$", "");
+    // it's risky if a no-prefix integer ID type (PubChem CID, SID) is used and no srcDb is provided;
+    // for biopolymers, we support the only one integer ID type - 'NCBI Gene'
+    for(String fromId : fromIds) {
+      if (toDb.equalsIgnoreCase("chebi")) {
+        if(fromId.matches("^\\d+$")) {
+          fromId = "CHEBI:" + fromId;
+        }
       }
-
+      else if (toDb.equalsIgnoreCase("uniprot")) {
+        if(isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
+          //it's certainly an uniprot isoform id; so we replace it with the corresponding accession number
+          fromId = fromId.replaceFirst("-\\d+$", "");
+        } else if (refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
+          //remove the version number, such as ".1"
+          fromId = fromId.replaceFirst("\\.\\d+$", "");
+        }
+      }
       sourceIds.add(fromId); //collect
     }
 
-    final List<Mapping> mappings = mappingsRepository.findBySrcIdInAndDestIgnoreCase(sourceIds, toDb);
+    //use Mappings repository to execute the search and get results
+    Set<String> results = mapping().findBySrcIdInAndDstDbIgnoreCase(sourceIds, toDb).stream()
+            .map(Mapping::getDstId)
+            .collect(Collectors.toCollection(TreeSet::new));
 
-    final Set<String> results = new TreeSet<>();
-    for(Mapping m : mappings) {
-      if(toDb.equalsIgnoreCase(m.getDest()))
-        results.add(m.getDestId());
-    }
     return results;
   }
 
-  /*
-   * Track core service events using Google Analytics Measurement Protocol
-   */
-  public void track(String ip, String category, String label)
-  {
-    log.info(String.format("%s, %s, %s", ip, category.toUpperCase(), String.valueOf(label).toLowerCase()));
+  public Mappings mapping() {
+    return index;
   }
 
-  public MappingsRepository mapping() {
-    return mappingsRepository;
-  }
-
-  public MetadataRepository metadata() {
-    return metadataRepository;
-  }
-
-  public void index()
-  {
-    init(); //very important - loads the model
-
-    log.info("Associating bio IDs with BioPAX objects using nested Xrefs and id-mapping...");
-    addIdsAsBiopaxAnnotations();
-
-    ((Indexer)searcher).index();
-
-    log.info("index(), all done.");
-  }
-
-  public void clear(Metadata metadata) {
-    CPathUtils.cleanupDirectory(intermediateDataDir(metadata), true);
-    metadata.setNumInteractions(null);
-    metadata.setNumPathways(null);
-    metadata.setNumPhysicalEntities(null);
-    metadata.getFiles().clear();
-  }
-
-  private void addIdsAsBiopaxAnnotations()
-  {
-    for(final BioPAXElement bpe : getModel().getObjects()) {
-      if(!(bpe instanceof Entity || bpe instanceof EntityReference))
-        continue; //skip for UtilityClass but EntityReference
-
-      final Set<String> ids = CPathUtils.getXrefIds(bpe);
-
-      // in addition, collect ChEBI and UniProt IDs and then
-      // use id-mapping to associate the bpe with more IDs:
-      final List<String> uniprotIds = new ArrayList<>();
-      final List<String> chebiIds = new ArrayList<>();
-      for(String id : ids)
-      {
-        if(id.startsWith("CHEBI:")) {
-          chebiIds.add(id);
-        } else if(isoformIdPattern.matcher(id).find()) {
-          //cut the isoform num. suffix
-          id = id.replaceFirst("-\\d+$", "");
-          uniprotIds.add(id);
-        } else if(uniprotIdPattern.matcher(id).find()) {
-          uniprotIds.add(id);
-        }
-      }
-      addSupportedIdsThatMapToChebi(chebiIds, ids);
-      addSupportedIdsThatMapToUniprotId(uniprotIds, ids);
-
-      bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+  public Metadata metadata() {
+    if(metadata == null) {
+      metadata = CPathUtils.readMetadata(settings().getMetadataLocation());
     }
+    return metadata;
   }
 
-  private void addSupportedIdsThatMapToChebi(List<String> chebiIds, final Set<String> resultIds) {
-    //find other IDs that map to the ChEBI ID
-    for(String id: chebiIds) {
-      List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", id);
-      if (mappings != null) {
-        //collect (for 'xrefid' full-text index field) only ID types that we want biopax graph queries support
-        for (Mapping mapping : mappings) {
-          if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
-            || mapping.getSrc().equals("CHEBI")
-            || mapping.getSrc().equals("DRUGBANK")
-            || mapping.getSrc().startsWith("KEGG")
-            || mapping.getSrc().startsWith("CHEMBL")
-            || mapping.getSrc().startsWith("PHARMGKB")
-          ) resultIds.add(mapping.getSrcId());
-          //(prefix 'CID:' is included in pubchem-compound ids)
-        }
-      }
-    }
+  public Index index() {
+    return index;
   }
 
-  private void addSupportedIdsThatMapToUniprotId(List<String> uniprotIds, final Set<String> resultIds) {
-    //find other IDs that map to the UniProt AC
-    for(String id: uniprotIds) {
-      List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", id);
-      if (mappings != null) {
-        //collect (for 'xrefid' full-text index field) only ID types that we want graph queries support
-        for (Mapping mapping : mappings) {
-          if (mapping.getSrc().startsWith("UNIPROT")
-            || mapping.getSrc().startsWith("HGNC")
-            || mapping.getSrc().equalsIgnoreCase("NCBI GENE")
-            || mapping.getSrc().equalsIgnoreCase("REFSEQ")
-            || mapping.getSrc().equalsIgnoreCase("IPI")
-            || mapping.getSrc().startsWith("ENSEMBL")
-          ) resultIds.add(mapping.getSrcId());
-        }
-      }
-    }
+  public void clear(Datasource datasource) {
+    CPathUtils.cleanupDirectory(intermediateDataDir(datasource), true);
+    datasource.setNumInteractions(0);
+    datasource.setNumPathways(0);
+    datasource.setNumPhysicalEntities(0);
+    datasource.getFiles().clear();
   }
 
   public Model loadMainModel() {
@@ -815,7 +768,7 @@ public class CPathServiceImpl implements CPathService {
     return CPathUtils.importFromTheArchive(settings.warehouseModelFile());
   }
 
-  public Model loadBiopaxModelByDatasource(Metadata datasource) {
+  public Model loadBiopaxModelByDatasource(Datasource datasource) {
     Path in = Paths.get(settings.biopaxFileNameFull(datasource.getIdentifier()));
     if (Files.exists(in)) {
       return CPathUtils.importFromTheArchive(in.toString());
@@ -826,20 +779,20 @@ public class CPathServiceImpl implements CPathService {
     }
   }
 
-  public String getDataArchiveName(Metadata metadata) {
-    return Paths.get(settings.dataDir(),metadata.getIdentifier() + ".zip").toString();
+  public String getDataArchiveName(Datasource datasource) {
+    return Paths.get(settings.dataDir(), datasource.getIdentifier() + ".zip").toString();
   }
 
 
-  public String intermediateDataDir(Metadata metadata) {
-    return Paths.get(settings.dataDir(), metadata.getIdentifier()).toString();
+  public String intermediateDataDir(Datasource datasource) {
+    return Paths.get(settings.dataDir(), datasource.getIdentifier()).toString();
   }
 
-  public void unzipData(Metadata metadata) {
+  public void unzipData(Datasource datasource) {
     try {
-      String fname = (metadata.getUrlToData().startsWith("classpath:"))//a hack for test
-        ? CPathUtils.LOADER.getResource(metadata.getUrlToData()).getFile().getPath()
-          : getDataArchiveName(metadata);//production
+      String fname = (datasource.getDataUrl().startsWith("classpath:"))//a hack for test
+        ? CPathUtils.LOADER.getResource(datasource.getDataUrl()).getFile().getPath()
+          : getDataArchiveName(datasource);//production
 
       ZipFile zipFile = new ZipFile(fname);
       Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -856,8 +809,8 @@ public class CPathServiceImpl implements CPathService {
           continue;
         }
         //create the original data file path/name, replacing all unsafe symbols with underscores
-        String datafile = CPathUtils.originalFile(intermediateDataDir(metadata), entryName);
-        metadata.addFile(datafile);
+        String datafile = CPathUtils.originalFile(intermediateDataDir(datasource), entryName);
+        datasource.getFiles().add(datafile);
         // expand original contend and save to the gzip output file
         Path out = Paths.get(datafile);
         if(!Files.exists(out)) {
@@ -868,11 +821,11 @@ public class CPathServiceImpl implements CPathService {
       //done all zip entries
       zipFile.close();
     } catch (IOException e) {
-      throw new RuntimeException("unzipData(), failed reading from: " + metadata.getIdentifier() , e);
+      throw new RuntimeException("unzipData(), failed reading from: " + datasource.getIdentifier() , e);
     }
 
-    if(metadata.getFiles().isEmpty())
-      log.warn("unzipData(), no data found for " + metadata);
+    if(datasource.getFiles().isEmpty())
+      log.warn("unzipData(), no data found for " + datasource);
   }
 
   public void saveValidationReport(Validation v, String reportFile) {

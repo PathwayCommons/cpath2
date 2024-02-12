@@ -14,33 +14,35 @@
 				</button>
 				<a class="navbar-brand" href="${cpath.url}">
 				 <img alt="Project Team Logo" src="${cpath.logo}" id="team-logo"/>&nbsp;
-				 <c:out value="${cpath.name} Web Service ${cpath.version}"/>&nbsp;
+				 <c:out value="${cpath.organization}"/>&nbsp;
 				</a>
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
 					<li class="dropdown">
-                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>
+                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  		  <b class="caret"></b> MENU <b class="caret"></b>
+                  		</a>
                   		<span class="dropdown-arrow"></span>
                   		<ul class="dropdown-menu">
-						<spring:url value="/home" var="home" />
-                  		 <li><a href="${home}" class="smooth-scroll">About</a></li>
-                  		 <li class="divider"></li>
-               			 <li><a href="${home}#search" class="smooth-scroll">Search</a></li>
-               			 <li><a href="${home}#get" class="smooth-scroll">Get</a></li>
-               			 <li><a href="${home}#traverse" class="smooth-scroll">Traverse</a></li>
-               			 <li><a href="${home}#graph" class="smooth-scroll">Graph</a></li>
-               			 <li><a href="${home}#top_pathways" class="smooth-scroll">Top pathways</a></li>
-                    	 <li class="divider"></li>
-                    	 <li><a href="${home}#parameter_values" class="smooth-scroll">Values</a></li>
+                  		 <li><a href="home" class="smooth-scroll">About</a></li>
+                  		 <li><a href="swagger">API</a></li>
+                  		 <li><a href="datasources">Datasources</a></li>
+                         <li><a href="${cpath.downloads}">Downloads</a></li>
+                         <%--
+               			 <li><a href="home#search" class="smooth-scroll">/search</a></li>
+               			 <li><a href="home#fetch" class="smooth-scroll">/fetch</a></li>
+               			 <li><a href="home#traverse" class="smooth-scroll">/traverse</a></li>
+               			 <li><a href="home#graph" class="smooth-scroll">/graph</a></li>
+               			 <li><a href="home#top_pathways" class="smooth-scroll">/top_pathways</a></li>
+               			 --%>
+                    	 <li><a href="home#parameter_values" class="smooth-scroll">Parameters</a></li>
                     	</ul>
                 	</li>
-					<li><a href="<spring:url value='/datasources'/>">Providers</a></li>
-					<li><a href="${cpath.url}/archives/">Downloads</a></li>
                   </ul>
-          	  </div> <!-- collapse -->
-      </div> <!-- container -->
+          	  </div> <%-- collapse --%>
+      </div> <%-- container --%>
  	</nav>
 </header>
-<!-- begin the #content container that will be closed in the footer.jsp-->
+<%-- begin the #content container that will be closed in the footer.jsp --%>
 <div id="content" class="container nav-target">

@@ -1,5 +1,7 @@
 package cpath.service.api;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Pre-defined Output Formats.
  * 
@@ -25,11 +27,11 @@ public enum OutputFormat {
 	JSONLD("JSON-LD format", ".json", "application/ld+json")
 	;
 
-    private final String info;
-	private final String ext;
-	private final String mediaType;
+  final String info;
+	final String ext;
+	final String mediaType;
     
-    public String getInfo() {
+  public String getInfo() {
 		return info;
 	}
 
@@ -45,5 +47,19 @@ public enum OutputFormat {
 		this.info = info;
 		this.ext = ext;
 		this.mediaType = mediaType;
+	}
+
+	public static OutputFormat typeOf(String tag)
+	{
+		if(StringUtils.isBlank(tag))
+			return null;
+
+		OutputFormat type = null;
+		try {
+			type = valueOf(tag.toUpperCase());
+		}
+		catch (IllegalArgumentException e){}
+
+		return type;
 	}
 }

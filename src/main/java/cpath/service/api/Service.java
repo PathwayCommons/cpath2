@@ -1,37 +1,31 @@
 package cpath.service.api;
 
 
-import java.io.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import cpath.service.Settings;
+import cpath.service.metadata.Datasource;
+import cpath.service.metadata.Index;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
 
-import cpath.service.jpa.MappingsRepository;
-import cpath.service.jpa.Metadata;
-import cpath.service.jpa.MetadataRepository;
+import cpath.service.metadata.Mappings;
+import cpath.service.metadata.Metadata;
 import cpath.service.jaxb.ServiceResponse;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.api.beans.Validation;
 
 
 /**
- * CPath^2 Service is an adapter between DAO and web controllers. 
- * Can be used in a console application or integration tests 
- * (web container is not required.)
+ * A middle-tier interface that defines data and metadata access and analysis methods.
  *
- * This interface defines several middle-tier data access and analysis methods 
- * that accept valid parameters, handle exceptions, and return results packed 
- * in a ServiceResponse bean.
- *
- * TODO: split into IntegrationService and AnalysisService
  * @author rodche
  */
-public interface CPathService {
+public interface Service {
 
   Model getModel();
 
@@ -110,8 +104,8 @@ public interface CPathService {
    * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
    */
   ServiceResponse getPathsFromTo(OutputFormat format, Map<String, String> formatOptions,
-                                 String[] sources, String[] targets, Integer limit, String[] organisms,
-                                 String[] datasources, boolean subPathways);
+                                 String[] sources, String[] targets, LimitType limitType, Integer limit,
+                                 String[] organisms, String[] datasources, boolean subPathways);
 
   /**
    * Runs a common upstream or downstream query
@@ -156,79 +150,62 @@ public interface CPathService {
   ServiceResponse topPathways(String q, String[] organisms, String[] datasources);
 
   /**
-   * Maps an identifier to primary ID(s) of a given type.
-   * Auto-detects the source ID type or tries all types.
-   * The result set may contain more than one primary ID.
-   *
-   * @param fromId the source ID
-   * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
-   * @return a set of primary IDs of the type; normally one or none elements
-   */
-  Set<String> map(String fromId, String toDb);
-
-  /**
    * Maps multiple identifiers to primary IDs of given type.
    * Auto-detects the source ID type or tries all types.
    * The result set may contain more than one primary ID.
    *
    * @param fromIds the source IDs
-   * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+   * @param toDb standard preferred name of the target ID type/collection name/prefix (e.g., 'UNIPROT','CHEBI')
    * @return a set of primary IDs of the type; normally one or none elements
    */
   Set<String> map(Collection<String> fromIds, String toDb);
 
+  Mappings mapping();
+
+  Metadata metadata();
+
+  Index index();
+
   /**
-   * Record web service and data access events.
-   * @param ip IP address
-   * @param category log event category
-   * @param name event name
+   * in production, loads the pre-built biopax model and the corresponding full-text index
+   * (location depends on application.properties) and the blacklist file.
    */
-  void track(String ip, String category, String name);
-
-  //spring-data-jpa repositories
-
-  MappingsRepository mapping();
-
-  MetadataRepository metadata();
-
-  void init(); //only in production - to load the main biopax model from file
+  void init();
 
   /**
-   * Creates:
-   * <ul>
-   * <li>new BioPAX full-text index;</li>
-   * <li>the blacklist of ubiquitous small molecules;</li>
-   * <li>updates counts of different BioPAX entities per data source</li>
-   * </ul>
-   */
-  void index() throws IOException;
-
-  // Metadata and data processing methods
-
-  /**
-   * Clears the metadata object and the db record,
-   * and also drops/creates the data directory.
+   * Loads a biopax model, metadata and the full-text index (existing or to generate)
    *
-   * @param metadata data source metadata
+   * @param model
+   * @param indexLocation
+   * @param readOnly
    */
-  void clear(Metadata metadata);
+  void initIndex(Model model, String indexLocation, boolean readOnly);
+
+  // Datasource and data processing methods
+
+  /**
+   * Clears the datasource object, drops/creates the data directory.
+   *
+   * @param datasource data source datasource
+   */
+  void clear(Datasource datasource);
 
   Model loadMainModel();
 
   Model loadWarehouseModel();
 
-  Model loadBiopaxModelByDatasource(Metadata datasource);
+  Model loadBiopaxModelByDatasource(Datasource datasource);
 
-  String getDataArchiveName(Metadata metadata);
+  String getDataArchiveName(Datasource datasource);
 
-  String intermediateDataDir(Metadata metadata);
+  String intermediateDataDir(Datasource datasource);
 
   /**
-   * Given Metadata (data source), this procedure expands the corresponding
+   * Given data source, this procedure expands the corresponding
    * original data archive (zip), collecting the data file names.
-   * @param metadata Metadata
+   * @param datasource Datasource
    */
-  void unzipData(Metadata metadata);
+  void unzipData(Datasource datasource);
 
   void saveValidationReport(Validation v, String reportFile);
 
