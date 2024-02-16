@@ -122,7 +122,7 @@ public class ConsoleApplicationIT
     simpleReader.mergeDuplicates(true);
 
     Normalizer normalizer = new Normalizer();
-    String base = "http://test/";
+    String base = "test:";
     normalizer.setXmlBase(base);
 
     Model m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));

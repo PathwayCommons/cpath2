@@ -34,7 +34,7 @@ public class CPathUtilsTest {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.setXmlBase("http://test/");
+		model.setXmlBase("test:");
 	}
 
 	@Test

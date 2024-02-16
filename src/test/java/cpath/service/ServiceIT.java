@@ -31,7 +31,7 @@ public class ServiceIT {
     Settings s = service.settings();
     assertAll(
         () -> assertNotNull(s),
-        () -> assertEquals("http://test/", s.getXmlBase()),
+        () -> assertEquals("test:", s.getXmlBase()),
         () -> assertEquals("pc",s.getName()),
         () -> assertEquals("Pathway Commons",s.getOrganization()),
         () -> assertEquals(1, s.getOrganismTaxonomyIds().size()),
