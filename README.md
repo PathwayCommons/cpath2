@@ -85,7 +85,7 @@ To see available commands and options, run:
 In order to create a new cpath2 instance, define or update the metadata.json, 
 prepare input data archives (see below how), and run 
 
-    bash cpath2.sh --build
+    bash cpath2.sh --build 2>&1 >build.log &
 
 , which normally takes a day or two - executes the following data integration steps: 
 import the metadata, clean, convert to BioPAX, normalize the data, build the BioPAX warehouse, 

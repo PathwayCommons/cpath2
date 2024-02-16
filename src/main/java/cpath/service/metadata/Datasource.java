@@ -31,7 +31,6 @@ public final class Datasource {
     PSI_MI(true), // interactions to be converted to BioPAX L3 format
     PSI_MITAB(true), // interactions to be converted to PSI-MI then to BioPAX L3 format
     BIOPAX(true), // pathways and interactions in BioPAX L2 or L3 format
-    SBML(true), // SBML (requires a data source specific Converter to BioPAX)
     WAREHOUSE(false), // warehouse data to be converted to BioPAX and used during the merge stage
     MAPPING(false); //extra gene/protein id-mapping data (two column, TSV format: "some id or name" \t "primary uniprot/chebi AC")
 

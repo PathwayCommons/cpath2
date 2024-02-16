@@ -93,6 +93,7 @@ public class IndexImpl implements Index, Mappings {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		BooleanQuery.setMaxClauseCount(10000); //Integer.MAX_VALUE
 	}
 
 	public void setMaxHitsPerPage(int maxHitsPerPage) {

@@ -419,8 +419,9 @@ public class ConsoleApplication implements CommandLineRunner {
     //collect BioPAX pathway data source names
     final Set<String> pathwayDataSources = new HashSet<>();
     for (Datasource md : service.metadata().getDatasources()) {
-      if (md.getType() == METADATA_TYPE.BIOPAX || md.getType() == METADATA_TYPE.SBML)
+      if (md.getType() == METADATA_TYPE.BIOPAX) {
         pathwayDataSources.add(md.standardName());
+      }
     }
     final String archiveName = service.settings().biopaxFileNameFull("Detailed");
     exportBiopax(mainModel, index, archiveName, pathwayDataSources.toArray(new String[]{}), null);

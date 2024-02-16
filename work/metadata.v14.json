@@ -269,11 +269,10 @@
       "name": [
         "Recon X"
       ],
-      "converterClass": "cpath.converter.ReconxConverter",
       "description": "Recon X: Reconstruction of the Human Genome; SBML model from BioModels, Recon 2 v2.02 (2013), converted to BioPAX by us using http://github.com/PathwayCommons/reconx-to-biopax library.",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/reconxlogo.png",
       "availability": "free",
-      "type": "SBML",
+      "type": "BIOPAX",
       "pubmedId": "23455439"
     },
     {
