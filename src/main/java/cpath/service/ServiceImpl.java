@@ -85,6 +85,7 @@ public class ServiceImpl implements Service {
   /**
    * Loads the main BioPAX model, full-text index, blacklist.
    * Call this only after the web service is up and running.
+   * (This is not called for the console app)
    */
   synchronized public void init() {
     if(paxtoolsModel == null) {

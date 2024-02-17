@@ -23,9 +23,9 @@ public class Application {
     } else {
       application.setWebApplicationType(WebApplicationType.NONE);
       if (ArrayUtils.contains(args, "-b") || ArrayUtils.contains(args, "--build")) {
-        //enable biopax-validator context
+        //enable biopax-validator context (and LTW)
         application.setAdditionalProfiles("admin", "premerge");
-      } else {
+      } else { //app run from console with -e or -a option (i.e. not as web app, not building the data instance)
         application.setAdditionalProfiles("admin");
       }
       ConfigurableApplicationContext applicationContext = application.run(args);

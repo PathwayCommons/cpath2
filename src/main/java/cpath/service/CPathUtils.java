@@ -1,6 +1,5 @@
 package cpath.service;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cpath.service.api.Cleaner;
 import cpath.service.api.Converter;
 import cpath.service.api.RelTypeVocab;
-import cpath.service.metadata.Datasource;
 import cpath.service.metadata.Metadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -83,7 +81,7 @@ public final class CPathUtils {
       path = StringUtils.substringAfter(path, ":");
     }
     try {
-      new ObjectMapper().writeValue(Files.newOutputStream(Paths.get(path)), metadata);
+      new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(Files.newOutputStream(Paths.get(path)), metadata);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -344,15 +342,6 @@ public final class CPathUtils {
     return null;
   }
 
-
-  /**
-   * Generate a URI (for a Provenance instance.)
-   *
-   * @return URI
-   */
-  static String getMetadataUri(Model model, Datasource datasource) {
-    return model.getXmlBase() + datasource.getIdentifier();
-  }
 
   /**
    * For the given converter class name,

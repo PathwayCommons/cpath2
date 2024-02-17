@@ -59,7 +59,11 @@ public class ConsoleApplication implements CommandLineRunner {
   enum Stage {
     PREMERGE,
     MERGE,
-    POSTMERGE
+    POSTMERGE;
+
+    static Stage toType(String stage) {
+      return Arrays.stream(Stage.values()).filter(s -> s.name().equalsIgnoreCase(stage)).findFirst().orElse(PREMERGE);
+    }
   }
 
   @Override
@@ -104,25 +108,21 @@ public class ConsoleApplication implements CommandLineRunner {
 
     if (cmd.hasOption("build")) {
       //Perform the data build from given stage (or from "premerge" when no value provided) to the end.
-      Stage stage;
-      try {
-        stage = Stage.valueOf(cmd.getOptionValue("build").toUpperCase());
-      } catch (Exception e) {
-        stage = Stage.PREMERGE;
-      }
+      String optVal = cmd.getOptionValue("build");
+      Stage stage = Stage.toType(optVal);
       switch ((stage != null) ? stage : Stage.PREMERGE) {
         case PREMERGE:
-          premerge(); //, and continue to "merge"
+          premerge(); //and continue to "merge"
         case MERGE:
-          merge();
+          merge(); //and continue to "postmerge"
         case POSTMERGE:
-          postmerge(); //is the final stage
+          postmerge(); //the final stage
       }
-    } else if (cmd.hasOption("export")) {
+    }
+    else if (cmd.hasOption("export")) {
       String[] uris = new String[]{};
       String[] datasources = new String[]{};
       String[] types = new String[]{};
-
       if (cmd.hasOption("F")) {
         Properties properties = cmd.getOptionProperties("F");
         if (properties.contains("uris")) {
@@ -134,9 +134,11 @@ public class ConsoleApplication implements CommandLineRunner {
         }
       }
       exportData(cmd.getOptionValue("export"), uris, datasources, types);
-    } else if (cmd.hasOption("analyze")) {
+    }
+    else if (cmd.hasOption("analyze")) {
       executeAnalysis(cmd.getOptionValue("analyze"), true);
-    } else {
+    }
+    else {
       new HelpFormatter().printHelp("cPath2", options);
     }
   }
@@ -279,7 +281,6 @@ public class ConsoleApplication implements CommandLineRunner {
 
   private void postmerge() throws IOException {
     LOG.info("postmerge: started");
-    Model model;
     // Updates counts of pathways, etc. and saves in the Metadata table.
     // This depends on the full-text index created already
     LOG.info("updating pathway/interaction/participant counts per data source...");
@@ -289,17 +290,17 @@ public class ConsoleApplication implements CommandLineRunner {
       if(ds.getType().isNotPathwayData()) {
         continue;
       }
-      model = service.loadBiopaxModelByDatasource(ds);
+      Model model = service.loadBiopaxModelByDatasource(ds);
       ds.setNumPathways(model.getObjects(Pathway.class).size());
       ds.setNumInteractions(model.getObjects(Interaction.class).size());
       ds.setNumPhysicalEntities(model.getObjects(PhysicalEntity.class).size() + model.getObjects(Gene.class).size());
     }
     CPathUtils.saveMetadata(service.metadata(), service.settings().getMetadataLocation()); //update the json file
 
-    //load the main model
-    LOG.info("loading the Main BioPAX Model...");
-    model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
-    LOG.info("loaded");
+    //init the service - load main model and index
+    service.init();
+    final Model mainModel = service.getModel();
+    LOG.info("loaded main model:{} biopax elements", mainModel.getObjects().size());
 
     // create an imported data summary file.txt (issue#23)
     PrintWriter writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
@@ -311,9 +312,11 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println("#Columns:\t" + String.join("\t", Arrays.asList(
       "ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS")));
     for (Datasource d : service.metadata().getDatasources()) {
-      writer.println(StringUtils.join(Arrays.asList(
-        CPathUtils.getMetadataUri(model, d), d.getDescription(), d.getType(), d.getHomepageUrl(),
-        d.getNumPathways(), d.getNumInteractions(), d.getNumPhysicalEntities()), "\t"));
+      String record = StringUtils.join(Arrays.asList(
+          service.settings().getXmlBase()+d.getIdentifier(), d.getDescription(), d.getType(), d.getHomepageUrl(),
+          d.getNumPathways(), d.getNumInteractions(), d.getNumPhysicalEntities()), "\t");
+      writer.println(record);
+      LOG.info(record);
     }
     writer.flush();
     writer.close();
@@ -322,8 +325,8 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("creating the list of primary uniprot ACs...");
     Set<String> acs = new TreeSet<>();
     //exclude publication xrefs
-    Set<Xref> xrefs = new HashSet<>(model.getObjects(UnificationXref.class));
-    xrefs.addAll(model.getObjects(RelationshipXref.class));
+    Set<Xref> xrefs = new HashSet<>(mainModel.getObjects(UnificationXref.class));
+    xrefs.addAll(mainModel.getObjects(RelationshipXref.class));
     for (Xref x : xrefs) {
       String id = x.getId();
       if (CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "uniprot")
@@ -343,9 +346,9 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("generated uniprot.txt");
 
     LOG.info("init the full-text search engine...");
-    final Index index = new IndexImpl(model, service.settings().indexDir(), false);
+    final Index index = new IndexImpl(mainModel, service.settings().indexDir(), false);
     // generate the "Detailed" pathway data file:
-    createDetailedBiopax(model, index);
+    createDetailedBiopax(mainModel, index);
 
     // generate the export.sh script (to run Paxtools commands for exporting the BioPAX files to other formats)
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
