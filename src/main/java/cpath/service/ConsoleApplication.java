@@ -44,7 +44,8 @@ import java.util.zip.GZIPOutputStream;
 @Profile({"admin"})
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
-  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx60g -jar paxtools.jar";
+  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx64g " +
+      "-Dpaxtools.normalizer.use-latest-registry=true -Dpaxtools.core.use-latest-genenames=true -jar paxtools.jar";
 
   @Autowired
   private Service service;
