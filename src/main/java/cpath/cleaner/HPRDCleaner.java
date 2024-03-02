@@ -16,20 +16,21 @@ final class HPRDCleaner implements Cleaner {
 	public void clean(InputStream data, OutputStream cleanedData) {
 		//HPRD data is less than 2Gb (max String length)
 		Scanner sc = new Scanner(data);
-	    StringBuilder sb = new StringBuilder();
-	    while (sc.hasNextLine())
-	        sb.append(sc.nextLine());
-	    sc.close(); sc = null;
-		
-	    String pathwayDataString = sb.toString();
-		// we want to add refType=identity to uniprot secondaryRef
-		pathwayDataString = pathwayDataString.replaceAll("^(\\s*)<secondaryRef db=\"uniprot\" dbAc=\"(.*)\" id=\"(.*)\"\\/>\\s*$",
-						 "$1<secondaryRef db=\"uniprot\" dbAc=\"$2\" id=\"$3\" refType=\"identity\"/>");
+		StringBuilder sb = new StringBuilder();
+		while (sc.hasNextLine())
+			sb.append(sc.nextLine());
+		sc.close(); sc = null;
 
-        // A quick and dirty fix for the latest export: HPRD_SINGLE_PSIMI_041210.xml
-        // Duplicate id error due to a trailing space error
+		String pathwayDataString = sb.toString();
+		// we want to add refType=identity to uniprot secondaryRef
+		pathwayDataString = pathwayDataString.replaceAll(
+				"^(\\s*)<secondaryRef db=\"uniprot\" dbAc=\"(.*)\" id=\"(.*)\"\\/>\\s*$",
+				"$1<secondaryRef db=\"uniprot\" dbAc=\"$2\" id=\"$3\" refType=\"identity\"/>");
+
+		// A quick and dirty fix for the latest export: HPRD_SINGLE_PSIMI_041210.xml
+		// Duplicate id error due to a trailing space error
 		pathwayDataString = pathwayDataString.replaceAll("\"07467 \"", "\"074670\"");
-		
+
 		try {
 			cleanedData.write(pathwayDataString.getBytes());
 			cleanedData.close();

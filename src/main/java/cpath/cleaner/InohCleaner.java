@@ -55,15 +55,15 @@ final class InohCleaner implements Cleaner {
 				for(XReferrable owner : new HashSet<>(x.getXrefOf())) {
 					owner.removeXref(x);
 					owner.addXref(rx);
-					log.debug("replaced PX " + x + " with RX " + rx);
+					log.debug("replaced PX {} with RX {}", x, rx);
 				}
 			}
 		}
 
 		// using PhysicalEntity instead SimplePhysicalEntity below also fixes for Complexes' xrefs;
-		// move some of unification xrefs from physical entity to entity reference
+		// move some of the unification xrefs from physical entity to entity reference
 		for(PhysicalEntity spe : new HashSet<>(model.getObjects(PhysicalEntity.class))) {
-			Set<UnificationXref> xrefs = new ClassFilterSet<Xref,UnificationXref>(new HashSet<>(spe.getXref()), UnificationXref.class);
+			Set<UnificationXref> xrefs = new ClassFilterSet<>(new HashSet<>(spe.getXref()), UnificationXref.class);
 			Set<UnificationXref> proteinUniprotUnifXrefs = new HashSet<>();
 			//first pass (do not move/convert proteins' uniprot unif. xrefs yet)
 			for(UnificationXref x : xrefs) {
@@ -72,7 +72,7 @@ final class InohCleaner implements Cleaner {
 				
 				if(x.getDb()==null || x.getId()==null) { //just in case there are some...
 					spe.removeXref(x);
-					log.debug("removed bad xref: " + x + " from " + spe.getUri());
+					log.debug("removed bad xref: {} from {}", x, spe.getUri());
 					continue;
 				}
 				
@@ -119,7 +119,7 @@ final class InohCleaner implements Cleaner {
 						cv.removeTerm(term);
 						String newTerm = term.substring(xref.getId().length()+1);
 						cv.addTerm(newTerm);
-						log.debug("replaced term '"+term+"' with '"+newTerm+"' in " + cv);
+						log.debug("replaced term '{}' with '{}' in {}", term, newTerm, cv);
 						continue terms;
 					}
 				}
@@ -139,7 +139,7 @@ final class InohCleaner implements Cleaner {
 					owner.removeXref(x);
 					owner.addXref(rx);
 				}			
-				log.debug("replaced UnificationXref " + x + " with RX " + rx);
+				log.debug("replaced UX {} with RX {}", x, rx);
 			}
 		}
 		
@@ -162,7 +162,7 @@ final class InohCleaner implements Cleaner {
 		try {
 			simpleReader.convertToOWL(model, cleanedData);
 		} catch (Exception e) {
-			throw new RuntimeException("clean(), Exception thrown while saving cleaned NetPath data", e);
+			throw new RuntimeException("Failed saving cleaned Inoh model", e);
 		}		
 	}
 

@@ -12,7 +12,6 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -445,21 +444,15 @@ public class ServiceImpl implements Service {
    */
   private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
   {
-    if(identifiers == null) {
+    if(identifiers == null || identifiers.length == 0) {
       return new String[]{};
-    }
-    if (identifiers.length == 0) {
-      return identifiers; //empty array
     }
 
     Set<String> uris = new TreeSet<>();
 
     StringBuilder q = new StringBuilder();
     for (String identifier : identifiers) {
-      if(identifier.startsWith(settings().getXmlBase())
-        || StringUtils.startsWithIgnoreCase(identifier, "http")
-        || StringUtils.containsAny(identifier, "bioregistry.io/", "identifiers.org/")) {
-        // must be valid URI of some existing BioPAX object in our model
+      if(getModel().containsID(identifier)) {
         uris.add(identifier);
       } else {
         //Build a Lucene query (eq. to xrefid:"A" OR xrefid:"B" OR ...);
@@ -474,7 +467,9 @@ public class ServiceImpl implements Service {
       //find all entity URIs by IDs using a specific full-text search
       final String query = q.toString().trim();
 
-      if(types.length==0) types = DEFAULT_SEED_TYPES; //BioPAX types to search in
+      if(types.length==0) {
+        types = DEFAULT_SEED_TYPES; //BioPAX types to search in
+      }
 
       for(Class<? extends BioPAXElement> type : types) {
         findAllUris(uris, query, type);

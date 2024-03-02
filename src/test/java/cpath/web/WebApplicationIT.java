@@ -82,7 +82,7 @@ public class WebApplicationIT {
 	@Test
 	public void getAsSbgn()  { //API v1 HTTP GET
 		String result = template.getForObject("/get?uri={uri}&format=sbgn",
-				String.class, "http://www.biopax.org/examples/myExample#Pathway50"); //will be URL-encoded
+				String.class, "merge:Pathway50"); //will be URL-encoded
 		assertNotNull(result);
 		assertTrue(result.contains("<glyph class=\"process\""));
 	}
@@ -94,7 +94,7 @@ public class WebApplicationIT {
 		String body = """
     		{
     			"uri": [
-    				"http://www.biopax.org/examples/myExample#Pathway50"
+    				"merge:Pathway50"
     			],
     			"format": "sbgn"
     		}

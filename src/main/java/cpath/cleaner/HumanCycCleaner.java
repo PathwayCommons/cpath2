@@ -8,7 +8,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.util.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +32,7 @@ public class HumanCycCleaner implements Cleaner
 			cleanXrefIDs(model);
 			cleanXrefDBName(model);
 			deleteHtmlFromNames(model);
-//			fix_RDH14_NT5C1B_fusion(model); //the problem is not present in 17.1 HymanCyc biopax
+//			fix_RDH14_NT5C1B_fusion(model); //the problem is not present in 17.1 HymanCyc biopax anymore
 			cleanMultipleUnificationXrefs(model);
 			// set organism to all pathways, where it's null
 			setOrganismHomoSapiens(model);
@@ -41,7 +40,7 @@ public class HumanCycCleaner implements Cleaner
 		}
 		catch (Exception e)
 		{
-			throw new RuntimeException("Exception in HumanCycCleaner.clean", e);
+			throw new RuntimeException("HumanCycCleaner failed", e);
 		}
 	}
 
@@ -94,8 +93,8 @@ public class HumanCycCleaner implements Cleaner
 	}
 
 	/**
-	 * HumanCyc refers to GenBank proteins as "Entrez".
-	 * We change those xrefs to use "Protein GenBank Identifier"
+	 * HumanCyc refers to GenBank proteins as "Entrez" (now "Entrez Protein Sequence" in v27.5).
+	 * We change those xrefs to use "genpept" ("Protein GenBank Identifier")
 	 * see {@code http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MI&termId=MI%3A0851&termName=protein%20genbank%20identifier}
 	 * 
 	 */
@@ -106,10 +105,10 @@ public class HumanCycCleaner implements Cleaner
 			if(xr.getDb() == null) {
 				if(!(xr instanceof PublicationXref)) 
 					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getUri());
-			} else if(xr.getDb().equals("Entrez")) 
-				xr.setDb("Protein GenBank Identifier");
+			} else if(xr.getDb().startsWith("Entrez"))
+				xr.setDb("genpept"); //Protein GenBank Identifier
 			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) 
-				xr.setDb("taxonomy");
+				xr.setDb("ncbitaxon");
 		}
 	}
 	
@@ -140,16 +139,13 @@ public class HumanCycCleaner implements Cleaner
 					editor.setValueToBean(name, domain);
 				}
 			}
-		}, new Filter<PropertyEditor>() {
-			@Override
-			public boolean filter(PropertyEditor e) {
-				//only name, displayName, standardName should pass
-				return e instanceof DataPropertyEditor && e.getProperty().toLowerCase().endsWith("name");
-			}
+		}, e -> {//only name, displayName, standardName should pass
+			return e instanceof DataPropertyEditor && e.getProperty().toLowerCase().endsWith("name");
 		});
 
-		for (Named named : model.getObjects(Named.class))
-			traverser.traverse(named,model);
+		for (Named named : model.getObjects(Named.class)) {
+			traverser.traverse(named, model);
+		}
 	}
 
 	/**
@@ -216,7 +212,7 @@ public class HumanCycCleaner implements Cleaner
 		}
 	}
 
-	static Map<String, String> toKeep = new HashMap<String, String>();
+	static Map<String, String> toKeep = new HashMap<>();
 	static
 	{
 		toKeep.put("Q9HBH5", "Q96P26");

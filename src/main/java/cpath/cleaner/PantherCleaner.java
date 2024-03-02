@@ -39,22 +39,21 @@ final class PantherCleaner implements Cleaner {
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model originalModel = simpleReader.convertFromOWL(data);
 		
-		//find "human" (BioSource); it's already there normalized - uses Identifiers.org URI
+		//find "human" (BioSource); it must be already there "normalized" - has absolute URI="9606" (rdf:about="9606")
 		final BioSource human = (BioSource) originalModel.getByID("9606");
 		// - new version PANTHER pathway data contain URIS and xrefs like that, unfortunately...
 		if(human == null) //fail shortly (importer must skip this dataFile)
 			throw new RuntimeException("Human data (e.g. BioSource) not found.");
 
-		// fix the taxonomy xref.db standard name
-		human.getXref().iterator().next().setDb("taxonomy");
+		// fix the preferred standard name (bioregistry.io prefix) for Taxonomy xref.db
+		human.getXref().iterator().next().setDb("ncbitaxon");
 		
-		//Remove/replace non-human BioSources, SequenceEntityReferences 
+		//Remove/replace non-human BioSources, SequenceEntityReferences;
 		//Pathways all have organism=null; let's set 'human' for all
-		//Use parallel execution
 		ExecutorService exec = Executors.newFixedThreadPool(3);
 		//make a copy of all model's objects set to avoid concurrent modification exceptions.
 		final Set<BioPAXElement> objects = new HashSet<>(originalModel.getObjects());
-		final Model model = originalModel;
+		final Model model = originalModel; //has to be final to use inside execute(), lambdas...
 		exec.execute(() -> {
 			for(BioPAXElement o : objects) {
 				if((o instanceof BioSource) && !human.equals(o)) {
@@ -63,7 +62,7 @@ final class PantherCleaner implements Cleaner {
 			}
 		});
 		exec.execute(() -> {
-			for(SequenceEntityReference er : new ClassFilterSet<BioPAXElement, SequenceEntityReference>(objects, SequenceEntityReference.class)) {
+			for(SequenceEntityReference er : new ClassFilterSet<>(objects, SequenceEntityReference.class)) {
 				if(er.getOrganism() != null && !er.getOrganism().equals(human)) {
 					model.remove(er);
 					for(SimplePhysicalEntity spe : new HashSet<>(er.getEntityReferenceOf()))
@@ -75,9 +74,10 @@ final class PantherCleaner implements Cleaner {
 		});
 		exec.execute(() -> {
 			for(Pathway p : new ClassFilterSet<>(objects, Pathway.class)) {
-				if(p.getUri().startsWith("http://identifiers.org/panther.pathway/")
+				if(p.getUri().contains("identifiers.org/panther.pathway/")
+						|| p.getUri().contains("bioregistry.io/panther.pathway:")
 						|| !p.getPathwayComponent().isEmpty()
-						|| !p.getPathwayOrder().isEmpty()) { //- seems they don't use pathwayOrder property, anyway
+						|| !p.getPathwayOrder().isEmpty()) { //seems they don't use pathwayOrder property, anyway
 					p.setOrganism(human);
 				} else //black box and no-components pathways
 					p.setOrganism(null); //clear in case it's set to other org.
@@ -103,6 +103,7 @@ final class PantherCleaner implements Cleaner {
 		
 		//clone the model (to actually get rid of removed objects in all object properties)
 		final Model cleanModel = (new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory())).clone(originalModel.getObjects());
+		cleanModel.setXmlBase(originalModel.getXmlBase());
 		log.info((objects.size()-cleanModel.getObjects().size())
 				+ " non-human objects (and all corresponding properties) were cleared.");
 		originalModel = null; // free some memory, perhaps...

@@ -112,6 +112,38 @@ public final class CPathUtils {
   }
 
   /**
+   * Smart replace the xml:base in the URI.
+   * Mind empty or same xmlBase, standard, or CURIEs like 'uniprot:P12345'.
+   * Also, xml:base can be like "http://smpdb.ca/pathways/#" or "https://pantherdb.org/pathways/biopax/P04373#"
+   * and absolute URIs like "http://smpdb.ca/pathways/#DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0"
+   * (i.e. have xml:base ending with '#' plus '/' after that....)
+   *
+   * @param absoluteUri
+   * @param oldXmlBase
+   * @param newXmlBase
+   * @return same or updated URI (never null)
+  */
+  public static String rebaseUri(String absoluteUri, String oldXmlBase, String newXmlBase) {
+    Assert.hasText(absoluteUri, "URI cannot be blank/null");
+    newXmlBase = (StringUtils.isBlank(newXmlBase)) ? "" : newXmlBase;
+    oldXmlBase = (StringUtils.isBlank(oldXmlBase)) ? "" : oldXmlBase; //sanitized
+    String uri = absoluteUri;
+    if((!newXmlBase.isEmpty() && StringUtils.startsWith(absoluteUri, newXmlBase))
+        || StringUtils.containsAny(absoluteUri, "identifiers.org/", "bioregistry.io/")) {
+      //nothing to do here
+    } else if(!oldXmlBase.isEmpty() && StringUtils.startsWith(absoluteUri, oldXmlBase)) {
+      uri = StringUtils.replace(absoluteUri, oldXmlBase, newXmlBase);
+    } else if (StringUtils.containsNone(absoluteUri, ':', '/', '#')) {
+      uri = newXmlBase + absoluteUri;
+    } else if (StringUtils.contains(absoluteUri, '#')){
+      uri = newXmlBase + StringUtils.substringAfterLast(absoluteUri, "#");
+    } else if (StringUtils.contains(absoluteUri, '/')){
+      uri = newXmlBase + StringUtils.substringAfterLast(absoluteUri, "/");
+    }
+    return uri; //not null
+  }
+
+  /**
    * Loads the BioPAX model from a Gzip archive
    * previously created by the same cpath2 instance.
    *

@@ -43,6 +43,8 @@ public class QuickTest {
         //and now three Proteins will become one
         ModelUtils.mergeEquivalentPhysicalEntities(model);
         assertEquals(1, model.getObjects(Protein.class).size());
+
+        assertTrue("merge:some_protein/foo/123".matches("^\\w+:.+$"));
     }
 
 }

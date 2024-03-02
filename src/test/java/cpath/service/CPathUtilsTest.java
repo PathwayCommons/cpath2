@@ -134,19 +134,45 @@ public class CPathUtilsTest {
 
 	@ParameterizedTest
 	@CsvSource(textBlock = """
-      bioregistry.io/chebi:1, CHEBI:1
-     	http://bioregistry.io/uniprot:A, A
-   		https://bioregistry.io/uniprot:A, A
-   		http://identifiers.org/chebi/CHEBI:1, CHEBI:1
-   		identifiers.org/chebi/CHEBI:1, CHEBI:1
-   		identifiers.org/uniprot/A, A
-   		identifiers.org/pubchem:1, CID:1
-     	bioregistry.io/pubchem.substance:1, SID:1
-     	bioregistry.io/pubchem.compound:1, CID:1
-   		a.foo/bar,
+			bioregistry.io/chebi:1, CHEBI:1
+			http://bioregistry.io/uniprot:A, A
+			https://bioregistry.io/uniprot:A, A
+			http://identifiers.org/chebi/CHEBI:1, CHEBI:1
+			identifiers.org/chebi/CHEBI:1, CHEBI:1
+			identifiers.org/uniprot/A, A
+			identifiers.org/pubchem:1, CID:1
+			bioregistry.io/pubchem.substance:1, SID:1
+			bioregistry.io/pubchem.compound:1, CID:1
+			a.foo/bar,
 			"""
 	) //the last (expected value) above is: null
 	void idFromNormalizedUri(String uri, String expected) {
 			assertEquals(expected, CPathUtils.idFromNormalizedUri(uri));
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			bioregistry.io/chebi:1,,,bioregistry.io/chebi:1
+			bioregistry.io/chebi:1, foo, bar, bioregistry.io/chebi:1
+			identifiers.org/chebi:1,foo,bar,identifiers.org/chebi:1
+			bioregistry.io/chebi:1,,bar,bioregistry.io/chebi:1
+			bioregistry.io/chebi:1,foo,,bioregistry.io/chebi:1
+			http://bioregistry.io/chebi:1, foo, foo, http://bioregistry.io/chebi:1
+			uniprot:1, foo, bar:, uniprot:1
+			uniprot:1, , , uniprot:1
+			uniprot:1, , bar:, uniprot:1
+			a.foo/bar,,,bar
+			https://a.foo/bar1, https://a.foo/, xyz:,xyz:bar1
+			http://a.foo#bar1, https://a.foo#, xyz:,xyz:bar1
+			ftp://a.foo#bar1, foo,xyz:, xyz:bar1
+			foo#123, foo#, bar:, bar:123
+			foo#123, foo:, bar:, bar:123
+			http://smpdb.ca/pathways/#DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0,,foo:,foo:DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0
+			foo:123, foo:, bar:, bar:123
+			foo:123,, bar:, foo:123
+			"""
+	)
+	void rebaseUri(String uri, String obase, String nbase, String expected) {
+		assertEquals(expected, CPathUtils.rebaseUri(uri, obase, nbase));
 	}
 }

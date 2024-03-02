@@ -36,8 +36,6 @@ import java.util.zip.GZIPOutputStream;
 public final class Merger {
 
   private static final Logger log = LoggerFactory.getLogger(Merger.class);
-
-	private final String xmlBase;
 	private final Service service;
 	private final Set<String> supportedTaxonomyIds;
 	private final Model warehouseModel;
@@ -52,13 +50,12 @@ public final class Merger {
 	Merger(Service service)
 	{
 		this.service = service;
-		this.xmlBase = service.settings().getXmlBase();
 		this.supportedTaxonomyIds = service.settings().getOrganismTaxonomyIds();
 		this.warehouseModel = service.loadWarehouseModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
 		log.info("Successfully imported Warehouse BioPAX archive.");
 		this.mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-		this.mainModel.setXmlBase(xmlBase);
+		this.mainModel.setXmlBase(service.settings().getXmlBase());
 		log.info("Created a new empty main BioPAX model.");
 	}
 
@@ -77,42 +74,37 @@ public final class Merger {
 	
 	public void merge() {
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
-
 		//init the lucene index
 		service.initIndex(mainModel, service.settings().indexDir(), false);
-
 		for (Datasource datasource : service.metadata().getDatasources()) {
 			if(datasource.getType().isNotPathwayData()) {
-				log.info("Skip Warehouse data: " + datasource);
+				log.info("Skip Warehouse data: {}", datasource);
 				continue;
 			}
 			Model providerModel = merge(datasource);
-			save(providerModel, datasource);
-
-			log.info("Replacing conflicting URIs in " + datasource.getIdentifier() + " before merging into Main...");
+			log.info("Replacing xml:base of non-generated/normalized URIs in {}", datasource.getIdentifier());
+			rebaseUris(providerModel, datasource.getIdentifier()+":");
+			log.info("Replacing conflicting URIs in {} before merging into Main...", datasource.getIdentifier());
 			replaceConflictingUris(providerModel, mainModel);
-
-			log.info("Merging '" + datasource.getIdentifier() + "' model into the Main BioPAX model...");
+			save(providerModel, datasource);
+			log.info("Merging '{}' model into the Main BioPAX model...", datasource.getIdentifier());
 			simpleMerger.merge(mainModel, providerModel);
 		}
-
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
-
-		log.info("Saving the main BioPAX Model to file: " + service.settings().mainModelFile());
 		save();
-
 		service.setModel(mainModel);
 		log.info("All merged!");
 	}
 
-	//remove bad unif. and rel. xrefs
+	//remove bad unification and relationship xrefs, if any;
+	//otherwise, just lowercase the xref.db (but not id, which is case-sensitive)
 	private void cleanupXrefs(Model m) {
 		for(Xref x : new HashSet<>(m.getObjects(Xref.class))) {
 			if(!(x instanceof PublicationXref)) {
 				//remove bad xrefs from the model and properties
-				if (x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
+				if (StringUtils.isBlank(x.getDb()) || StringUtils.isBlank(x.getId())) {
 					m.remove(x);
-					//remove from properties
+					//also remove from biopax properties
 					for (XReferrable owner : new HashSet<>(x.getXrefOf())) {
 						owner.removeXref(x);
 					}
@@ -124,33 +116,37 @@ public final class Merger {
 	}
 
 	private Model merge(Datasource datasource) {
+		log.info("Merging {}", datasource.getIdentifier());
+		//try to load already merged/processed model first, if there exists
 		Model providerModel = service.loadBiopaxModelByDatasource(datasource);
-		if(providerModel == null)
-		{
-			log.info("Merging " + datasource.getIdentifier());
+		if(providerModel == null) {
+			//create a new model to merge several source files into one
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-			providerModel.setXmlBase(xmlBase);
-
+			//set xml:base for all generated/normalized objects
+			providerModel.setXmlBase(service.settings().getXmlBase());
 			for (String f : datasource.getFiles()) {
 				String fn = CPathUtils.normalizedFile(f);
 				if (Files.notExists(Paths.get(fn))) {
-					log.warn("Skipped " + datasource.getIdentifier() + " - no normalized data found.");
+					log.warn("Skipped {} - no normalized data found", datasource.getIdentifier());
 					continue;
 				}
-				log.info("Processing: " + fn);
+				log.info("Processing: {}", fn);
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
 				InputStream inputStream = CPathUtils.gzipInputStream(fn);
 				if(inputStream == null) {
-					log.error("Skipped " + fn + " - " + "cannot read.");
+					log.error("Skipped {} - cannot read", fn);
 					continue;
 				}
-				//merge each input file model with Warehouse model (using id-mapping too) and into providerModel (one-datasource model)
-				merge(fn, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
+				//merge each input file model with Warehouse model (using id-mapping too) and into providerModel (one-datasource)
+				//
+				Model oneFileModel =  (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
+				merge(fn, oneFileModel, providerModel);
 			}
 
+			log.info("Removing dangling utility class elements from {}...", datasource.getIdentifier());
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
 
-			log.info("Normalizing generics (" + datasource.getIdentifier() + ")...");
+			log.info("Normalizing generics in {}...", datasource.getIdentifier());
 			ModelUtils.normalizeGenerics(providerModel);
 
 			//for (already normalized) BioSource, also add the name from
@@ -165,14 +161,14 @@ public final class Merger {
 				}
 			}
 
-			log.info("Breaking pathway/pathwayComponent cycles (" + datasource.getIdentifier() + ")...");
+			log.info("Breaking pathway/pathwayComponent cycles in {}...", datasource.getIdentifier());
 			for(Pathway pathway : providerModel.getObjects(Pathway.class)) {
 				breakPathwayComponentCycle(pathway);
 			}
 
-			log.info("Done merging " + datasource);
+			log.info("Done merging {}", datasource);
 		} else {
-			log.info("Loaded BioPAX model from " + service.settings().biopaxFileNameFull(datasource.getIdentifier()));
+			log.info("Loaded BioPAX model from {}", service.settings().biopaxFileNameFull(datasource.getIdentifier()));
 		}
 
 		return providerModel;
@@ -206,23 +202,22 @@ public final class Merger {
 	 * directory.
 	 */
 	protected void save() {
-		try {		
+		try {
+			log.info("Saving the main BioPAX Model to file: {}", service.settings().mainModelFile());
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel, 
-				new GZIPOutputStream(new FileOutputStream(
-						service.settings().mainModelFile())));
+				new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
 		} catch (Exception e) {
-			throw new RuntimeException("Failed updating the main BioPAX archive.", e);
+			throw new RuntimeException("Failed saving the main BioPAX archive.", e);
 		}
 	}
 
-	private void save(Model datasourceModel, Datasource datasource) {
-		try {		
-			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(datasourceModel, 
-				new GZIPOutputStream(new FileOutputStream(
-						service.settings().biopaxFileNameFull(datasource.getIdentifier()))));
+	private void save(Model model, Datasource ds) {
+		try {
+			String path = service.settings().biopaxFileNameFull(ds.getIdentifier());
+			log.info("Saving model:'{}' to file: {}", ds.getIdentifier(), path);
+			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, new GZIPOutputStream(new FileOutputStream(path)));
 		} catch (Exception e) {
-			throw new RuntimeException("Failed updating the " + 
-					datasource.getIdentifier() + " BioPAX archive.", e);
+			throw new RuntimeException("Failed updating the " + ds.getIdentifier() + " BioPAX archive.", e);
 		}
 	}
 	
@@ -237,7 +232,7 @@ public final class Merger {
 	 * canonical warehouse or previously existing target ones). 
 	 * 
 	 * @param description datasource (metadata) description
-	 * @param source input model
+	 * @param source input model (normally a one-datasource one-file model here)
 	 * @param target model to merge into
 	 */
 	protected void merge(final String description, final Model source, final Model target) {
@@ -245,8 +240,7 @@ public final class Merger {
 
 		cleanupXrefs(source);
 
-		log.info("Searching for canonical or existing Entity References " +
-				" to replace the original ones ("+srcModelInfo+")...");
+		log.info("Searching for canonical/existing ERs to replace the original ones in {}...", srcModelInfo);
 		final Map<EntityReference, EntityReference> replacements = new HashMap<>();
 		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
 		for (EntityReference origEr: new HashSet<>(source.getObjects(EntityReference.class)))
@@ -283,9 +277,9 @@ public final class Merger {
 							genericEr.removeMemberEntityReference(origEr);
 						}
 						source.remove(origEr);
-						log.info("Removed a dangling/member " + origEr.getModelInterface().getSimpleName()
-							+ " for which no warehouse ER was found: " + origEr.getUri() + "; organism: "
-								+ ((SequenceEntityReference) origEr).getOrganism());
+						log.info("Removed a dangling/member: {} as no warehouse ER was found: {}; organism: {}",
+								origEr.getModelInterface().getSimpleName(), origEr.getUri(),
+								((SequenceEntityReference) origEr).getOrganism());
 					}
 				}
 			}
@@ -299,22 +293,22 @@ public final class Merger {
 		}
 		
 		// Replace objects in the source model
-		log.info("Replacing objects ("+srcModelInfo+")...");	
+		log.info("Replacing objects in {}...", srcModelInfo);
 		ModelUtils.replace(source, replacements);
 		
-		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
+		log.info("Migrate properties, such as original entityFeature and xref in {}...", srcModelInfo);
 		copySomeOfPropertyValues(replacements, target);
 
 		filterOutUnwantedOrganismInteractions(source); //do carefully
 
 		// cleaning up dangling objects (including the replaced above ones)
-		log.info("Removing dangling objects ("+srcModelInfo+")...");
+		log.info("Removing dangling objects in {}...", srcModelInfo);
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
 
 		//This improves our graph queries results and simple format output:
 		xrefByMapping(source, srcModelInfo, target);
 
-		log.info("Replacing conflicting URIs, if any (" + srcModelInfo + ")");
+		log.info("Replacing conflicting URIs, if any, in {}", srcModelInfo);
 		replaceConflictingUris(source, target);
 		
 		log.info("Merging into the target one-datasource BioPAX model...");
@@ -323,7 +317,7 @@ public final class Merger {
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
 		simpleMerger.merge(target, source);
 
-		log.info("Merged " + srcModelInfo + ".");
+		log.info("Merged {}", srcModelInfo);
 	}
 
 	private void filterOutUnwantedOrganismInteractions(Model source) {
@@ -363,7 +357,7 @@ public final class Merger {
 
 			//unless jumped to 'miLoop:' label above, remove this MI and participants
 			source.remove(mi);
-			log.info("MI is removed (all participants come from unwanted organisms): " + mi.getUri());
+			log.info("MI is removed (all participants come from unwanted organisms): {}", mi.getUri());
 			for(Entity e : new HashSet<>(mi.getParticipant())) {
 				mi.removeParticipant(e);
 				//ok to remove from the model as well, because some may come back after merging
@@ -373,29 +367,43 @@ public final class Merger {
 		}
 	}
 
-	private void replaceConflictingUris(Model source, Model target) {
+	void replaceConflictingUris(Model source, Model target) {
 		//iterate over a new set to avoid concurrent mod. ex. in CPathUtils.changeUri
-		for(BioPAXElement bpe : new HashSet<>(source.getObjects()))
-		{
+		for(BioPAXElement bpe : new HashSet<>(source.getObjects())) {
 			String currUri = bpe.getUri();
+			BioPAXElement existBpe = target.getByID(currUri);
 			if(
 				(!(bpe instanceof ProteinReference) && (StringUtils.containsIgnoreCase(currUri, "bioregistry.io/uniprot")))
 				||
 				(!(bpe instanceof SmallMoleculeReference) && (StringUtils.containsIgnoreCase(currUri, "bioregistry.io/chebi")))
+				||
+				(existBpe != null && bpe.getModelInterface() != existBpe.getModelInterface())
 			){
-				//Replace URI due to potential type collision
+				//Replace URI due to type collision
 				CPathUtils.replaceUri(source, bpe,
-						xmlBase + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
-			}
-			else {
-				BioPAXElement targetBpe = target.getByID(currUri);
-				if (targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface()) {
-					//Replace due to target has the same URI for a different type object
-					CPathUtils.replaceUri(source, bpe,
-							xmlBase + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
-				}
+						target.getXmlBase() + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
 			}
 		}
+	}
+
+	/*
+	 * Replaces xml:base for the normalized model and updates the URis of all non-normalized objects
+	 * (mostly Entity, Evidence, etc.)
+	 * The model is already normalized, which means the URIs of many xrefs, CVs, entity reference start with
+	 * bioregistry.io/ or are CURIEs like e.g. chebi:1234, pubmed:1234556.
+	 */
+	void rebaseUris(Model model, String xmlBase) {
+		Assert.hasText(xmlBase, "Blank/null value is not allowed for xmlBase");
+		for(BioPAXElement bpe : new HashSet<>(model.getObjects())) {//copy the collection due to CPathUtils.replaceUri modifies the model map
+			String currUri = bpe.getUri();
+			String uri = CPathUtils.rebaseUri(currUri, null, xmlBase); //null - prevents replacing for already normalized objects
+			//if uri was updated but another object uses the new uri, add the hash to the end
+			if(!StringUtils.equals(currUri, uri) && model.getByID(uri) != null) {
+				uri = String.format("%s_%s", uri, ModelUtils.md5hex(currUri));
+			}
+			CPathUtils.replaceUri(model, bpe, uri);
+		}
+		model.setXmlBase(xmlBase);
 	}
 
 	/*
@@ -412,7 +420,7 @@ public final class Merger {
 	*/
 	private void xrefByMapping(Model source, String srcModelInfo, Model target) {
 		log.info("Using original xrefs or names and id-mapping, add UniProt/ChEBI/HGNC xrefs " +
-				" (unless they're too many) to not-merged PE/ERs (" + srcModelInfo + ")");
+				" (unless they're too many) to not-merged PE/ERs ({})", srcModelInfo);
 		for(Entity pe : new HashSet<>(source.getObjects(Entity.class)))
 		{
 			if(pe instanceof PhysicalEntity) {
@@ -472,17 +480,6 @@ public final class Merger {
 					}	
 				}
 			}				
-
-// TODO: original xrefs of a known/matched ER seem useless (can get later from the primary ID); so why to copy?..
-			// Copy orig. ER xrefs to the PEs (old xrefs are gone after the ERs substitution)
-//			for(Xref x : new HashSet<>(old.getXref())) {
-//				if(x instanceof UnificationXref) {//sub with RX
-//					x = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, x.getDb(), x.getId(), model, false);
-//				}
-//				for(SimplePhysicalEntity owner : old.getEntityReferenceOf()) {
-//					owner.addXref(x);
-//				}
-//			}
 		}
 	}
 
@@ -503,11 +500,11 @@ public final class Merger {
 			if(er != null && !er.getXref().isEmpty())
 				bpe = er;
 		}
+
 		//shortcut
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty()) {
 			if(!isComplexOrGeneric(bpe))
-				log.info("non-generic " + bpe.getModelInterface().getSimpleName()
-						+ " (" + bpe.getUri() + ") has no xrefs/names.");
+				log.info("non-generic {} ({}) has no xrefs/names", bpe.getModelInterface().getSimpleName(), bpe.getUri());
 			return;
 		}
 
@@ -550,11 +547,11 @@ public final class Merger {
 			if(er != null && !er.getXref().isEmpty())
 				bpe = er;
 		}
+
 		//shortcut
 		if(bpe.getXref().isEmpty()) {
 			if(!isComplexOrGeneric(bpe))
-				log.info("non-generic " + bpe.getModelInterface().getSimpleName()
-						+ " (" + bpe.getUri() + ") has no xrefs/names.");
+				log.info("non-generic {} ({}) has no xrefs/names", bpe.getModelInterface().getSimpleName(), bpe.getUri());
 			return;
 		}
 
@@ -574,8 +571,7 @@ public final class Merger {
 				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION);
 			}
 			else if(primaryACs.size() > maxNumXrefsToAdd) {
-				log.debug(bpe.getUri() + ", " + organismRemark + ", ambiguously maps to many UNIPROT ACs: "
-						+ primaryACs.size());
+				log.debug("{}, {}, ambiguously maps to many UNIPROT ACs: {}", bpe.getUri(), organismRemark, primaryACs.size());
 				//remove some
 				Iterator<String> it = primaryACs.iterator();
 				while (it.hasNext() && primaryACs.size() > maxNumXrefsToAdd) {
@@ -586,9 +582,12 @@ public final class Merger {
 			}
 		} else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
 			// let's map those to primary accessions, then - to HGNC Symbols, and then remove other ids
-			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class, "UNIPROT", "uniprot"));
-			if(primaryACs.isEmpty())
-				primaryACs.addAll(idMappingByXrefs(bpe, RelationshipXref.class, "UNIPROT", "uniprot"));
+			primaryACs.addAll(idMappingByXrefs(bpe, UnificationXref.class,
+					"UNIPROT", "uniprot"));
+			if(primaryACs.isEmpty()) {
+				primaryACs.addAll(idMappingByXrefs(bpe, RelationshipXref.class,
+						"UNIPROT", "uniprot"));
+			}
 			//remove existing uniprot xrefs, add primary ones (unsupported species IDs must disappear)
 			if(!primaryACs.isEmpty()) {
 				Collection<String> newACs = new HashSet<>(primaryACs);
@@ -688,7 +687,7 @@ public final class Merger {
 				Set<String> mp = service.map(List.of(id), "UNIPROT");
 				Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "UNIPROT");
 				if (ers.size() > 1) {
-					log.debug(origUri + ", by URI, ambiguously maps to " + ers.size() + " warehouse PRs");
+					log.debug("{}: by URI, ambiguously maps to {} warehouse PRs", origUri, ers.size());
 					return null;
 				} else if (ers.size() == 1)
 					return (ProteinReference) ers.iterator().next();
@@ -704,7 +703,7 @@ public final class Merger {
 				ers = entRefFromWhByPrimaryId(primaryIds, "UNIPROT");
 			}
 			if (ers.size() > 1) {
-				log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse PRs");
+				log.debug("{}: by Xrefs, ambiguously maps to {} warehouse PRs", origUri, ers.size());
 				return null;
 			} else if (ers.size() == 1) {
 				return (ProteinReference) ers.iterator().next();
@@ -743,8 +742,8 @@ public final class Merger {
 
 		final Set<T> filteredXrefs = new ClassFilterSet<>(element.getXref(), xrefClassForMapping);
 		if(filteredXrefs.isEmpty()) {
-			log.debug("no " + xrefClassForMapping.getSimpleName() +
-				" found for " + element.getModelInterface().getSimpleName() + ": " + element.getUri());
+			log.debug("no {} found for {}: {}",	xrefClassForMapping.getSimpleName(),
+					element.getModelInterface().getSimpleName(),  element.getUri());
 		} else {
 			final Set<String> sourceIds = new HashSet<>();
 			for (T x : filteredXrefs) {
@@ -813,7 +812,7 @@ public final class Merger {
 				Set<String> mp = service.map(List.of(id), "CHEBI");
 				Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "CHEBI");
 				if (ers.size() > 1) {
-					log.debug(origUri + ": by URI (ID part), ambiguously maps to " + ers.size() + " warehouse SMRs");
+					log.debug("{}: by URI (ID part), ambiguously maps to {} warehouse SMRs", origUri, ers.size());
 				} else if (!ers.isEmpty()) //size==1
 					return (SmallMoleculeReference) ers.iterator().next();
 			}
@@ -827,7 +826,7 @@ public final class Merger {
 				ers = entRefFromWhByPrimaryId(primaryIds, "CHEBI");
 			}
 			if (ers.size() > 1) {
-				log.debug(origUri + ", by xrefs, ambiguously maps to " + ers.size() + " warehouse SMRs");
+				log.debug("{}: by xrefs, ambiguously maps to {} warehouse SMRs", origUri, ers.size());
 				return null;
 			} else if (ers.size() == 1) {
 				return (SmallMoleculeReference) ers.iterator().next();
@@ -838,11 +837,11 @@ public final class Merger {
 		Set<String> mp = mapSmallMoleculeByExactName(orig);
 		Set<EntityReference> ers = entRefFromWhByPrimaryId(mp, "CHEBI");
 		if(ers.size()>1) {
-			log.debug(origUri + ", by names, ambiguously maps to " + ers.size() + " warehouse SMRs");
+			log.debug("{}: by names, ambiguously maps to {} warehouse SMRs", origUri, ers.size());
 			return null;
 		} else if (ers.size()==1) {
 			SmallMoleculeReference smr = (SmallMoleculeReference) ers.iterator().next();
-			log.warn(origUri + " is merged by name(s) to one " + smr.getUri());
+			log.warn("{} is merged by name(s) to one {}", origUri, smr.getUri());
 			return smr;
 		}
 

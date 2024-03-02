@@ -65,6 +65,8 @@ public class ConsoleApplicationIT
 
   private final BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
 
+  private final String DS_XML_BASE = "merge:"; //we load/merge all files from src/test/resources/merge/ like if they were from one datasource/provider
+
   /*
    * This tests that the BioPAX Validator framework
    * is properly configured and usable in the current context.
@@ -122,7 +124,7 @@ public class ConsoleApplicationIT
     simpleReader.mergeDuplicates(true);
 
     Normalizer normalizer = new Normalizer();
-    String base = "test:";
+    String base = "l3test:";
     normalizer.setXmlBase(base);
 
     Model m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
@@ -140,7 +142,7 @@ public class ConsoleApplicationIT
     assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "c00002", UnificationXref.class)));
     assertTrue(m.containsID(Normalizer.uri(base, "kegg compound", "C00002", UnificationXref.class)));
 
-    // However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerger) together
+    // However, using the validator with autofix=true and then normalizer (like in Premerger) together
     // will, in fact, fix and merge these two xrefs
     m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
     Validation v = new Validation(new BiopaxIdentifier(), null, true, null, 0, null);
@@ -245,19 +247,27 @@ public class ConsoleApplicationIT
 
     // **** MERGE ***
     Merger merger = new Merger(service);
-    /* For simplicity, we don't use Datasource and thus bypass some Merger methods
-     * (in production, we'd simply run as merger.merge())
-     */
-    //Load the test models from classpath:resources/merge folder
+    // For simplicity, we don't use Datasource and thus bypass some Merger methods
+    // (in production, we'd simply run as merger.merge())
+    // Load the test models from classpath:resources/merge folder
     final List<Model> pathwayModels = initPathwayModels();
-    Model target = BioPAXLevel.L3.getDefaultFactory().createModel();
+    Model providerModel = BioPAXLevel.L3.getDefaultFactory().createModel(); //simulate a single datasource; xml:base is not set
+    //in prod, we also set xml:base from application.properties when normalizing/merging provider's sub-models!
+    providerModel.setXmlBase(service.settings().getXmlBase());
     for (Model m : pathwayModels) {
-      ModelUtils.removeObjectsIfDangling(m, UtilityClass.class);
-      ModelUtils.normalizeGenerics(m);
-      merger.merge(m.getName(), m, target);
+      // all the input models were normalized and use same settings.xmlBase (existing URIs ain't replaced yet)
+      // normally all the biopax files of the same provider/datasource use the same xml:base initially
+      // (e.g. "http://smpdb.ca/pathways/#" or "https://pantherdb.org/pathways/biopax/P04373#"),
+      // but it's not the case for our random test data files here...
+      merger.merge(m.getName(), m, providerModel);
     }
     Model mainModel = merger.getMainModel();
-    mainModel.merge(target);
+    mainModel.setXmlBase(service.settings().getXmlBase());
+    ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
+    ModelUtils.normalizeGenerics(providerModel);
+    merger.rebaseUris(providerModel, DS_XML_BASE); //important
+    merger.replaceConflictingUris(providerModel, mainModel);
+    mainModel.merge(providerModel);
     ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
     //export the main model (for manual check up)
     //it's vital to save to and then read the model from file,
@@ -265,11 +275,11 @@ public class ConsoleApplicationIT
     merger.save();
 
     //load back the integrated test data model from the archive and validate it...
-    Model m = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
-    assertMerge(m);
+    mainModel = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+    assertMerge(mainModel);
 
     //pid, reactome,humancyc,.. were there in the test
-    assertEquals(4, m.getObjects(Provenance.class).size());
+    assertEquals(4, mainModel.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
     Datasource md = new Datasource("test", Collections.singletonList("Reactome"),
@@ -279,20 +289,20 @@ public class ConsoleApplicationIT
             0, 0, 0);
 
     // normally, setProvenanceFor gets called during Premerge stage
-    md.setProvenanceFor(m, service.settings().getXmlBase());
+    md.setProvenanceFor(mainModel, service.settings().getXmlBase());
     // which EXPLICITLY removes all other Provenance values from dataSource properties;
-    assertEquals(1, m.getObjects(Provenance.class).size());
+    assertEquals(1, mainModel.getObjects(Provenance.class).size());
 
     // SERVICE-TIER features tests
 
     // Before next tests - update the main file due to changes to dataSource prop. above
     // (persistent and in-memory models must be the same as the indexer/searcher reads the model from file)
-    new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m,
+    new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel,
       new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
 
     //index (it uses additional id-mapping service internally)
-    service.setModel(m);
-    service.index().save(m);
+    service.setModel(mainModel);
+    service.index().save(mainModel);
 
     // Test FULL-TEXT SEARCH
     SearchResponse resp;
@@ -333,7 +343,7 @@ public class ConsoleApplicationIT
 
     // fetch as SIF; apply only one SIF rule
     res = service.fetch(OutputFormat.SIF, Collections.singletonMap("pattern", "controls-production-of"),
-      false, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
+      false, DS_XML_BASE+"glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
     assertTrue(res instanceof DataResponse);
     assertFalse(res.isEmpty());
     Object respData = ((DataResponse) res).getData();
@@ -343,10 +353,10 @@ public class ConsoleApplicationIT
     assertFalse(((DataResponse) res).getProviders().isEmpty());
 
     // fetch a small molecule by URI
-    res = service.fetch(OutputFormat.BIOPAX, null, false,
-      "bioregistry.io/chebi:20");
+    res = service.fetch(OutputFormat.BIOPAX, null, false, "bioregistry.io/chebi:20");
     assertNotNull(res);
     assertFalse(res.isEmpty());
+
     // fetch the same small molecule by ID (ChEBI, contains ":" in it...)
     res = service.fetch(OutputFormat.BIOPAX, null, false, "CHEBI:20");
     assertTrue(res instanceof DataResponse);
@@ -381,12 +391,13 @@ public class ConsoleApplicationIT
   // test everything
   // WARN: CHEBI ID, names, relationships here might be FAKE ones - just for these tests!
   private void assertMerge(Model mergedModel) {
-    final String XML_BASE = service.settings().getXmlBase();
+    String XML_BASE = service.settings().getXmlBase();
     // test proper merge of protein reference
-    assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
+    assertTrue(mergedModel.containsID(DS_XML_BASE+"Protein_54"));
+    assertFalse(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54")); //due to orig. xml base was rewritten
     assertTrue(mergedModel.containsID("bioregistry.io/uniprot:P27797")); //CALR_HUMAN
     assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
-    final String humanUri = Normalizer.uri(XML_BASE, "taxonomy", "9606", BioSource.class);
+    String humanUri = Normalizer.uri(XML_BASE, "taxonomy", "9606", BioSource.class);
     assertTrue(mergedModel.containsID(humanUri));
     String clUri = Normalizer.uri(XML_BASE, "GO", "GO:0005737", CellularLocationVocabulary.class);
     assertTrue(mergedModel.containsID(clUri));
@@ -407,14 +418,16 @@ public class ConsoleApplicationIT
     assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 
     // test proper merge of small molecule reference
-    assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
+    assertFalse(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
+    assertTrue(mergedModel.containsID(DS_XML_BASE+"beta-D-fructose_6-phosphate"));
     assertTrue(mergedModel.containsID("bioregistry.io/chebi:20"));
     SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:20");
     assertNotNull(smr.getStructure());
     assertSame(StructureFormatType.InChI, smr.getStructure().getStructureFormat());
     assertNotNull(smr.getStructure().getStructureData());
 
-    assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
+    assertFalse(mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
+    assertFalse(mergedModel.containsID(DS_XML_BASE+"ChemicalStructure_8"));
 
     // A special test id-mapping file (some PubChem SIDs and CIDs to ChEBI) is there present.
     // The PubChem:14438 SMR would not be replaced by CHEBI:20 if it were not having standard URI
@@ -424,7 +437,7 @@ public class ConsoleApplicationIT
     // but 14439 gets successfully replaced/merged
     assertFalse(mergedModel.containsID("bioregistry.io/pubchem.substance:14439")); //maps to CHEBI:28 by xrefs
 
-    SmallMolecule sm = (SmallMolecule) mergedModel.getByID("http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate");
+    SmallMolecule sm = (SmallMolecule) mergedModel.getByID(DS_XML_BASE+"alpha-D-glucose_6-phosphate");
     smr = (SmallMoleculeReference) sm.getEntityReference();
     assertNotNull(smr);
     assertEquals("bioregistry.io/chebi:422", smr.getUri());
@@ -438,7 +451,7 @@ public class ConsoleApplicationIT
     assertEquals(3, msmr.getXref().size());
     assertTrue(msmr.getMemberEntityReferenceOf().isEmpty());
 
-    sm = (SmallMolecule) mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+    sm = (SmallMolecule) mergedModel.getByID(DS_XML_BASE+"beta-D-fructose_6-phosphate");
     smr = (SmallMoleculeReference) sm.getEntityReference();
     assertNotNull(smr);
     assertEquals(smr, msmr);//CHEBI:20
@@ -468,12 +481,14 @@ public class ConsoleApplicationIT
     }
 
     //SmallMoleculeReference165390 SMR should have been replaced with one from the warehouse (ChEBI) or removed
-    assertNull(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")); //shoulda match by ID and become bioregistry.io/chebi:28!
-    assertNull(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"));
+    assertFalse(mergedModel.containsID("http://identifiers.org/chebi/CHEBI:28"));//shoulda match by ID and become bioregistry.io/chebi:28!
+    assertTrue(mergedModel.containsID("bioregistry.io/chebi:28"));
+    assertFalse(mergedModel.containsID("http://biocyc.org/biopax/biopax-level3#SmallMoleculeReference165390"));//orig. URI base was replaced
+    assertFalse(mergedModel.containsID(DS_XML_BASE+"SmallMoleculeReference165390"));
     // check the canonical SMR has proper member/memberOf
     smr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:28");
     // - was matched/replaced by the same URI Warehouse SMR
-    sm = (SmallMolecule) mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMolecule173158");
+    sm = (SmallMolecule) mergedModel.getByID(DS_XML_BASE+"SmallMolecule173158");
     assertFalse(smr.getXref().isEmpty());
     assertTrue(smr.getMemberEntityReference().isEmpty()); //no memberERs after 2015/11/26 change in the converter
     assertFalse(smr.getEntityReferenceOf().isEmpty());
@@ -483,8 +498,7 @@ public class ConsoleApplicationIT
     smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141"); //the orig.; wasn't matched/replaced
     assertNotNull(smr);
 
-    msmr = (SmallMoleculeReference) mergedModel.getByID(
-      "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
+    msmr = (SmallMoleculeReference) mergedModel.getByID(DS_XML_BASE+"SmallMoleculeReference171684");
     assertNotNull(msmr);
 
   	//there were 3 member ERs in orig. file, but e.g. SmallMoleculeReference165390 was removed (dangling after replacing CHEBI:28)
@@ -499,6 +513,7 @@ public class ConsoleApplicationIT
     SimpleIOHandler reader = new SimpleIOHandler();
     Normalizer normalizer = new Normalizer();
     normalizer.setXmlBase(service.settings().getXmlBase());
+    //all the normalized models will have this xml:base (but existing Entities' uris are not modified yet)
     reader.mergeDuplicates(true);
 
     Model model = reader.convertFromOWL(resourceLoader

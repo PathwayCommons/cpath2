@@ -15,7 +15,6 @@ import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +57,14 @@ final class NetPathCleaner implements Cleaner {
 				}
 			}
 			
-			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<>(cv.getXref()), UnificationXref.class);
-			//skip if there is a unif. xref
+			Set<UnificationXref> urefs = new ClassFilterSet<>(new HashSet<>(cv.getXref()), UnificationXref.class);
+			//skip if there is a unification xref
 			if(!urefs.isEmpty()) {
 				log.info("(skip) there are unif.xref: " + urefs); 
 				continue; //perhaps, will never happen (I manually checked a couple of orig. files)
 			}
 				
-			Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
-					new HashSet<>(cv.getXref()), RelationshipXref.class);
-			
+			Set<RelationshipXref> rxrefs = new ClassFilterSet<>(new HashSet<>(cv.getXref()), RelationshipXref.class);
 			for(RelationshipXref x : rxrefs) {
 				//remove and skip for bad xref (just in case there are any)
 				if(x.getDb()==null || x.getId()==null) {
@@ -78,7 +74,7 @@ final class NetPathCleaner implements Cleaner {
 				}
 				
 				String id = x.getId();
-				String uri = "UnificationXref_" + BaseCleaner.encode(x.getDb() + "_"+ id);
+				String uri = "UX_" + BaseCleaner.encode(x.getDb() + "_"+ id);
 				UnificationXref ux = (UnificationXref) model.getByID(uri);
 				if(ux == null) {
 					ux = model.addNew(UnificationXref.class, uri);
@@ -102,7 +98,7 @@ final class NetPathCleaner implements Cleaner {
 					owner.removeXref(x);
 					owner.addXref(rx);
 				}			
-				log.info("replaced UnificationXref " + x + " with RX " + rx);
+				log.info("replaced UX {} with RX {}", x, rx);
 			}
 		}
 		
@@ -112,7 +108,7 @@ final class NetPathCleaner implements Cleaner {
 		try {
 			simpleReader.convertToOWL(model, cleanedData);
 		} catch (Exception e) {
-			throw new RuntimeException("clean(), Exception thrown while saving cleaned NetPath data", e);
-		}		
+			throw new RuntimeException("Failed to save cleaned NetPath model", e);
+		}
 	}
 }

@@ -46,8 +46,7 @@ final class KeggHsaCleaner implements Cleaner {
 			if(!uxrefs.isEmpty()) {
 				UnificationXref x = uxrefs.iterator().next();
 				if(x.getId() != null && x.getId().startsWith("hsa")) {
-					String uri = "http://identifiers.org/kegg.pathway/" + x.getId();
-					
+					String uri = "bioregistry.io/kegg.pathway:" + x.getId();
 					if(!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
 						newUriToEntityMap.put(uri, pw); //collect to replace URIs later (below)
 					} else { //shared unification xref bug

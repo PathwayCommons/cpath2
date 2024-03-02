@@ -35,9 +35,9 @@ final class ReactomeCleaner implements Cleaner {
     public void clean(InputStream data, OutputStream cleanedData)
 	{	
 		// import the original Reactome BioPAX model from file
+		log.info("Cleaning Reactome data...");
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(data);
-		log.info("Cleaning Reactome data...");
 
 		// Normalize pathway URIs, where possible, using Reactome stable IDs
 		// Since v54, Reactome stable ID format has been changed to like: "R-HSA-123456"
@@ -55,12 +55,12 @@ final class ReactomeCleaner implements Cleaner {
 				if (x.getDb() != null && x.getDb().equalsIgnoreCase("Reactome")) {
 					String stableId = x.getId();
 					//remove 'REACTOME:' (length=9) prefix if present (it's optional - according to MIRIAM)
-					if (stableId.startsWith("REACTOME:"))
+					if (stableId.startsWith("REACTOME:")) {
 						stableId = stableId.substring(9);
-					// stableID is like 'R-HSA-123456'
+						// stableID is like 'R-HSA-123456'
+					}
 
-					final String uri = "https://bioregistry.io/reactome:" + stableId;
-
+					final String uri = "bioregistry.io/reactome:" + stableId;
 					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
 						//save it in the map to replace the URI later (see below)
 						newUriToEntityMap.put(uri, proc);
@@ -96,8 +96,7 @@ final class ReactomeCleaner implements Cleaner {
 		// Since Reactome v54, stable ID format is different (not like REACT_12345...)
 		final Set<Xref> xrefsToRemove = new HashSet<>();
 		for(Xref xref: new HashSet<>(model.getObjects(Xref.class))) {
-			if(xref.getDb() != null && xref.getDb()
-				.toLowerCase().startsWith("reactome database"))
+			if(xref.getDb() != null && xref.getDb().toLowerCase().startsWith("reactome database"))
 			{
 				//remove the long comment (save some RAM)
 				if(!(xref instanceof PublicationXref))

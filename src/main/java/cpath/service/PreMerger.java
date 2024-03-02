@@ -428,12 +428,6 @@ final class PreMerger {
    */
   private void checkAndNormalize(Datasource datasource, File file) throws IOException
   {
-    // init Normalizer
-    Normalizer normalizer = new Normalizer();
-    //set xml:base to use instead of the original model's one (important!)
-    normalizer.setXmlBase(xmlBase);
-    normalizer.setFixDisplayName(true); // important
-
     final String filename = file.getPath();
     InputStream biopaxStream = new GZIPInputStream(new FileInputStream(file));
 
@@ -470,9 +464,8 @@ final class PreMerger {
         // count critical not fixed error cases (ignore warnings and fixed ones)
         int noErrors = validation.countErrors(null, null, null, null,
           true, true);
-        log.info("pipeline(), summary for " + filename + ". Critical errors found:" + noErrors + ". "
-          + validation.getComment().toString() + "; " + validation);
-
+        log.info("checkAndNormalize, summary for {}; critical errors: {}; {}; {}", filename, noErrors,
+            validation.getComment().toString(), validation);
       } catch (Exception e) {
         log.error("checkAndNormalize(), failed " + filename + "; " + e);
         return;
@@ -481,7 +474,13 @@ final class PreMerger {
 
     //Normalize URIs, Xrefs, etc.
     log.info("checkAndNormalize, normalizing "	+ filename);
-    normalizer.normalize(model, true);
+    // init Normalizer
+    Normalizer normalizer = new Normalizer();
+    //set xml:base to use instead of the original model's one
+    //important; the idea is to re-use normalized CVs, xrefs later on instead of duplicating...
+    normalizer.setXmlBase(xmlBase);
+    normalizer.setFixDisplayName(true); // important
+    normalizer.normalize(model, true); //using bioregistry.io prefix for xref.db values if possible
 
     // save
     try {

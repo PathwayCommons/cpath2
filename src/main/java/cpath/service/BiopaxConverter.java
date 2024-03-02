@@ -185,7 +185,7 @@ public class BiopaxConverter {
     // It won't traverse into sub-pathways; will use only pre-defined organisms.
     // GSEAConverter's 'skipSubPathways' option is a different beast from the PC web api's 'subpw':
     // given sub-model (no matter how it was cut from the main model), there is still choice
-    // to include gene IDs from sub-pathways (if there're any) into parent pathway's record or not.
+    // to include gene IDs from sub-pathways (if any) into parent pathway's record or not.
     GSEAConverter gseaConverter = new GSEAConverter(idType, true, true);
 
     if (options.containsKey("organisms")) {
@@ -209,7 +209,7 @@ public class BiopaxConverter {
                             boolean extended, Map<String, String> options) {
     String db;
     if ((db = options.get("db")) == null) {
-      db = "hgnc symbol"; //default
+      db = "hgnc"; //default
     }
 
     ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
