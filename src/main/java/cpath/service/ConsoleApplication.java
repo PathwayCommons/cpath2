@@ -364,7 +364,7 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println("# sh export.sh &");
 
     //write commands to the script file for 'All' and 'Detailed' BioPAX input files:
-    writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
+//    writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
     writeScriptCommands(service.settings().biopaxFileName("All"), writer, true);
 
     //rename SIF files that were cut from corresponding extended SIF (.txt) ones
@@ -392,16 +392,16 @@ public class ConsoleApplication implements CommandLineRunner {
     if (exportToGSEA) {
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
         prefix + "hgnc.gmt", "'hgnc.symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
-      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-        prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
+//      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
+//        prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
       writer.println("wait"); //important
-      writer.println("echo \"Done converting " + bpFilename + " to GSEA.\"");
+      writer.println("echo \"Converted " + bpFilename + " to GSEA.\"");
     }
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
       prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));
     //UniProt ID based extended SIF files can be huge, take too long to generate; skip for now.
     writer.println("wait"); //important
-    writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");
+    writer.println("echo \"Converted " + bpFilename + " to SIF.\"");
   }
 
   private Collection<String> findAllUris(Index index, Class<? extends BioPAXElement> type, String[] ds, String[] org) {

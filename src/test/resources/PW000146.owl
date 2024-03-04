@@ -22,11 +22,6 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-compound</bp:db>
 </bp:UnificationXref>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00027">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00027</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:UnificationXref rdf:ID="Reference/ChemSpider_937">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">937</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChemSpider</bp:db>
@@ -50,7 +45,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/261">
  <bp:xref rdf:resource="#Reference/UniProt_P15259" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Phosphoglycerate mutase 2</bp:displayName>
 </bp:ProteinReference>
 
@@ -63,13 +58,13 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/263">
  <bp:xref rdf:resource="#Reference/UniProt_P18669" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Phosphoglycerate mutase 1</bp:displayName>
 </bp:ProteinReference>
 
 <bp:ProteinReference rdf:ID="ProteinReference/260">
  <bp:xref rdf:resource="#Reference/UniProt_P07738" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Bisphosphoglycerate mutase</bp:displayName>
 </bp:ProteinReference>
 
@@ -99,15 +94,6 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChemSpider</bp:db>
 </bp:UnificationXref>
 
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00076">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway177" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/177" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000036" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00076" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Thiamine Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
 <bp:UnificationXref rdf:ID="Reference/PathWhiz_PW000055">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PW000055</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PathWhiz</bp:db>
@@ -130,11 +116,6 @@
 <bp:UnificationXref rdf:ID="Reference/PathWhiz_PW000054">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PW000054</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PathWhiz</bp:db>
-</bp:UnificationXref>
-
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00039">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00039</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
 </bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/BioCyc_ATP">
@@ -236,11 +217,6 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">HMDB</bp:db>
 </bp:UnificationXref>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00031">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00031</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:Interaction rdf:ID="SubPathwayInteractions/178">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathwayInteraction178</bp:displayName>
  <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway178Reaction</bp:name>
@@ -268,11 +244,6 @@
 <bp:UnificationXref rdf:ID="Reference/CAS_2280-44-6">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">2280-44-6</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
-</bp:UnificationXref>
-
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00040">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00040</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
 </bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/BioCyc_ALPHA-GLUCOSE-16-BISPHOSPHATE">
@@ -329,11 +300,6 @@
  <bp:structureData rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">OC1O[C@H](COP(O)(O)=O)[C@@H](O)[C@H](O)[C@H]1O</bp:structureData>
 </bp:ChemicalStructure>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00043">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00043</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:Interaction rdf:ID="SubPathwayInteractions/177">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathwayInteraction177</bp:displayName>
  <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway177Reaction</bp:name>
@@ -370,7 +336,7 @@
  <bp:xref rdf:resource="#Reference/HMDB_HMDB0003498" />
  <bp:xref rdf:resource="#Reference/PubChem-compound_439427" />
  <bp:chemicalFormula rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C6H13O9P</bp:chemicalFormula>
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Beta-D-Glucose 6-phosphate</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#946;-D-Glucose 6-phosphate</bp:displayName>
  <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">260.02972</bp:molecularWeight>
  <bp:structure rdf:resource="#ChemicalStructure/PW_C001906" />
 </bp:SmallMoleculeReference>
@@ -474,11 +440,6 @@
  <bp:controlType rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
 </bp:Catalysis>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00058">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00058</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:Catalysis rdf:ID="ReactionCatalysis/953">
  <bp:controller rdf:resource="#Protein/1417_Cytosol" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ReactionCatalysis953</bp:displayName>
@@ -519,105 +480,10 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
 </bp:UnificationXref>
 
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00043">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway176" />
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway171" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/171" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/176" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000159" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00043" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Galactose Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
 <bp:Stoichiometry rdf:ID="Compound/PW_C000414_Cytosol/Stoichiometry/1.0">
  <bp:physicalEntity rdf:resource="#Compound/PW_C000414_Cytosol" />
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00040">
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/177" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/211553" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/178" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/175" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/176" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/173" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/174" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1254" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1253" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1252" />
- <bp:pathwayOrder rdf:resource="#PathwayTransport/1213" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1248" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1247" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1246" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1245" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1249" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/171" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/172" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/170" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/168" />
- <bp:pathwayOrder rdf:resource="#PathwaySubPathway/169" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1222" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1244" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1220" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1242" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1241" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1215" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1219" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1218" />
- <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1216" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00064" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/950" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00043" />
- <bp:pathwayComponent rdf:resource="#Reactions/812" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00060" />
- <bp:pathwayComponent rdf:resource="#Reactions/810" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00006" />
- <bp:pathwayComponent rdf:resource="#Transports/42" />
- <bp:pathwayComponent rdf:resource="#TransportCatalysis/15" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00027" />
- <bp:pathwayComponent rdf:resource="#Reactions/1231" />
- <bp:pathwayComponent rdf:resource="#Reactions/1232" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/949" />
- <bp:pathwayComponent rdf:resource="#Reactions/1237" />
- <bp:pathwayComponent rdf:resource="#Reactions/312" />
- <bp:pathwayComponent rdf:resource="#Reactions/1238" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/942" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/349" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/940" />
- <bp:pathwayComponent rdf:resource="#Reactions/1057" />
- <bp:pathwayComponent rdf:resource="#Reactions/1233" />
- <bp:pathwayComponent rdf:resource="#Reactions/275" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/960" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00031" />
- <bp:pathwayComponent rdf:resource="#Reactions/927" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00010" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00076" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00039" />
- <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP00058" />
- <bp:pathwayComponent rdf:resource="#Reactions/1242" />
- <bp:pathwayComponent rdf:resource="#Reactions/1243" />
- <bp:pathwayComponent rdf:resource="#Reactions/1240" />
- <bp:pathwayComponent rdf:resource="#Reactions/1241" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/939" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/937" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/936" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/958" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/713" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/955" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/659" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/513" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/953" />
- <bp:pathwayComponent rdf:resource="#Reactions/1246" />
- <bp:pathwayComponent rdf:resource="#Reactions/243" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/954" />
- <bp:pathwayComponent rdf:resource="#Reactions/365" />
- <bp:pathwayComponent rdf:resource="#ReactionCatalysis/952" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00040" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000146" />
- <bp:organism rdf:resource="#Species/1" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glycolysis</bp:displayName>
-</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/CAS_59-56-3">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">59-56-3</bp:id>
@@ -761,7 +627,7 @@
  <bp:spontaneous rdf:datatype = "http://www.w3.org/2001/XMLSchema#boolean">false</bp:spontaneous>
  <bp:eCNumber rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">5.1.3.3</bp:eCNumber>
  <bp:left rdf:resource="#Compound/PW_C001851_Cytosol" />
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Alpha-D-Glucose &amp;harr; Beta-D-Glucose</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#945;-D-Glucose &amp;harr; &#946;-D-Glucose</bp:name>
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">REVERSIBLE</bp:conversionDirection>
 </bp:BiochemicalReaction>
 
@@ -769,15 +635,6 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00009</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
 </bp:UnificationXref>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00031">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway175" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/175" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000055" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00031" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pentose Phosphate Pathway</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/KEGG_Compound_C00008">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00008</bp:id>
@@ -812,15 +669,6 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00001</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
 </bp:UnificationXref>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00039">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway178" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/178" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000144" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00039" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glycerolipid Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/UniProt_P15259">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">P15259</bp:id>
@@ -873,7 +721,7 @@
  <bp:xref rdf:resource="#Reference/CAS_492-62-6" />
  <bp:xref rdf:resource="#Reference/KEGG_Compound_C00267" />
  <bp:chemicalFormula rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C6H12O6</bp:chemicalFormula>
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Alpha-D-Glucose</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#945;-D-Glucose</bp:displayName>
  <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">180.06339</bp:molecularWeight>
  <bp:structure rdf:resource="#ChemicalStructure/PW_C001851" />
 </bp:SmallMoleculeReference>
@@ -882,15 +730,6 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">GLC-1-P</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BioCyc</bp:db>
 </bp:UnificationXref>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00064">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway174" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/174" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000025" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00064" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Fructose and Mannose Degradation</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/ChemSpider_388411">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">388411</bp:id>
@@ -909,15 +748,6 @@
  <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathwayInput</bp:name>
 </bp:SmallMolecule>
 
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00060">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway168" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/168" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00060" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000054" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pyruvate Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
 <bp:SmallMoleculeReference rdf:ID="CompoundReference/PW_C000721">
  <bp:xref rdf:resource="#Reference/ChEBI_CHEBI_15846" />
  <bp:xref rdf:resource="#Reference/HMDB_HMDB0000902" />
@@ -931,11 +761,6 @@
  <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">664.11694</bp:molecularWeight>
  <bp:structure rdf:resource="#ChemicalStructure/PW_C000721" />
 </bp:SmallMoleculeReference>
-
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00006">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00006</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
 
 <bp:Stoichiometry rdf:ID="Protein/260_Cytosol/Stoichiometry/2.0">
  <bp:physicalEntity rdf:resource="#Protein/260_Cytosol" />
@@ -959,7 +784,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/368">
  <bp:xref rdf:resource="#Reference/UniProt_P35575" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glucose-6-phosphatase</bp:displayName>
 </bp:ProteinReference>
 
@@ -998,15 +823,6 @@
  <bp:stepProcess rdf:resource="#ReactionCatalysis/513" />
 </bp:BiochemicalPathwayStep>
 
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00058">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway173" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/173" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00058" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000150" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Starch and Sucrose Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
 <bp:UnificationXref rdf:ID="Reference/KEGG_Compound_C00267">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00267</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
@@ -1044,28 +860,9 @@
  <bp:controlType rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
 </bp:Catalysis>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00010">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00010</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:UnificationXref rdf:ID="Reference/UniProt_P06733">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">P06733</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
-</bp:UnificationXref>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00006">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway170" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/170" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000142" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00006" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Tyrosine Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
-<bp:UnificationXref rdf:ID="Reference/CELL_TYPE_ONTOLOGY_CL_0000000">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CL:0000000</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CELL TYPE ONTOLOGY</bp:db>
 </bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/KEGG_Compound_C00031">
@@ -1264,7 +1061,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/207">
  <bp:xref rdf:resource="#Reference/UniProt_P52789" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Hexokinase-2</bp:displayName>
 </bp:ProteinReference>
 
@@ -1287,15 +1084,6 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">591-59-3</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
 </bp:UnificationXref>
-
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00027">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway169" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/169" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000032" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00027" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pantothenate and CoA Biosynthesis</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/HMDB_HMDB0001487">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">HMDB0001487</bp:id>
@@ -1359,21 +1147,6 @@
  <bp:entityReference rdf:resource="#CompoundReference/PW_C000721" />
 </bp:SmallMolecule>
 
-<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP00010">
- <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway172" />
- <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/172" />
- <bp:xref rdf:resource="#Reference/PathWhiz_PW000031" />
- <bp:xref rdf:resource="#Reference/SMPDB_SMP00010" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Nucleotide Sugars Metabolism</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
-</bp:Pathway>
-
-<bp:BioSource rdf:ID="BiologicalState/14">
- <bp:xref rdf:resource="#Reference/TAXONOMY_9606" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BiologicalState14</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Homo sapiens, Cell Membrane</bp:name>
-</bp:BioSource>
-
 <bp:SmallMoleculeReference rdf:ID="CompoundReference/PW_C000414">
  <bp:xref rdf:resource="#Reference/ChEBI_CHEBI_15422" />
  <bp:xref rdf:resource="#Reference/PubChem-compound_5957" />
@@ -1430,7 +1203,7 @@
 </bp:UnificationXref>
 
 <bp:SmallMolecule rdf:ID="Compound/PW_C001851_Cytosol">
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Alpha-D-Glucose</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#945;-D-Glucose</bp:displayName>
  <bp:cellularLocation rdf:resource="#CellularLocation/Cytosol" />
  <bp:entityReference rdf:resource="#CompoundReference/PW_C001851" />
 </bp:SmallMolecule>
@@ -1506,6 +1279,15 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChemSpider</bp:db>
 </bp:UnificationXref>
 
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000076">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway177" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/177" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000036" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000076" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Thiamine Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
 <bp:UnificationXref rdf:ID="Reference/KEGG_Compound_C00085">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00085</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
@@ -1544,13 +1326,6 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">HMDB0002111</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">HMDB</bp:db>
 </bp:UnificationXref>
-
-<bp:BioSource rdf:ID="BiologicalState/2">
- <bp:cellType rdf:resource="#CellType/Cell" />
- <bp:xref rdf:resource="#Reference/TAXONOMY_9606" />
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BiologicalState2</bp:displayName>
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Homo sapiens, Cell, Cytosol</bp:name>
-</bp:BioSource>
 
 <bp:UnificationXref rdf:ID="Reference/CAS_14265-44-2">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">14265-44-2</bp:id>
@@ -1610,7 +1385,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/751">
  <bp:xref rdf:resource="#Reference/UniProt_P06744" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glucose-6-phosphate isomerase</bp:displayName>
 </bp:ProteinReference>
 
@@ -1631,7 +1406,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/1417">
  <bp:xref rdf:resource="#Reference/UniProt_P00558" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Phosphoglycerate kinase 1</bp:displayName>
 </bp:ProteinReference>
 
@@ -1718,7 +1493,7 @@
 </bp:UnificationXref>
 
 <bp:SmallMolecule rdf:ID="Compound/PW_C000395_Cytosol">
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Beta-D-Glucose</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#946;-D-Glucose</bp:displayName>
  <bp:cellularLocation rdf:resource="#CellularLocation/Cytosol" />
  <bp:entityReference rdf:resource="#CompoundReference/PW_C000395" />
 </bp:SmallMolecule>
@@ -1730,7 +1505,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/659">
  <bp:xref rdf:resource="#Reference/UniProt_P04406" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glyceraldehyde-3-phosphate dehydrogenase</bp:displayName>
 </bp:ProteinReference>
 
@@ -1766,7 +1541,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/2519">
  <bp:xref rdf:resource="#Reference/UniProt_Q96C23" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Aldose 1-epimerase</bp:displayName>
 </bp:ProteinReference>
 
@@ -1793,7 +1568,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/709">
  <bp:xref rdf:resource="#Reference/UniProt_P08237" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">6-phosphofructokinase, muscle type</bp:displayName>
 </bp:ProteinReference>
 
@@ -1808,6 +1583,15 @@
  <bp:cellularLocation rdf:resource="#CellularLocation/Cytosol" />
  <bp:component rdf:resource="#Protein/659_Cytosol" />
 </bp:Complex>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000031">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway175" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/175" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000055" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000031" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pentose Phosphate Pathway</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
 
 <bp:Stoichiometry rdf:ID="Compound/PW_C000983_Cytosol/Stoichiometry/1.0">
  <bp:physicalEntity rdf:resource="#Compound/PW_C000983_Cytosol" />
@@ -1834,6 +1618,15 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
 </bp:UnificationXref>
 
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000039">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway178" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/178" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000144" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000039" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glycerolipid Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
 <bp:SmallMoleculeReference rdf:ID="CompoundReference/PW_C000395">
  <bp:xref rdf:resource="#Reference/PubChem-compound_64689" />
  <bp:xref rdf:resource="#Reference/ChemSpider_58238" />
@@ -1842,7 +1635,7 @@
  <bp:xref rdf:resource="#Reference/CAS_492-61-5" />
  <bp:xref rdf:resource="#Reference/ChEBI_CHEBI_15903" />
  <bp:chemicalFormula rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C6H12O6</bp:chemicalFormula>
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Beta-D-Glucose</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#946;-D-Glucose</bp:displayName>
  <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">180.06339</bp:molecularWeight>
  <bp:structure rdf:resource="#ChemicalStructure/PW_C000395" />
 </bp:SmallMoleculeReference>
@@ -1869,7 +1662,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/712">
  <bp:xref rdf:resource="#Reference/UniProt_P30613" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pyruvate kinase isozymes R/L</bp:displayName>
 </bp:ProteinReference>
 
@@ -1882,6 +1675,101 @@
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">1981-49-3</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
 </bp:UnificationXref>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000043">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway176" />
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway171" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/171" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/176" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000159" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000043" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Galactose Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000040">
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/177" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/211553" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/178" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/175" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/176" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/173" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/174" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1254" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1253" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1252" />
+ <bp:pathwayOrder rdf:resource="#PathwayTransport/1213" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1248" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1247" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1246" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1245" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1249" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/171" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/172" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/170" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/168" />
+ <bp:pathwayOrder rdf:resource="#PathwaySubPathway/169" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1222" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1244" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1220" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1242" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1241" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1215" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1219" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1218" />
+ <bp:pathwayOrder rdf:resource="#PathwayEnzymeReaction/1216" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/950" />
+ <bp:pathwayComponent rdf:resource="#Reactions/812" />
+ <bp:pathwayComponent rdf:resource="#Reactions/810" />
+ <bp:pathwayComponent rdf:resource="#Transports/42" />
+ <bp:pathwayComponent rdf:resource="#TransportCatalysis/15" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1231" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1232" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000010" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000076" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000031" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/949" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1237" />
+ <bp:pathwayComponent rdf:resource="#Reactions/312" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1238" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000039" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/942" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/349" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/940" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1057" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1233" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000058" />
+ <bp:pathwayComponent rdf:resource="#Reactions/275" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/960" />
+ <bp:pathwayComponent rdf:resource="#Reactions/927" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1242" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1243" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1240" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000043" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1241" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000064" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/939" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/937" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000060" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/936" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/958" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/713" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/955" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/659" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000006" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/513" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/953" />
+ <bp:pathwayComponent rdf:resource="#Reactions/1246" />
+ <bp:pathwayComponent rdf:resource="#Reactions/243" />
+ <bp:pathwayComponent rdf:resource="http://identifiers.org/smpdb/SMP0000027" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/954" />
+ <bp:pathwayComponent rdf:resource="#Reactions/365" />
+ <bp:pathwayComponent rdf:resource="#ReactionCatalysis/952" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000040" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000146" />
+ <bp:organism rdf:resource="#Species/1" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Glycolysis</bp:displayName>
+</bp:Pathway>
 
 <bp:SmallMoleculeReference rdf:ID="CompoundReference/PW_C001134">
  <bp:xref rdf:resource="#Reference/BioCyc_DIHYDROXY-ACETONE-PHOSPHATE" />
@@ -1942,6 +1830,15 @@
  <bp:entityReference rdf:resource="#ProteinReference/2449" />
 </bp:Protein>
 
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000058">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway173" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/173" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000058" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000150" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Starch and Sucrose Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
 <bp:UnificationXref rdf:ID="Reference/ChEBI_CHEBI_16908">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CHEBI:16908</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChEBI</bp:db>
@@ -1966,6 +1863,24 @@
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
 
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000064">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway174" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/174" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000025" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000064" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Fructose and Mannose Degradation</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000060">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway168" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/168" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000060" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000054" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pyruvate Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
 <bp:UnificationXref rdf:ID="Reference/ChEBI_CHEBI_15946">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CHEBI:15946</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChEBI</bp:db>
@@ -1979,7 +1894,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/2449">
  <bp:xref rdf:resource="#Reference/UniProt_P11168" />
- <bp:organism rdf:resource="#BiologicalState/14" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Solute carrier family 2, facilitated glucose transporter member 2</bp:displayName>
 </bp:ProteinReference>
 
@@ -2006,6 +1921,11 @@
 <bp:UnificationXref rdf:ID="Reference/CAS_58-68-4">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">58-68-4</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000040">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000040</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
 </bp:UnificationXref>
 
 <bp:ChemicalStructure rdf:ID="ChemicalStructure/PW_C001104">
@@ -2046,6 +1966,11 @@
  <bp:structure rdf:resource="#ChemicalStructure/PW_C000077" />
 </bp:SmallMoleculeReference>
 
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000043">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000043</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:UnificationXref rdf:ID="Reference/UniProt_P00558">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">P00558</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
@@ -2053,7 +1978,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/916">
  <bp:xref rdf:resource="#Reference/UniProt_P04075" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Fructose-bisphosphate aldolase A</bp:displayName>
 </bp:ProteinReference>
 
@@ -2077,10 +2002,24 @@
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
 
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000058">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000058</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:Stoichiometry rdf:ID="Compound/PW_C000164_Cytosol/Stoichiometry/1.0">
  <bp:physicalEntity rdf:resource="#Compound/PW_C000164_Cytosol" />
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000006">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway170" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/170" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000142" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000006" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Tyrosine Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
 
 <bp:UnificationXref rdf:ID="Reference/CAS_57-04-5">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">57-04-5</bp:id>
@@ -2101,6 +2040,20 @@
  <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMILES</bp:structureFormat>
  <bp:structureData rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">OP(O)(O)=O</bp:structureData>
 </bp:ChemicalStructure>
+
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000010">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway172" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/172" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000010" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000031" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Nucleotide Sugars Metabolism</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000060">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000060</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/PubChem-compound_5958">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">5958</bp:id>
@@ -2131,6 +2084,11 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-compound</bp:db>
 </bp:UnificationXref>
 
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000064">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000064</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:ChemicalStructure rdf:ID="ChemicalStructure/PW_C001207">
  <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMILES</bp:structureFormat>
  <bp:structureData rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">OC[C@H]1OC(OP(O)(O)=O)[C@H](O)[C@@H](O)[C@@H]1O</bp:structureData>
@@ -2138,7 +2096,7 @@
 
 <bp:ProteinReference rdf:ID="ProteinReference/1021">
  <bp:xref rdf:resource="#Reference/UniProt_P06733" />
- <bp:organism rdf:resource="#BiologicalState/2" />
+ <bp:organism rdf:resource="#Species/1" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Alpha-enolase</bp:displayName>
 </bp:ProteinReference>
 
@@ -2204,9 +2162,28 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChEBI</bp:db>
 </bp:UnificationXref>
 
+<bp:Pathway rdf:about="http://identifiers.org/smpdb/SMP0000027">
+ <bp:pathwayOrder rdf:resource="#SubPathwayInteractionSteps/SubPathway169" />
+ <bp:pathwayComponent rdf:resource="#SubPathwayInteractions/169" />
+ <bp:xref rdf:resource="#Reference/PathWhiz_PW000032" />
+ <bp:xref rdf:resource="#Reference/SMPDB_SMP0000027" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Pantothenate and CoA Biosynthesis</bp:displayName>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SubPathway</bp:name>
+</bp:Pathway>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000076">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000076</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:UnificationXref rdf:ID="Reference/UniProt_P08237">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">P08237</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000006">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000006</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
 </bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/BioCyc_CPD-8587">
@@ -2305,6 +2282,11 @@
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">REVERSIBLE</bp:conversionDirection>
 </bp:BiochemicalReaction>
 
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000010">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000010</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:BiochemicalReaction rdf:ID="Reactions/365">
  <bp:participantStoichiometry rdf:resource="#Compound/PW_C000414_Cytosol/Stoichiometry/1.0" />
  <bp:participantStoichiometry rdf:resource="#Compound/PW_C000164_Cytosol/Stoichiometry/1.0" />
@@ -2321,11 +2303,6 @@
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">REVERSIBLE</bp:conversionDirection>
 </bp:BiochemicalReaction>
 
-<bp:CellVocabulary rdf:ID="CellType/Cell">
- <bp:xref rdf:resource="#Reference/CELL_TYPE_ONTOLOGY_CL_0000000" />
- <bp:term rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Cell</bp:term>
-</bp:CellVocabulary>
-
 <bp:UnificationXref rdf:ID="Reference/PubChem-compound_439427">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">439427</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-compound</bp:db>
@@ -2337,7 +2314,7 @@
 </bp:Stoichiometry>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/177">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00076" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000076" />
 </bp:PathwayStep>
 
 <bp:UnificationXref rdf:ID="Reference/ChEBI_CHEBI_15422">
@@ -2351,11 +2328,11 @@
 </bp:UnificationXref>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/178">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00039" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000039" />
 </bp:PathwayStep>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/175">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00031" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000031" />
 </bp:PathwayStep>
 
 <bp:UnificationXref rdf:ID="Reference/ChemSpider_5589">
@@ -2364,24 +2341,29 @@
 </bp:UnificationXref>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/176">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00043" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000043" />
 </bp:PathwayStep>
 
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000027">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000027</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
+
 <bp:PathwayStep rdf:ID="PathwaySubPathway/173">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00058" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000058" />
 </bp:PathwayStep>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/174">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00064" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000064" />
 </bp:PathwayStep>
 
 <bp:BioSource rdf:ID="Species/1">
- <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Homo sapiens</bp:standardName>
- <bp:xref rdf:resource="#Reference/Taxonomy_9606" />
+ <bp:xref rdf:resource="#Reference/TAXONOMY_9606" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Homo sapiens</bp:displayName>
 </bp:BioSource>
 
 <bp:SmallMolecule rdf:ID="Compound/PW_C001906_Cytosol">
- <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Beta-D-Glucose 6-phosphate</bp:displayName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#946;-D-Glucose 6-phosphate</bp:displayName>
  <bp:cellularLocation rdf:resource="#CellularLocation/Cytosol" />
  <bp:entityReference rdf:resource="#CompoundReference/PW_C001906" />
 </bp:SmallMolecule>
@@ -2418,7 +2400,7 @@
 </bp:UnificationXref>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/171">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00043" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000043" />
 </bp:PathwayStep>
 
 <bp:UnificationXref rdf:ID="Reference/ChEBI_CHEBI_17719">
@@ -2427,11 +2409,11 @@
 </bp:UnificationXref>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/172">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00010" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000010" />
 </bp:PathwayStep>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/170">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00006" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000006" />
 </bp:PathwayStep>
 
 <bp:SmallMolecule rdf:ID="Compound/PW_C001420_Cytosol">
@@ -2446,17 +2428,22 @@
 </bp:UnificationXref>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/168">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00060" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000060" />
 </bp:PathwayStep>
 
 <bp:PathwayStep rdf:ID="PathwaySubPathway/169">
- <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP00027" />
+ <bp:stepProcess rdf:resource="http://identifiers.org/smpdb/SMP0000027" />
 </bp:PathwayStep>
 
 <bp:Stoichiometry rdf:ID="Compound/PW_C000077/Stoichiometry/1.0">
  <bp:physicalEntity rdf:resource="#Compound/PW_C000077" />
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000039">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000039</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
 
 <bp:ChemicalStructure rdf:ID="ChemicalStructure/PW_C000833">
  <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMILES</bp:structureFormat>
@@ -2482,6 +2469,11 @@
  <bp:physicalEntity rdf:resource="#Compound/PW_C000079_Cytosol" />
  <bp:stoichiometricCoefficient rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1.0</bp:stoichiometricCoefficient>
 </bp:Stoichiometry>
+
+<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP0000031">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP0000031</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
+</bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/TAXONOMY_9606">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">9606</bp:id>
@@ -2534,11 +2526,6 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-compound</bp:db>
 </bp:UnificationXref>
 
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00060">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00060</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
-
 <bp:Complex rdf:ID="ProteinComplex/287_Cytosol">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Fructose-bisphosphate aldolase A</bp:displayName>
  <bp:componentStoichiometry rdf:resource="#Protein/916_Cytosol/Stoichiometry/4.0" />
@@ -2558,7 +2545,7 @@
  <bp:eCNumber rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">2.7.1.1</bp:eCNumber>
  <bp:left rdf:resource="#Compound/PW_C000414_Cytosol" />
  <bp:left rdf:resource="#Compound/PW_C000395_Cytosol" />
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Adenosine triphosphate + Beta-D-Glucose &amp;rarr; Adenosine diphosphate + Beta-D-Glucose 6-phosphate</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Adenosine triphosphate + &#946;-D-Glucose &amp;rarr; Adenosine diphosphate + &#946;-D-Glucose 6-phosphate</bp:name>
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">LEFT_TO_RIGHT</bp:conversionDirection>
 </bp:BiochemicalReaction>
 
@@ -2579,11 +2566,6 @@
  <bp:controlled rdf:resource="#Reactions/812" />
  <bp:controlType rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
 </bp:Catalysis>
-
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00064">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00064</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
-</bp:UnificationXref>
 
 <bp:CellularLocationVocabulary rdf:ID="CellularLocation/Cell_Membrane">
  <bp:xref rdf:resource="#Reference/GENE_ONTOLOGY_GO_0005886" />
@@ -2628,19 +2610,9 @@
  <bp:structureData rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">OC[C@@H](OP(O)(O)=O)C(O)=O</bp:structureData>
 </bp:ChemicalStructure>
 
-<bp:UnificationXref rdf:ID="Reference/Taxonomy_9606">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">9606</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Taxonomy</bp:db>
-</bp:UnificationXref>
-
 <bp:UnificationXref rdf:ID="Reference/PubChem-compound_79025">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">79025</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-compound</bp:db>
-</bp:UnificationXref>
-
-<bp:UnificationXref rdf:ID="Reference/SMPDB_SMP00076">
- <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMP00076</bp:id>
- <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMPDB</bp:db>
 </bp:UnificationXref>
 
 <bp:UnificationXref rdf:ID="Reference/PubChem-compound_5793">
@@ -2681,7 +2653,7 @@
  <bp:eCNumber rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">2.7.1.1</bp:eCNumber>
  <bp:left rdf:resource="#Compound/PW_C000414_Cytosol" />
  <bp:left rdf:resource="#Compound/PW_C001851_Cytosol" />
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Adenosine triphosphate + Alpha-D-Glucose &amp;rarr; Adenosine diphosphate + Glucose 6-phosphate</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Adenosine triphosphate + &#945;-D-Glucose &amp;rarr; Adenosine diphosphate + Glucose 6-phosphate</bp:name>
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">LEFT_TO_RIGHT</bp:conversionDirection>
 </bp:BiochemicalReaction>
 
@@ -2723,7 +2695,7 @@
  <bp:spontaneous rdf:datatype = "http://www.w3.org/2001/XMLSchema#boolean">false</bp:spontaneous>
  <bp:eCNumber rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">5.3.1.9</bp:eCNumber>
  <bp:left rdf:resource="#Compound/PW_C001906_Cytosol" />
- <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Beta-D-Glucose 6-phosphate &amp;harr; Fructose 6-phosphate</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">&#946;-D-Glucose 6-phosphate &amp;harr; Fructose 6-phosphate</bp:name>
  <bp:conversionDirection rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">REVERSIBLE</bp:conversionDirection>
 </bp:BiochemicalReaction>
 

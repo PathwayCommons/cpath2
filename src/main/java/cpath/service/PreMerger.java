@@ -480,7 +480,7 @@ final class PreMerger {
     //important; the idea is to re-use normalized CVs, xrefs later on instead of duplicating...
     normalizer.setXmlBase(xmlBase);
     normalizer.setFixDisplayName(true); // important
-    normalizer.normalize(model, true); //using bioregistry.io prefix for xref.db values if possible
+    normalizer.normalize(model); //using bioregistry.io prefix for xref.db values if possible
 
     // save
     try {

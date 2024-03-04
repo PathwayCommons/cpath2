@@ -338,7 +338,7 @@
       "dataUrl": "http://pathbank.org/downloads/pathbank_primary_biopax.zip",
       "identifier": "pathbank",
       "homepageUrl": "http://pathbank.org",
-      "cleanerClass": "cpath.cleaner.SmpdbCleaner",
+      "cleanerClass": "cpath.cleaner.PathbankCleaner",
       "name": [
         "Pathbank"
       ],

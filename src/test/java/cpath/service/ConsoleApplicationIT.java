@@ -128,7 +128,7 @@ public class ConsoleApplicationIT
     normalizer.setXmlBase(base);
 
     Model m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
-    normalizer.normalize(m, true);
+    normalizer.normalize(m);
 
     /*
      * Normalizer, if used alone (without Validator), does not turn DB or ID values to upper case
@@ -151,7 +151,7 @@ public class ConsoleApplicationIT
     validator.validate(v);
     validator.getResults().remove(v);
     m = (Model) v.getModel();
-    normalizer.normalize(m, true);
+    normalizer.normalize(m);
 
     assertFalse(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "c00002", UnificationXref.class)));
     assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "C00002", UnificationXref.class)));
@@ -265,7 +265,7 @@ public class ConsoleApplicationIT
     mainModel.setXmlBase(service.settings().getXmlBase());
     ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
     ModelUtils.normalizeGenerics(providerModel);
-    merger.rebaseUris(providerModel, DS_XML_BASE); //important
+    CPathUtils.rebaseUris(providerModel, null, DS_XML_BASE); //important (null)
     merger.replaceConflictingUris(providerModel, mainModel);
     mainModel.merge(providerModel);
     ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
@@ -519,31 +519,31 @@ public class ConsoleApplicationIT
     Model model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pathwaydata1.owl").getInputStream());
     model.setName("pathwaydata1");
-    normalizer.normalize(model, true);
+    normalizer.normalize(model);
     pathwayModels.add(model);
     model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pathwaydata2.owl").getInputStream());
-    normalizer.normalize(model, true);
+    normalizer.normalize(model);
     model.setName("pathwaydata2");
     pathwayModels.add(model);
     model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pid_60446.owl").getInputStream());
-    normalizer.normalize(model, true);
+    normalizer.normalize(model);
     model.setName("pid_60446");
     pathwayModels.add(model); //PR P22932 caused the trouble
     model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pid_6349.owl").getInputStream());
-    normalizer.normalize(model, true);
+    normalizer.normalize(model);
     model.setName("pid_6349");
     pathwayModels.add(model); //Xref for P01118 caused the trouble
     model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/hcyc.owl").getInputStream());
-    normalizer.normalize(model, true);
+    normalizer.normalize(model);
     model.setName("hcyc");
     pathwayModels.add(model);
     model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/hcyc2.owl").getInputStream());
-		normalizer.normalize(model, true);
+		normalizer.normalize(model);
     model.setName("hcyc2");
     pathwayModels.add(model);
 

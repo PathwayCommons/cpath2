@@ -162,14 +162,20 @@ public class CPathUtilsTest {
 			uniprot:1, , , uniprot:1
 			uniprot:1, , bar:, uniprot:1
 			a.foo/bar,,,bar
-			https://a.foo/bar1, https://a.foo/, xyz:,xyz:bar1
-			http://a.foo#bar1, https://a.foo#, xyz:,xyz:bar1
-			ftp://a.foo#bar1, foo,xyz:, xyz:bar1
+			https://a.foo/bar1,https://a.foo/,xyz:,xyz:bar1
+			http://a.foo#bar1,http://a.foo#,xyz:,xyz:bar1
+			ftp://a.foo#bar1, foo, xyz:, ftp://a.foo#bar1
+			ftp://a.foo#bar1, , xyz:, xyz:bar1
 			foo#123, foo#, bar:, bar:123
-			foo#123, foo:, bar:, bar:123
-			http://smpdb.ca/pathways/#DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0,,foo:,foo:DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0
+			foo#123, whatever/, bar:, foo#123
+			http://smpdb.ca/pathways/#a1,,foo:,foo:a1
 			foo:123, foo:, bar:, bar:123
 			foo:123,, bar:, foo:123
+			http://smpdb.ca/pathways/#A,,foo:,foo:A
+			http://smpdb.ca/pathways/#A,,foo:,foo:A
+			http://smpdb.ca/pathways/#A,,foo:,foo:A
+			http://smpdb.ca/pathways/#A,http://smpdb.ca/pathways/#,foo:,foo:A
+			http://identifiers.org/smpdb/A,http://identifiers.org/smpdb/,foo:,foo:A
 			"""
 	)
 	void rebaseUri(String uri, String obase, String nbase, String expected) {

@@ -83,7 +83,7 @@ public final class Merger {
 			}
 			Model providerModel = merge(datasource);
 			log.info("Replacing xml:base of non-generated/normalized URIs in {}", datasource.getIdentifier());
-			rebaseUris(providerModel, datasource.getIdentifier()+":");
+			CPathUtils.rebaseUris(providerModel, null, datasource.getIdentifier()+":");
 			log.info("Replacing conflicting URIs in {} before merging into Main...", datasource.getIdentifier());
 			replaceConflictingUris(providerModel, mainModel);
 			save(providerModel, datasource);
@@ -384,26 +384,6 @@ public final class Merger {
 						target.getXmlBase() + bpe.getModelInterface().getSimpleName() + "_" + UUID.randomUUID());
 			}
 		}
-	}
-
-	/*
-	 * Replaces xml:base for the normalized model and updates the URis of all non-normalized objects
-	 * (mostly Entity, Evidence, etc.)
-	 * The model is already normalized, which means the URIs of many xrefs, CVs, entity reference start with
-	 * bioregistry.io/ or are CURIEs like e.g. chebi:1234, pubmed:1234556.
-	 */
-	void rebaseUris(Model model, String xmlBase) {
-		Assert.hasText(xmlBase, "Blank/null value is not allowed for xmlBase");
-		for(BioPAXElement bpe : new HashSet<>(model.getObjects())) {//copy the collection due to CPathUtils.replaceUri modifies the model map
-			String currUri = bpe.getUri();
-			String uri = CPathUtils.rebaseUri(currUri, null, xmlBase); //null - prevents replacing for already normalized objects
-			//if uri was updated but another object uses the new uri, add the hash to the end
-			if(!StringUtils.equals(currUri, uri) && model.getByID(uri) != null) {
-				uri = String.format("%s_%s", uri, ModelUtils.md5hex(currUri));
-			}
-			CPathUtils.replaceUri(model, bpe, uri);
-		}
-		model.setXmlBase(xmlBase);
 	}
 
 	/*

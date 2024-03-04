@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.Fetcher;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -118,29 +119,55 @@ public final class CPathUtils {
    * and absolute URIs like "http://smpdb.ca/pathways/#DNA/1_Mitochondrial_Matrix/Stoichiometry/1.0"
    * (i.e. have xml:base ending with '#' plus '/' after that....)
    *
-   * @param absoluteUri
-   * @param oldXmlBase
-   * @param newXmlBase
-   * @return same or updated URI (never null)
-  */
-  public static String rebaseUri(String absoluteUri, String oldXmlBase, String newXmlBase) {
+   * @param absoluteUri - URI of a biopax element
+   * @param fromBase    - the URI prefix to replace (can occur in this or other objects); can be null, currentBase or any;
+   * @param toBase      - the new xml:base, to use as new prefix where makes sense
+   * @return same or updated URI (never null) using the toBase prefix
+   */
+  static String rebaseUri(String absoluteUri, String fromBase, String toBase) {
     Assert.hasText(absoluteUri, "URI cannot be blank/null");
-    newXmlBase = (StringUtils.isBlank(newXmlBase)) ? "" : newXmlBase;
-    oldXmlBase = (StringUtils.isBlank(oldXmlBase)) ? "" : oldXmlBase; //sanitized
+    toBase = (StringUtils.isBlank(toBase)) ? "" : toBase;
     String uri = absoluteUri;
-    if((!newXmlBase.isEmpty() && StringUtils.startsWith(absoluteUri, newXmlBase))
-        || StringUtils.containsAny(absoluteUri, "identifiers.org/", "bioregistry.io/")) {
-      //nothing to do here
-    } else if(!oldXmlBase.isEmpty() && StringUtils.startsWith(absoluteUri, oldXmlBase)) {
-      uri = StringUtils.replace(absoluteUri, oldXmlBase, newXmlBase);
-    } else if (StringUtils.containsNone(absoluteUri, ':', '/', '#')) {
-      uri = newXmlBase + absoluteUri;
-    } else if (StringUtils.contains(absoluteUri, '#')){
-      uri = newXmlBase + StringUtils.substringAfterLast(absoluteUri, "#");
-    } else if (StringUtils.contains(absoluteUri, '/')){
-      uri = newXmlBase + StringUtils.substringAfterLast(absoluteUri, "/");
+
+    if(StringUtils.isBlank(fromBase)) {
+      //try to auto-detect and replace a prefix in the URI but skip for standard, normalized, already using toBase ones.
+      if(StringUtils.containsAny(absoluteUri, "identifiers.org/", "bioregistry.io/")) {
+        //nothing to do here
+      } else if (StringUtils.containsNone(absoluteUri, ':', '/', '#')) {
+        uri = toBase + absoluteUri;
+      } else if (StringUtils.contains(absoluteUri, '#')){
+        uri = toBase + StringUtils.substringAfterLast(absoluteUri, "#");
+      } else if (StringUtils.contains(absoluteUri, '/')){
+        uri = toBase + StringUtils.substringAfterLast(absoluteUri, "/");
+      }
+    } else {
+      // just replace the fromBase prefix, if present, in the URI or return the URI unchanged
+      if(StringUtils.startsWith(absoluteUri, fromBase)) {
+        uri = StringUtils.replace(absoluteUri, fromBase, toBase);
+      }
     }
+
     return uri; //not null
+  }
+
+  /*
+   * Replaces xml:base for the normalized model and updates the URis of all non-normalized objects
+   * (mostly Entity, Evidence, etc.)
+   * The model is already normalized, which means the URIs of many xrefs, CVs, entity reference start with
+   * bioregistry.io/ or are CURIEs like e.g. chebi:1234, pubmed:1234556.
+   */
+  public static void rebaseUris(Model model, String fromBase, String toBase) {
+    Assert.hasText(toBase, "Blank/null value is not allowed for xmlBase");
+    for(BioPAXElement bpe : new HashSet<>(model.getObjects())) {//copy the collection due to CPathUtils.replaceUri modifies the model map
+      String currUri = bpe.getUri();
+      String uri = CPathUtils.rebaseUri(currUri, fromBase, toBase); //null - prevents replacing for already normalized objects
+      //if uri was updated but another object uses the new uri, add the hash to the end
+      if(!StringUtils.equals(currUri, uri) && model.getByID(uri) != null) {
+        uri = String.format("%s_%s", uri, ModelUtils.md5hex(currUri));
+      }
+      CPathUtils.replaceUri(model, bpe, uri);
+    }
+    model.setXmlBase(toBase);
   }
 
   /**
