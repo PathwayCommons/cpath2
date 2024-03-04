@@ -391,14 +391,14 @@ public class ConsoleApplication implements CommandLineRunner {
     final String commaSepTaxonomyIds = String.join(",", service.settings().getOrganismTaxonomyIds());
     if (exportToGSEA) {
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-        prefix + "hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
+        prefix + "hgnc.gmt", "'hgnc.symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
       writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
         prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
       writer.println("wait"); //important
       writer.println("echo \"Done converting " + bpFilename + " to GSEA.\"");
     }
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
-      prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
+      prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));
     //UniProt ID based extended SIF files can be huge, take too long to generate; skip for now.
     writer.println("wait"); //important
     writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");

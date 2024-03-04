@@ -30,36 +30,34 @@ import org.biopax.paxtools.model.level3.Process;
  * Removes "unstable" Reactome ID xref from objects where a stable ID is present.
  */
 final class ReactomeCleaner implements Cleaner {
-    private static Logger log = LoggerFactory.getLogger(ReactomeCleaner.class);
+  private static Logger log = LoggerFactory.getLogger(ReactomeCleaner.class);
 
-    public void clean(InputStream data, OutputStream cleanedData)
+  public void clean(InputStream data, OutputStream cleanedData)
 	{	
 		// import the original Reactome BioPAX model from file
 		log.info("Cleaning Reactome data...");
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(data);
-
 		// Normalize pathway URIs, where possible, using Reactome stable IDs
 		// Since v54, Reactome stable ID format has been changed to like: "R-HSA-123456"
 		final Map<String, Entity> newUriToEntityMap = new HashMap<>();
 		final Set<Process> processes = new HashSet<>(model.getObjects(Process.class));
 
-		for(Process proc : processes) {
-			if (StringUtils.contains(proc.getUri(),"identifiers.org/reactome")
-					|| StringUtils.contains(proc.getUri(), "bioregistry.io/reactome"))
+		for(Process proc : processes)
+		{
+			if (StringUtils.containsAny(proc.getUri(),
+					"identifiers.org/reactome", "bioregistry.io/reactome")) {
 				continue; //skip for already normalized pathway or interaction
-
-			final Set<UnificationXref> uxrefs = new ClassFilterSet<>(
-					new HashSet<>(proc.getXref()), UnificationXref.class);
+			}
+			final Set<UnificationXref> uxrefs = new ClassFilterSet<>(new HashSet<>(proc.getXref()), UnificationXref.class);
 			for (UnificationXref x : uxrefs) {
-				if (x.getDb() != null && x.getDb().equalsIgnoreCase("Reactome")) {
+				if (StringUtils.equalsIgnoreCase(x.getDb(),"reactome")) {
 					String stableId = x.getId();
-					//remove 'REACTOME:' (length=9) prefix if present (it's optional - according to MIRIAM)
+					//remove 'REACTOME:' (length=9) prefix if present (it's optional - according to MIRIAM/Bioregistry)
 					if (stableId.startsWith("REACTOME:")) {
 						stableId = stableId.substring(9);
 						// stableID is like 'R-HSA-123456'
 					}
-
 					final String uri = "bioregistry.io/reactome:" + stableId;
 					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
 						//save it in the map to replace the URI later (see below)
@@ -79,9 +77,10 @@ final class ReactomeCleaner implements Cleaner {
 			}
 		}
 
-		// set standard URIs for selected entities;
-		for(String uri : newUriToEntityMap.keySet())
+		// set standard URIs for selected entities (processes);
+		for(String uri : newUriToEntityMap.keySet()) {
 			CPathUtils.replaceUri(model, newUriToEntityMap.get(uri), uri);
+		}
 		
 		// All Conversions in Reactome are LEFT-TO-RIGH, 
 		// unless otherwise was specified (confirmed with Guanming Wu, 2013/12)
@@ -91,29 +90,25 @@ final class ReactomeCleaner implements Cleaner {
 				ent.setConversionDirection(ConversionDirectionType.LEFT_TO_RIGHT);
 		}
 		
-		// Remove unstable UnificationXrefs like "Reactome Database ID Release XX"
+		// Remove unstable UnificationXrefs like "Reactome Database ID Release 65"
 		// if there is a stable xref in the same object
 		// Since Reactome v54, stable ID format is different (not like REACT_12345...)
 		final Set<Xref> xrefsToRemove = new HashSet<>();
-		for(Xref xref: new HashSet<>(model.getObjects(Xref.class))) {
-			if(xref.getDb() != null && xref.getDb().toLowerCase().startsWith("reactome database"))
+		for(Xref xref: new HashSet<>(model.getObjects(Xref.class)))
+		{
+			if(StringUtils.startsWithIgnoreCase(xref.getDb(),"reactome database"))
 			{
 				//remove the long comment (save some RAM)
-				if(!(xref instanceof PublicationXref))
+				if(!(xref instanceof PublicationXref)) {
 					xref.getComment().clear();
-
-				//proceed with a unification xref only...
-				if(xref instanceof UnificationXref) {
-					for(XReferrable owner :  new HashSet<>(xref.getXrefOf())) {
-						for(Xref x : new HashSet<>(owner.getXref())) {
-							if(!(x instanceof UnificationXref) || x.equals(xref))
-								continue;
-							//another unif. xref present in the same owner object
-							if(x.getDb() != null && x.getDb().equalsIgnoreCase("reactome")) {
-								//remove the unstable ID ref from the object that has a stable id
-								owner.removeXref(xref);
-								xrefsToRemove.add(xref);
-							}
+				}
+				for(XReferrable owner :  new HashSet<>(xref.getXrefOf())) {
+					for(Xref x : new HashSet<>(owner.getXref())) {
+						if(StringUtils.equalsIgnoreCase(x.getDb(), "reactome")) {
+							//if a standard "reactome" xref is also present in the same owner object,
+							//then remove the unstable ID xref from that object
+							owner.removeXref(xref);
+							xrefsToRemove.add(xref);
 						}
 					}
 				}
@@ -128,8 +123,7 @@ final class ReactomeCleaner implements Cleaner {
 		try {
 			simpleReader.convertToOWL(model, cleanedData);
 		} catch (Exception e) {
-			throw new RuntimeException("clean(), Exception thrown while saving cleaned Reactome data", e);
+			throw new RuntimeException("clean(), failed saving the cleaned Reactome model", e);
 		}
 	}
-
 }

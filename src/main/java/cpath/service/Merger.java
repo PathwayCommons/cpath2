@@ -606,8 +606,9 @@ public final class Merger {
 		}
 
 		// map primary ACs to HGNC Symbols and generate RXs if not too many...
-		if (noneXrefDbStartsWith(bpe, "hgnc symbol"))
+		if (noneXrefDbStartsWith(bpe, "hgnc.symbol")) {
 			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
+		}
 	}
 
 	// For biopolymers, also map uniprot accessions to HGNC Symbols, and add the xrefs, if possible -
@@ -618,17 +619,17 @@ public final class Merger {
 		}
 		final Set<String> hgncSymbols = new HashSet<>();
 		for (String ac : accessions) {
-			ProteinReference canonicalPR =
-					(ProteinReference) warehouseModel.getByID("bioregistry.io/uniprot:" + ac);
+			ProteinReference canonicalPR = (ProteinReference) warehouseModel.getByID("bioregistry.io/uniprot:" + ac);
 			if (canonicalPR != null) {
 				for (Xref x : canonicalPR.getXref())
-					if (x.getDb().equalsIgnoreCase("hgnc symbol"))
+					if (x.getDb().equalsIgnoreCase("hgnc.symbol")) {
 						hgncSymbols.add(x.getId());
+					}
 			}
 		}
 		// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 		if (!hgncSymbols.isEmpty() && hgncSymbols.size() <= maxNumXrefsToAdd) {
-			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
+			addRelXrefs(m, bpe, "hgnc.symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
 	}
 

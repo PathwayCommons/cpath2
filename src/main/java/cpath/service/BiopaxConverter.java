@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import cpath.service.api.OutputFormat;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.jsonld.JsonldBiopaxConverter;
 import org.biopax.paxtools.io.jsonld.JsonldConverter;
@@ -178,9 +179,9 @@ public class BiopaxConverter {
   private void convertToGSEA(Model m, OutputStream stream, Map<String, String> options)
     throws IOException {
     String idType;
-    if ((idType = options.get("db")) == null)
-      idType = "hgnc symbol";
-
+    if ((idType = options.get("db")) == null) {
+      idType = "hgnc.symbol";
+    }
 
     // It won't traverse into sub-pathways; will use only pre-defined organisms.
     // GSEAConverter's 'skipSubPathways' option is a different beast from the PC web api's 'subpw':
@@ -215,7 +216,7 @@ public class BiopaxConverter {
     ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
     idFetcher.chemDbStartsWithOrEquals("chebi");
 
-    if (db == null || db.isEmpty() || db.toLowerCase().startsWith("hgnc")) {
+    if (StringUtils.isBlank(db) || db.toLowerCase().startsWith("hgnc")) {
       idFetcher.seqDbStartsWithOrEquals("hgnc");
     } else if (db.toLowerCase().startsWith("uniprot")) {
       idFetcher.seqDbStartsWithOrEquals("uniprot");

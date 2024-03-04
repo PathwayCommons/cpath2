@@ -70,13 +70,13 @@ final class UniprotConverter extends BaseConverter {
 				// GN gene symbols - to PR names and rel. xrefs
 				if (geneName != null) {
 					Collection<String> geneNames = getGeneSymbols(geneName.toString(), proteinReference);
-					// always use "HGNC Symbol" for rel. xrefs, despite it can be from MGI, RGD,.. (these are coordinated by HGNC)
+					// always use HGNC Symbol for rel. xrefs, despite it can be from MGI, RGD (these are coordinated by HGNC);
 					// (cannot do this in setXRefsFromDRs: no gene synonyms there, and organism specific db names like MGI)
 					for (String symbol : geneNames) {
 						// also add Gene Names to PR names (can be >1 due to isoforms)
 						proteinReference.addName(symbol);
 						RelationshipXref rXRef = CPathUtils
-								.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model);
+								.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "hgnc.symbol", symbol, model);
 						proteinReference.addXref(rXRef);
 					}
 				}
@@ -305,12 +305,12 @@ final class UniprotConverter extends BaseConverter {
 						fixedDb = "Nucleotide Sequence Database";
 						//last ID in a HGNC line is in fact gene name
 					} else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
-						fixedDb = "HGNC Symbol";
+						fixedDb = "hgnc.symbol";
 					}
 					//remove .version from RefSeq IDs
 					else if (db.equalsIgnoreCase("REFSEQ")) {
 						// extract only RefSeq AC from AC.Version ID form
-						fixedDb = "RefSeq";
+						fixedDb = "refseq";
 						id = id.replaceFirst("\\.\\d+", "");
 					}
 

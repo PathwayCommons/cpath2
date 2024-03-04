@@ -103,12 +103,18 @@ public class HumanCycCleaner implements Cleaner
 		for (Xref xr : model.getObjects(Xref.class))
 		{
 			if(xr.getDb() == null) {
-				if(!(xr instanceof PublicationXref)) 
+				if(!(xr instanceof PublicationXref))
 					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getUri());
-			} else if(xr.getDb().startsWith("Entrez"))
+			}
+			else if(xr.getDb().startsWith("Entrez")) {
 				xr.setDb("genpept"); //Protein GenBank Identifier
-			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) 
+			}
+			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) {
 				xr.setDb("ncbitaxon");
+			}
+			else if(xr.getDb().equalsIgnoreCase("Ensembl Human")) {
+				xr.setDb("ensembl");
+			}
 		}
 	}
 	
