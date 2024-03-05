@@ -9,6 +9,8 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,6 +21,8 @@ import java.util.*;
  */
 final class PathbankCleaner implements Cleaner {
 
+  private static final Logger log = LoggerFactory.getLogger(PathbankCleaner.class);
+
   public void clean(InputStream data, OutputStream cleanedData) {
     // create bp model from dataFile
     SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
@@ -28,59 +32,61 @@ final class PathbankCleaner implements Cleaner {
     if (!model.containsID(model.getXmlBase() + "Reference/TAXONOMY_9606")
       && !model.containsID(model.getXmlBase() + "Reference/Taxonomy_9606")
       && !model.getObjects(BioSource.class).isEmpty())
+    {
       throw new RuntimeException("Highly likely non-human datafile (skip).");
+    }
 
     //since Apr-2018, top pathway URIs are "normalized" like: http://identifiers.org/smpdb/...
     //let's fix pathway uris base - use bioregistry.io/pathbank: instead
     CPathUtils.rebaseUris(model, "http://identifiers.org/smpdb/", "bioregistry.io/pathbank:");
 
-    // Normalize Pathway URIs KEGG stable id, where possible
-    Set<Pathway> pathways = new HashSet<>(model.getObjects(Pathway.class));
-    for (Pathway pw : pathways) {
-
-      //smpdb/pathbank use pathwayOrder, but it's useless - no nextStep at all!
-      for (PathwayStep step : new HashSet<>(pw.getPathwayOrder())) {
-        if (step.getNextStep().isEmpty() && step.getNextStepOf().isEmpty()) {
-          for (Process process : step.getStepProcess())
-            if (process instanceof Interaction && !Interaction.class.equals(process.getModelInterface()))
-              pw.addPathwayComponent(process);
-          pw.removePathwayOrder(step);
+    //remove pathways that have "SubPathway" name;
+    //though all these could be merged to become more informative pathways (once all the datafiles get merged),
+    //they add too much/unordered nesting/complexity to our model; not very helpful for the graph queries, SIF/GMT...
+    //due to the way pathwayOrder and pathwayComponent are used...
+    for (Pathway sp : new HashSet<>(model.getObjects(Pathway.class))) {
+      if (sp.getName().contains("SubPathway")) {
+        for (Pathway p : new HashSet<>(sp.getPathwayComponentOf())) {
+          p.removePathwayComponent(sp);
         }
-      }
-
-      //remove all Interaction.class (base) objects
-      for (Interaction it : new HashSet<>(model.getObjects(Interaction.class))) {
-        if (Interaction.class.equals(it.getModelInterface())) {
-          model.remove(it);
-        }
-      }
-
-      //remove sub-pathways that have "SubPathway" in names...
-      //forgot why we do this (likely due to same pathways were defined in other files and we merge all...)
-      for (Pathway pathway : new HashSet<>(model.getObjects(Pathway.class))) {
-        if (pathway.getName().contains("SubPathway")) {
-          model.remove(pathway);
-          for (Pathway pp : new HashSet<>(pathway.getPathwayComponentOf())) {
-            pp.removePathwayComponent(pathway);
-          }
-          for (PathwayStep ps : new HashSet<>(pathway.getStepProcessOf())) {
-            ps.removeStepProcess(pathway);
-          }
-        }
+        model.remove(sp);
       }
     }
 
+    //remove all Interaction.class (base) objects
+    for (Interaction it : new HashSet<>(model.getObjects(Interaction.class))) {
+      if (Interaction.class.equals(it.getModelInterface())) {
+        model.remove(it);
+      }
+    }
+
+    //smpdb/pathbank use pathwayOrder, but it seems useless/nonsense, - no nextStep, participants are also added as pathwayComponent...
+    //move reaction/control from PathwayStep having no nextStep to pathwayComponent property of the parent pw.
+    for (PathwayStep step : new HashSet<>(model.getObjects(PathwayStep.class))) {
+      Pathway p = step.getPathwayOrderOf();
+      if (step.getNextStep().isEmpty() && step.getNextStepOf().isEmpty()) { //seems always TRUE (pathbank 2024/02)!
+        for (Process process : step.getStepProcess()) {
+          if (process instanceof Interaction && !Interaction.class.equals(process.getModelInterface())) {
+            p.addPathwayComponent(process);
+          }
+        }
+        step.getPathwayOrderOf().removePathwayOrder(step);
+        model.remove(step);
+      } else {
+        log.debug("keep pw step {} of pw {}", step.getUri(), p.getUri());
+      }
+    }
+
+    //delete dummy names if any
     for (Named o : model.getObjects(Named.class)) {
-      //delete bogus dummy names
       for (String name : new HashSet<>(o.getName())) {
         if (StringUtils.startsWithIgnoreCase(name, "SubPathway")) {
           o.removeName(name);
-          o.addComment(name);
         }
       }
     }
 
-//		ModelUtils.replace(model, replacements);
+    //remove dangling, e.g., pathway steps, cv, xrefs, etc.
     ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
 
     // convert model back to OutputStream for return
