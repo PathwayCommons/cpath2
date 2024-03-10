@@ -10,7 +10,7 @@
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
-      "description": "ChEBI Ontology v230, 29-Jan-2024",
+      "description": "ChEBI Ontology v231, 10-Mar-2024",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",
@@ -284,7 +284,7 @@
         "Comparative Toxicogenomics Database",
         "ctdbase"
       ],
-      "description": "Curated chemical-gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 31-Jan-2024; converted with http://github.com/PathwayCommons/ctd-to-biopax",
+      "description": "Curated chemical-gene interactions from Comparative Toxicogenomics Database, MDI Biological Laboratory, and NC State University; 28-Feb-2024; converted with http://github.com/PathwayCommons/ctd-to-biopax",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/ctdlogo.png",
       "availability": "academic",
       "type": "BIOPAX",
@@ -369,7 +369,7 @@
   	  "name": [
   	    "Biofactoid"
   	  ],
-  	  "description": "Biofactoid BioPAX data, 2024-02-07",
+  	  "description": "Biofactoid BioPAX data, 2024-03-10",
   	  "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/biofactoid.png",
   	  "availability": "free",
   	  "type": "BIOPAX",
