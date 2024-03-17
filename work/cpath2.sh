@@ -7,12 +7,12 @@ DEBUG_OPTS=""
 #DEBUG_OPTS="-Dlogback.configurationFile=logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 BASE_OPTS="-Dlogback.configurationFile=logback.xml -Dfile.encoding=UTF-8 -Xss32m -Xmx60g -Dpaxtools.normalizer.use-latest-registry=true -Dpaxtools.core.use-latest-genenames=true"
 #use List instead Map collections for read-only BioPAX model if we start the Web app but not if building the instance/data
-EXTRA_OPTS="$BASE_OPTS -Dpaxtools.model.safeset=list -server"
+EXTRA_OPTS="$BASE_OPTS -server"
 
 for arg in "$@"; do
   if [ "$arg" = "--build" ] || [ "$arg" = "-b" ] ; then
     echo "Enabled load time weaving (LTW)"
-    EXTRA_OPTS="$BASE_OPTS -Dpaxtools.model.safeset=map -javaagent:../target/spring-instrument.jar"
+    EXTRA_OPTS="$BASE_OPTS -javaagent:../target/spring-instrument.jar"
     break
   fi
 done

@@ -11,7 +11,8 @@ WORKDIR ${CPATH2_HOME}
 ENTRYPOINT ["java", "-server", "-Djava.security.egd=file:/dev/./urandom", \
 "-Dfile.encoding=UTF-8", "-Xss32m", "-Xmx64g", \
 "-Dspring.profiles.active=docker", \
-"-Dpaxtools.model.safeset=list", \
+"-Dlogback.configurationFile=logback.xml", \
 "-Dpaxtools.normalizer.use-latest-registry=true", \
+"-Dpaxtools.core.use-latest-genenames=true", \
 "-jar", "/cpath2.war", "--server"]
 EXPOSE 8080

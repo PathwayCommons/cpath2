@@ -176,6 +176,7 @@ public class CPathUtilsTest {
 			http://smpdb.ca/pathways/#A,,foo:,foo:A
 			http://smpdb.ca/pathways/#A,http://smpdb.ca/pathways/#,foo:,foo:A
 			http://identifiers.org/smpdb/A,http://identifiers.org/smpdb/,foo:,foo:A
+			ctdbase:complex_3048803,,ctd:,ctdbase:complex_3048803
 			"""
 	)
 	void rebaseUri(String uri, String obase, String nbase, String expected) {

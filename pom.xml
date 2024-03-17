@@ -220,7 +220,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
           <mainClass>${start-class}</mainClass>
-          <jvmArguments>${jvm.options} -Dpaxtools.model.safeset=list -Dpaxtools.normalizer.use-latest-registry=true</jvmArguments>
+          <jvmArguments>${jvm.options}</jvmArguments>
           <agents>
             <agent>${agent}</agent>
           </agents>
