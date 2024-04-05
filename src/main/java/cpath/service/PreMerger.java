@@ -110,7 +110,8 @@ final class PreMerger {
               + "; skipping for this data source...");
             return; // skip due to the error
           }
-          converter.setXmlBase(xmlBase);
+//          converter.setXmlBase(xmlBase);
+          converter.setXmlBase(datasource.getIdentifier()+":"); //todo: test if it works/looks better than with instance's xmlBase...
         } else {
           log.info("premerge(), Converter class is not defined for " + mid);
         }

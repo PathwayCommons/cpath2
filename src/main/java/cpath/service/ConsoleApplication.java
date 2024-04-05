@@ -351,9 +351,9 @@ public class ConsoleApplication implements CommandLineRunner {
     // generate the "Detailed" pathway data file:
     createDetailedBiopax(mainModel, index);
 
-    // generate the export.sh script (to run Paxtools commands for exporting the BioPAX files to other formats)
+    // Generate export.sh script (to convert the data/model to other formats)
     LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
-    final String commonPrefix = service.settings().exportArchivePrefix(); //e.g., PathwayCommons13
+    final String commonPrefix = service.settings().exportArchivePrefix();
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
       Paths.get(service.settings().exportScriptFile())), StandardCharsets.UTF_8));
     writer.println("#!/bin/sh");
@@ -364,7 +364,7 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println("# sh export.sh &");
 
     //write commands to the script file for 'All' and 'Detailed' BioPAX input files:
-//    writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
+    //writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
     writeScriptCommands(service.settings().biopaxFileName("All"), writer, true);
 
     //rename SIF files that were cut from corresponding extended SIF (.txt) ones
@@ -379,7 +379,11 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
       service.settings().biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
     writer.println("wait");
-    writer.println("gzip pathways.txt *.json");
+    writer.println("""
+        gunzip -c physical_entities.json.gz | jq -cS 'map(select(.generic)) | reduce .[] as $o ({}; . + {($o.uri): {name: $o.name, label:$o.label, synonyms:$o."hgnc.symbol"}})' > generic-physical-entity-map.json
+        """);
+    writer.println("wait");
+    writer.println("gzip pathways.txt physical_entities.json");
     writer.println("echo \"All done.\"");
     writer.close();
     LOG.info("postmerge: done.");

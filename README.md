@@ -83,7 +83,8 @@ To see available commands and options, run:
     bash cpath2.sh
 
 In order to create a new cpath2 instance, define or update the metadata.json, 
-prepare input data archives (see below how), and run 
+prepare input data archives (see below how), also install `jq`, `gunzip`, 
+and run:
 
     bash cpath2.sh --build 2>&1 >build.log &
 
