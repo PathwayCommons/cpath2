@@ -33,7 +33,7 @@ public class ApiControllerV1 extends BasicController {
    */
 
   @GetMapping(path = "get",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format (query parameters must be URL-encoded and not too many).",
       description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
@@ -46,7 +46,7 @@ public class ApiControllerV1 extends BasicController {
 
   @PostMapping(path = "get",
       consumes = {APPLICATION_FORM_URLENCODED_VALUE},
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
     summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format",
     description = "Retrieve pathways/interactions/entities by their BioPAX URIs; " +
@@ -175,7 +175,7 @@ public class ApiControllerV1 extends BasicController {
   }
 
   @GetMapping(path = "graph",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "BioPAX Graph Query and optional converter to another output format (parameters must be URL-encoded and not too many).",
       description = "Find connections of bio network elements, such as the shortest path between " +
@@ -193,7 +193,7 @@ public class ApiControllerV1 extends BasicController {
 
   @PostMapping(path = "graph",
       consumes = {APPLICATION_FORM_URLENCODED_VALUE},
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
     summary = "A BioPAX graph query and optional converter to another output format.",
     description = "Find connections of bio network elements, such as the shortest path between " +

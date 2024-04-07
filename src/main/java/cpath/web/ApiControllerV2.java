@@ -171,7 +171,7 @@ public class ApiControllerV2 extends BasicController {
   }
 
   @PostMapping(path = "neighborhood",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "BioPAX Neighborhood graph query and optional converter to another output format.",
       description = "Find the neighborhood network given the source bio entity URIs/IDs. " +
@@ -196,7 +196,7 @@ public class ApiControllerV2 extends BasicController {
   }
 
   @PostMapping(path = "pathsbetween",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "BioPAX PathsBetween graph query and optional converter to another output format.",
       description = "Find the BioPAX subnetwork that includes all paths between given source bio entities (URIs/IDs). " +
@@ -221,7 +221,7 @@ public class ApiControllerV2 extends BasicController {
   }
 
   @PostMapping(path = "pathsfromto",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "BioPAX PathsFromTo graph query and optional converter to another output format.",
       description = "Find a subnetwork that includes entities on the paths from the source bio " +
@@ -247,7 +247,7 @@ public class ApiControllerV2 extends BasicController {
   }
 
   @PostMapping(path = "commonstream",
-      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/xml", "text/plain"})
+      produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
       summary = "BioPAX CommonStream graph query and optional converter to another output format.",
       description = "Find a BioPAX common stream subnetwork from the source bio entities (URIs/IDs). " +
