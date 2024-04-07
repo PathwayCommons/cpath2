@@ -44,7 +44,7 @@ import java.util.zip.GZIPOutputStream;
 @Profile({"admin"})
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
-  private static final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx64g " +
+  private static final String JAVA_PAXTOOLS = "$JAVA_HOME/bin/java -Xmx64g " +
       "-Dpaxtools.normalizer.use-latest-registry=true -Dpaxtools.core.use-latest-genenames=true -jar paxtools.jar";
 
   @Autowired
@@ -187,7 +187,6 @@ public class ConsoleApplication implements CommandLineRunner {
     service.settings().getOrganismTaxonomyIds();
     LOG.info("premerge: this instance is configured to integrate and query " +
       " bio data about following organisms: " + Arrays.toString(service.settings().getOrganisms()));
-//    System.setProperty("net.sf.ehcache.disabled", "true"); //(there is no JPA/Hibernate/H2 anymore)
     PreMerger premerger = new PreMerger(service, validator);
     premerger.premerge();
     // create the Warehouse BioPAX model and id-mapping db table
@@ -220,8 +219,8 @@ public class ConsoleApplication implements CommandLineRunner {
    *
    * @param output      - output BioPAX file name (path)
    * @param uris        - optional, the list of valid (existing) URIs to extract a sub-model
-   * @param datasources filter by data source if 'uris' is not empty
-   * @param types       filter by biopax type if 'uris' is not empty
+   * @param datasources filter by datasource if 'uris' is not empty
+   * @param types       filter by BioPAX type if 'uris' is not empty
    * @throws IOException, IllegalStateException (in maintenance mode)
    */
   private void exportData(final String output, String[] uris, String[] datasources, String[] types) throws IOException {
@@ -351,41 +350,37 @@ public class ConsoleApplication implements CommandLineRunner {
     // generate the "Detailed" pathway data file:
     createDetailedBiopax(mainModel, index);
 
-    // Generate export.sh script (to convert the data/model to other formats)
-    LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
+    // Generate export.sh script (to convert the data/model to other formats; we then run this script separately)
+    LOG.info("generating script: {}...", service.settings().exportScriptFile());
     final String commonPrefix = service.settings().exportArchivePrefix();
     writer = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(
       Paths.get(service.settings().exportScriptFile())), StandardCharsets.UTF_8));
-    writer.println("#!/bin/sh");
-    writer.println("# An auto-generated script for converting the BioPAX data archives");
-    writer.println("# in the downloads directory to other formats.");
-    writer.println("# There must be blacklist.txt and paxtools.jar files already.");
-    writer.println("# Change to the downloads/ and run as:");
-    writer.println("# sh export.sh &");
-
-    //write commands to the script file for 'All' and 'Detailed' BioPAX input files:
-    //writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true);
+    //begin writing shell commands
+    writer.println("""
+    #!/bin/sh
+    # A script for converting the BioPAX data in this dir to other formats.
+    # There must be blacklist.txt and paxtools.jar files already.
+    """);
+    //writeScriptCommands(service.settings().biopaxFileName("Detailed"), writer, true); //skip; users can download files and convert later if they want.
     writeScriptCommands(service.settings().biopaxFileName("All"), writer, true);
-
     //rename SIF files that were cut from corresponding extended SIF (.txt) ones
     writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
     writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
       commonPrefix, commonPrefix, commonPrefix, commonPrefix));
-
     //generate pathways.txt (parent-child) and physical_entities.json (URI-to-IDs mapping) files
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "summarize",
       service.settings().biopaxFileName("All"), "pathways.txt", "--pathways"));
-    writer.println("wait");
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "summarize",
+    //generate the list of physical entities (some uri, names, ids) as json array:
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "summarize",
       service.settings().biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
-    writer.println("wait");
+    //filter and convert just created above file to the json map of only "generic" PEs:
     writer.println("""
-        gunzip -c physical_entities.json.gz | jq -cS 'map(select(.generic)) | reduce .[] as $o ({}; . + {($o.uri): {name: $o.name, label:$o.label, synonyms:$o."hgnc.symbol"}})' > generic-physical-entity-map.json
+        cat physical_entities.json | jq -cS 'map(select(.generic)) | reduce .[] as $o ({}; . + {($o.uri): {name: $o.name, label:$o.label, synonyms:$o."hgnc.symbol"}})' > generic-physical-entity-map.json
+        gzip pathways.txt physical_entities.json
+        echo "Export completed!"
         """);
-    writer.println("wait");
-    writer.println("gzip pathways.txt physical_entities.json");
-    writer.println("echo \"All done.\"");
     writer.close();
+
     LOG.info("postmerge: done.");
   }
 
@@ -394,17 +389,16 @@ public class ConsoleApplication implements CommandLineRunner {
     final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
     final String commaSepTaxonomyIds = String.join(",", service.settings().getOrganismTaxonomyIds());
     if (exportToGSEA) {
-      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-        prefix + "hgnc.gmt", "'hgnc.symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
-//      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
+      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toGSEA", bpFilename,
+        prefix + "hgnc.gmt", "'hgnc.symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc.symbol' - important
+//      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toGSEA", bpFilename,
 //        prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
-      writer.println("wait"); //important
+//      writer.println("wait"); //important if JAVA_PAXTOOLS command starts with "nohup"
       writer.println("echo \"Converted " + bpFilename + " to GSEA.\"");
     }
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toSIF", bpFilename,
       prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));
-    //UniProt ID based extended SIF files can be huge, take too long to generate; skip for now.
-    writer.println("wait"); //important
+    //UniProt based extended SIF files can be huge, take too long (2 days) to generate; skip for now.
     writer.println("echo \"Converted " + bpFilename + " to SIF.\"");
   }
 
