@@ -28,11 +28,6 @@ public class PagesController extends BasicController {
     return service.settings();
   }
 
-  @RequestMapping({"/api", "/swagger"})
-  public String swagger() {
-    return "redirect:swagger-ui.html";
-  }
-
   @RequestMapping({"/", "/home"})
   public String home() {
     return "home";

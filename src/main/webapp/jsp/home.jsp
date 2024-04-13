@@ -17,16 +17,16 @@
     <div class="jumbotron">
       <h2>About <c:out value="${cpath.name} v${cpath.version}"/>:</h2>
       <p><c:out value="${cpath.description}"/></p>
-      <p>Explore the new <a href="swagger">Swagger API docs:</a></p>
+      <p>Explore the new <a href="swagger-ui.html">Swagger API docs:</a></p>
       <blockquote>
       <ul>
-      <li><a href="swagger#/biopax-model-controller/searchQuery"><code>/search</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/topPathwaysQuery"><code>/top_pathways</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/traverseQuery"><code>/traverse</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/neighborhoodQuery"><code>/neighborhood</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/pathsbetweenQuery"><code>/pathsbetween</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/pathsfromtoQuery"><code>/pathsfromto</code></a></li>
-      <li><a href="swagger#/biopax-model-controller/commonstreamQuery"><code>/commonstream</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/searchQuery"><code>/search</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/topPathwaysQuery"><code>/top_pathways</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/traverseQuery"><code>/traverse</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/neighborhoodQuery"><code>/neighborhood</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/pathsbetweenQuery"><code>/pathsbetween</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/pathsfromtoQuery"><code>/pathsfromto</code></a></li>
+      <li><a href="swagger-ui.html#/biopax-model-controller/commonstreamQuery"><code>/commonstream</code></a></li>
       </ul>
       </blockquote>
     </div>
