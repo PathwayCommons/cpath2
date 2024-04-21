@@ -435,10 +435,12 @@ final class PreMerger {
     Model model;
     //validate or just normalize
     if(datasource.getType().isNotPathwayData()) { //when "warehouse" or "mapping" data type
-      if(datasource.getType() == METADATA_TYPE.MAPPING) {
-        throw new IllegalArgumentException("Unsupported data type: MAPPING");
+      if(datasource.getType() == METADATA_TYPE.MAPPING) { //this should never happen, but let's handle and skip -
+        log.info("checkAndNormalize, skipped MAPPING data " + filename);
+        return; //skip as checkAndNormalize is not applicable to this datatype
       }
       //just load the model and skip validation
+      log.info("checkAndNormalize, loading (no validation) {} {}", datasource.getType(), filename);
       model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
       IOUtils.closeQuietly(biopaxStream);
     } else { // validate and normalize the cleaned/converted BioPAX data
