@@ -45,9 +45,9 @@
 				</h3>
 				<p><strong>{{ds.description}}</code></strong></p>
 				<p><var>Type: </var><code>{{ds.type}}</code></p>
-				<p ng-hide="ds.type.notPathwayData"><var>URI: </var><code>${cpath.xmlBase}{{ds.identifier}}</code></p>
+				<p ng-hide="ds.type === 'WAREHOUSE' || ds.type === 'MAPPING'"><var>URI: </var><code>${cpath.xmlBase}{{ds.identifier}}</code></p>
 				<p><var>Names: </var><code>{{uniqueStrings(ds.name) + ""}}</code></p>
-				<p ng-hide="ds.type.notPathwayData">
+				<p ng-hide="ds.type === 'WAREHOUSE' || ds.type === 'MAPPING'">
 					<var>Contains: </var>
 					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span>
 					<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span>
