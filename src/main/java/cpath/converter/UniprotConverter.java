@@ -409,7 +409,7 @@ final class UniprotConverter extends BaseConverter {
 		final List<String> acList = new ArrayList<>(Arrays.asList(accessions.split(";")));
 		// Pop the first item, the primary AC, to generate canonical URI and unif. xref:
 		final String primaryId = acList.remove(0).trim();
-		final String uri = "bioregistry.io/uniprot:" + primaryId;
+		final String uri = "http://bioregistry.io/uniprot:" + primaryId;
 
 		// create a new PR with the name and primary unification xref
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
@@ -450,7 +450,7 @@ final class UniprotConverter extends BaseConverter {
 		if(taxonomy==null || taxonomy <= 0) {
 			throw new RuntimeException("Illegal taxonomy ID: " + taxId);
 		} else {
-			String uri = "bioregistry.io/ncbitaxon:" + taxonomy;
+			String uri = "http://bioregistry.io/ncbitaxon:" + taxonomy;
 			if (model.containsID(uri)) {
 				toReturn = (BioSource) model.getByID(uri);
 			} else {

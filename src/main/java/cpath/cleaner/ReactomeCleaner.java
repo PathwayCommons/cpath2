@@ -58,7 +58,7 @@ final class ReactomeCleaner implements Cleaner {
 						stableId = stableId.substring(9);
 						// stableID is like 'R-HSA-123456'
 					}
-					final String uri = "bioregistry.io/reactome:" + stableId;
+					final String uri = "http://bioregistry.io/reactome:" + stableId;
 					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
 						//save it in the map to replace the URI later (see below)
 						newUriToEntityMap.put(uri, proc);

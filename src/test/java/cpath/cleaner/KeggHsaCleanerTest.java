@@ -23,7 +23,7 @@ public class KeggHsaCleanerTest {
 	@Test
 	public final void testClean() throws IOException {	
 		Cleaner cleaner = new KeggHsaCleaner();
-		final String testPathwayUri = "bioregistry.io/kegg.pathway:hsa00010";
+		final String testPathwayUri = "http://bioregistry.io/kegg.pathway:hsa00010";
 
 		String f10 = getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "testCleanKegghsa00010.owl";
@@ -45,7 +45,7 @@ public class KeggHsaCleanerTest {
 		assertEquals("PGM", named.getStandardName()); //was "PGM1, GSD14..."
 		assertFalse(named.getXref().isEmpty());
 		//Pathway
-		named = (Named)m10.getByID("bioregistry.io/kegg.pathway:hsa00010");
+		named = (Named)m10.getByID("http://bioregistry.io/kegg.pathway:hsa00010");
 		assertEquals("Glycolysis / Gluconeogenesis", named.getDisplayName()); //was "Glycolysis / ..."
 		//SM or SMR
 		named = (Named)m10.getByID(m10.getXmlBase()+"cpdC00236");
@@ -63,7 +63,7 @@ public class KeggHsaCleanerTest {
 		cleaner.clean(new FileInputStream(getClass().getResource("/hsa00562.owl").getFile()), 
 				new FileOutputStream(f562));		
 		Model m562 = new SimpleIOHandler().convertFromOWL(new FileInputStream(f562));		
-		assertTrue(m562.containsID("bioregistry.io/kegg.pathway:hsa00562"));
+		assertTrue(m562.containsID("http://bioregistry.io/kegg.pathway:hsa00562"));
 		assertTrue(m562.containsID(testPathwayUri));
 		
 		
@@ -73,7 +73,7 @@ public class KeggHsaCleanerTest {
 		model.merge(m10);
 		model.merge(m562);		
 		assertTrue(model.containsID(testPathwayUri));
-		assertTrue(model.containsID("bioregistry.io/kegg.pathway:hsa00562"));
+		assertTrue(model.containsID("http://bioregistry.io/kegg.pathway:hsa00562"));
 		
 		//save result 1
 		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(
@@ -88,7 +88,7 @@ public class KeggHsaCleanerTest {
 		model.merge(m562);	
 		model.merge(m10);
 		assertTrue(model.containsID(testPathwayUri));
-		assertTrue(model.containsID("bioregistry.io/kegg.pathway:hsa00562"));
+		assertTrue(model.containsID("http://bioregistry.io/kegg.pathway:hsa00562"));
 		
 		//save test result 2
 		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(
@@ -104,7 +104,7 @@ public class KeggHsaCleanerTest {
 		merger.merge(model, m562);
 		merger.merge(model, m10);
 		assertTrue(model.containsID(testPathwayUri));
-		assertTrue(model.containsID("bioregistry.io/kegg.pathway:hsa00562"));
+		assertTrue(model.containsID("http://bioregistry.io/kegg.pathway:hsa00562"));
 		
 		//save test result 3
 		new SimpleIOHandler().convertToOWL(model, new FileOutputStream(

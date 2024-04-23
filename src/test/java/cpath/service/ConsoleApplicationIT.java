@@ -197,10 +197,10 @@ public class ConsoleApplicationIT
     Model warehouse = CPathUtils.importFromTheArchive(service.settings().warehouseModelFile());
     assertNotNull(warehouse);
     assertFalse(warehouse.getObjects(ProteinReference.class).isEmpty());
-    assertTrue(warehouse.containsID("bioregistry.io/uniprot:P0DP23"));
+    assertTrue(warehouse.containsID("http://bioregistry.io/uniprot:P0DP23"));
     assertFalse(warehouse.getObjects(SmallMoleculeReference.class).isEmpty());
-    assertTrue(warehouse.containsID("bioregistry.io/chebi:20"));
-    ProteinReference pr = (ProteinReference) warehouse.getByID("bioregistry.io/uniprot:P0DP23");
+    assertTrue(warehouse.containsID("http://bioregistry.io/chebi:20"));
+    ProteinReference pr = (ProteinReference) warehouse.getByID("http://bioregistry.io/uniprot:P0DP23");
     assertNotNull(pr);
     assertNotNull(pr.getName());
     assertFalse(pr.getName().isEmpty());
@@ -210,7 +210,7 @@ public class ConsoleApplicationIT
     assertFalse(pr.getXref().isEmpty());
 
     service.index().refresh();
-    assertTrue(warehouse.containsID("bioregistry.io/uniprot:Q8TD86"));
+    assertTrue(warehouse.containsID("http://bioregistry.io/uniprot:Q8TD86"));
     // test some id-mapping using different srcDb names (UniProt synonyms...)
     Set<String> acs = service.map(List.of("A2A2M3"), "UNIPROT");
     assertFalse(acs.isEmpty());
@@ -229,7 +229,7 @@ public class ConsoleApplicationIT
     // (the id-mapping table only has canonical uniprot AC/IDs, not isoform IDs)
     acs = service.map(List.of("NP_619650"), "UNIPROT");
     assertTrue(acs.contains("Q8TD86"));
-    assertTrue(warehouse.containsID("bioregistry.io/uniprot:Q8TD86"));
+    assertTrue(warehouse.containsID("http://bioregistry.io/uniprot:Q8TD86"));
 
     ids = service.map(List.of("P01118"), "UNIPROT");
     assertEquals(1, ids.size());
@@ -335,7 +335,7 @@ public class ConsoleApplicationIT
     // Test FETCH (get an object or subnetwork by URI or ID service; uses the full-text id-mapping index too)
 
     // fetch as BIOPAX
-    res = service.fetch(OutputFormat.BIOPAX, null, false, "bioregistry.io/uniprot:P27797");
+    res = service.fetch(OutputFormat.BIOPAX, null, false, "http://bioregistry.io/uniprot:P27797");
     assertNotNull(res);
     assertTrue(res instanceof DataResponse);
     assertFalse(res.isEmpty());
@@ -353,7 +353,7 @@ public class ConsoleApplicationIT
     assertFalse(((DataResponse) res).getProviders().isEmpty());
 
     // fetch a small molecule by URI
-    res = service.fetch(OutputFormat.BIOPAX, null, false, "bioregistry.io/chebi:20");
+    res = service.fetch(OutputFormat.BIOPAX, null, false, "http://bioregistry.io/chebi:20");
     assertNotNull(res);
     assertFalse(res.isEmpty());
 
@@ -364,7 +364,7 @@ public class ConsoleApplicationIT
 
     //test traverse using path and URI
     res = service.traverse("ProteinReference/displayName",
-      "bioregistry.io/uniprot:P27797");
+      "http://bioregistry.io/uniprot:P27797");
     assertTrue(res instanceof TraverseResponse);
     assertFalse(res.isEmpty());
     List<String> vals = ((TraverseResponse) res).getTraverseEntry().get(0).getValue();
@@ -395,22 +395,22 @@ public class ConsoleApplicationIT
     // test proper merge of protein reference
     assertTrue(mergedModel.containsID(DS_XML_BASE+"Protein_54"));
     assertFalse(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54")); //due to orig. xml base was rewritten
-    assertTrue(mergedModel.containsID("bioregistry.io/uniprot:P27797")); //CALR_HUMAN
+    assertTrue(mergedModel.containsID("http://bioregistry.io/uniprot:P27797")); //CALR_HUMAN
     assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
     String humanUri = Normalizer.uri(XML_BASE, "taxonomy", "9606", BioSource.class);
     assertTrue(mergedModel.containsID(humanUri));
     String clUri = Normalizer.uri(XML_BASE, "GO", "GO:0005737", CellularLocationVocabulary.class);
     assertTrue(mergedModel.containsID(clUri));
 
-    assertTrue(mergedModel.containsID("bioregistry.io/uniprot:P13631"));
-    assertFalse(mergedModel.containsID("bioregistry.io/uniprot:P22932"));
+    assertTrue(mergedModel.containsID("http://bioregistry.io/uniprot:P13631"));
+    assertFalse(mergedModel.containsID("http://bioregistry.io/uniprot:P22932"));
     //sec. ACs are not kept anymore (they're used in creating id-mapping and index, and then removed)
     assertFalse(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118_secondary-ac", RelationshipXref.class)));
-    assertFalse(mergedModel.containsID("bioregistry.io/uniprot:P01118")); //must be replaced with P01116 and gone
+    assertFalse(mergedModel.containsID("http://bioregistry.io/uniprot:P01118")); //must be replaced with P01116 and gone
     assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
-    assertTrue(mergedModel.containsID("bioregistry.io/uniprot:P01116"));
+    assertTrue(mergedModel.containsID("http://bioregistry.io/uniprot:P01116"));
 
-    ProteinReference pr = (ProteinReference) mergedModel.getByID("bioregistry.io/uniprot:P27797");
+    ProteinReference pr = (ProteinReference) mergedModel.getByID("http://bioregistry.io/uniprot:P27797");
     assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
     assertEquals("CALR_HUMAN", pr.getDisplayName());
     assertEquals("Calreticulin", pr.getStandardName());
@@ -420,8 +420,8 @@ public class ConsoleApplicationIT
     // test proper merge of small molecule reference
     assertFalse(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
     assertTrue(mergedModel.containsID(DS_XML_BASE+"beta-D-fructose_6-phosphate"));
-    assertTrue(mergedModel.containsID("bioregistry.io/chebi:20"));
-    SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:20");
+    assertTrue(mergedModel.containsID("http://bioregistry.io/chebi:20"));
+    SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID("http://bioregistry.io/chebi:20");
     assertNotNull(smr.getStructure());
     assertSame(StructureFormatType.InChI, smr.getStructure().getStructureFormat());
     assertNotNull(smr.getStructure().getStructureData());
@@ -432,20 +432,20 @@ public class ConsoleApplicationIT
     // A special test id-mapping file (some PubChem SIDs and CIDs to ChEBI) is there present.
     // The PubChem:14438 SMR would not be replaced by CHEBI:20 if it were not having standard URI
     // (because the original xref has ambiguous db='PubChem' it wouldn't map to CHEBI:20);
-    assertFalse(mergedModel.containsID("bioregistry.io/pubchem.substance:14438"));
+    assertFalse(mergedModel.containsID("http://bioregistry.io/pubchem.substance:14438"));
 
     // but 14439 gets successfully replaced/merged
-    assertFalse(mergedModel.containsID("bioregistry.io/pubchem.substance:14439")); //maps to CHEBI:28 by xrefs
+    assertFalse(mergedModel.containsID("http://bioregistry.io/pubchem.substance:14439")); //maps to CHEBI:28 by xrefs
 
     SmallMolecule sm = (SmallMolecule) mergedModel.getByID(DS_XML_BASE+"alpha-D-glucose_6-phosphate");
     smr = (SmallMoleculeReference) sm.getEntityReference();
     assertNotNull(smr);
-    assertEquals("bioregistry.io/chebi:422", smr.getUri());
+    assertEquals("http://bioregistry.io/chebi:422", smr.getUri());
     // smr must not contain any member SMR anymore (changeed on 2015/11/26)
     // (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
     assertEquals(0, smr.getMemberEntityReference().size());
     assertEquals(4, smr.getXref().size());//0 PX, 1 UX and 3 RX (ChEBI) are there!
-    SmallMoleculeReference msmr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:20");
+    SmallMoleculeReference msmr = (SmallMoleculeReference) mergedModel.getByID("http://bioregistry.io/chebi:20");
     assertEquals("(+)-camphene", msmr.getDisplayName());
     assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
     assertEquals(3, msmr.getXref().size());
@@ -456,7 +456,7 @@ public class ConsoleApplicationIT
     assertNotNull(smr);
     assertEquals(smr, msmr);//CHEBI:20
 
-    smr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:28");
+    smr = (SmallMoleculeReference) mergedModel.getByID("http://bioregistry.io/chebi:28");
     assertEquals(5, smr.getXref().size(), "chebi:28 smr.xref.size!=5"); // relationship xrefs were removed before merging
     assertEquals("(R)-linalool", smr.getDisplayName());
     assertEquals(5, smr.getEntityReferenceOf().size(), "chebi:28 entityReferenceOf.size!=5");
@@ -474,7 +474,7 @@ public class ConsoleApplicationIT
     assertEquals(1, ux.getXrefOf().size());
 
     // check features from the warehouse and pathway data were merged properly
-    pr = (ProteinReference) mergedModel.getByID("bioregistry.io/uniprot:P01116");
+    pr = (ProteinReference) mergedModel.getByID("http://bioregistry.io/uniprot:P01116");
     assertEquals(2, pr.getEntityFeature().size()); //from test models (no mod_res features from uniprot anymore)
     for (EntityFeature ef : pr.getEntityFeature()) {
       assertSame(pr, ef.getEntityFeatureOf());
@@ -482,11 +482,11 @@ public class ConsoleApplicationIT
 
     //SmallMoleculeReference165390 SMR should have been replaced with one from the warehouse (ChEBI) or removed
     assertFalse(mergedModel.containsID("http://identifiers.org/chebi/CHEBI:28"));//shoulda match by ID and become bioregistry.io/chebi:28!
-    assertTrue(mergedModel.containsID("bioregistry.io/chebi:28"));
+    assertTrue(mergedModel.containsID("http://bioregistry.io/chebi:28"));
     assertFalse(mergedModel.containsID("http://biocyc.org/biopax/biopax-level3#SmallMoleculeReference165390"));//orig. URI base was replaced
     assertFalse(mergedModel.containsID(DS_XML_BASE+"SmallMoleculeReference165390"));
     // check the canonical SMR has proper member/memberOf
-    smr = (SmallMoleculeReference) mergedModel.getByID("bioregistry.io/chebi:28");
+    smr = (SmallMoleculeReference) mergedModel.getByID("http://bioregistry.io/chebi:28");
     // - was matched/replaced by the same URI Warehouse SMR
     sm = (SmallMolecule) mergedModel.getByID(DS_XML_BASE+"SmallMolecule173158");
     assertFalse(smr.getXref().isEmpty());

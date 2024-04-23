@@ -115,11 +115,11 @@ public class WebApplicationIT {
 	public void postFetchQuery() {  // API v1, HTTP POST, body: URL-encoded form parameters
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-		String body = "uri=bioregistry.io/uniprot:P27797"; //will be url-encoded before sent
+		String body = "uri=http://bioregistry.io/uniprot:P27797"; //will be url-encoded before sent
 		HttpEntity<String> req = new HttpEntity<>(body, headers);
 		String result = template.postForObject("/get", req, String.class);
 		assertNotNull(result);
-		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"bioregistry.io/uniprot:P27797\""));
+		assertTrue(result.contains("<bp:ProteinReference rdf:about=\"http://bioregistry.io/uniprot:P27797\""));
 	}
 
 }

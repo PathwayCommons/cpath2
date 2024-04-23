@@ -51,7 +51,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			return;
 		}
 		final String thisID = childChebiIDs.iterator().next();
-		SmallMoleculeReference thisSMR = (SmallMoleculeReference) model.getByID("bioregistry.io/chebi:" + thisID.toLowerCase());
+		SmallMoleculeReference thisSMR = (SmallMoleculeReference) model.getByID("http://bioregistry.io/chebi:" + thisID.toLowerCase());
 		if (thisSMR == null) {
 			log.debug("processOBOEntry(), Skipped (not found): " + thisID);
 			return;

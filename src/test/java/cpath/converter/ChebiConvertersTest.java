@@ -53,10 +53,10 @@ public class ChebiConvertersTest {
 
 		// get all small molecule references out
 		assertEquals(7, model.getObjects(SmallMoleculeReference.class).size());
-		assertNotNull(model.getByID("bioregistry.io/chebi:58342")); //the SMR without InChIKey
+		assertNotNull(model.getByID("http://bioregistry.io/chebi:58342")); //the SMR without InChIKey
 
 		// get lactic acid sm
-		String rdfID = "bioregistry.io/chebi:422";
+		String rdfID = "http://bioregistry.io/chebi:422";
 		assertTrue(model.containsID(rdfID));
 		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference) model.getByID(rdfID);
 
@@ -77,12 +77,12 @@ public class ChebiConvertersTest {
 		assertEquals(0, publicationXrefCount); //there are no such xrefs anymore
 
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
-		assertTrue(model.containsID("bioregistry.io/chebi:20"));
-		EntityReference er20 = (EntityReference) model.getByID("bioregistry.io/chebi:20");
-		assertTrue(model.containsID("bioregistry.io/chebi:28"));
-//		EntityReference er28 = (EntityReference) model.getByID("bioregistry.io/chebi:28");
-		assertTrue(model.containsID("bioregistry.io/chebi:422"));
-		EntityReference er422 = (EntityReference) model.getByID("bioregistry.io/chebi:422");
+		assertTrue(model.containsID("http://bioregistry.io/chebi:20"));
+		EntityReference er20 = (EntityReference) model.getByID("http://bioregistry.io/chebi:20");
+		assertTrue(model.containsID("http://bioregistry.io/chebi:28"));
+//		EntityReference er28 = (EntityReference) model.getByID("http://bioregistry.io/chebi:28");
+		assertTrue(model.containsID("http://bioregistry.io/chebi:422"));
+		EntityReference er422 = (EntityReference) model.getByID("http://bioregistry.io/chebi:422");
 
 		assertTrue(er20.getMemberEntityReferenceOf().isEmpty());
 		assertTrue(er422.getMemberEntityReferenceOf().isEmpty());

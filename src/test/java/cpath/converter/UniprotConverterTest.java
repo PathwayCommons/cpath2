@@ -54,14 +54,14 @@ public class UniprotConverterTest {
 		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 				
-		ProteinReference pr = (ProteinReference) model.getByID("bioregistry.io/uniprot:P27797");
+		ProteinReference pr = (ProteinReference) model.getByID("http://bioregistry.io/uniprot:P27797");
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 		assertEquals(48, pr.getXref().size()); //no duplicates (UniProt, HGNC, PDB, IPI, EMBL, PIR, DIP, etc., xrefs)
-		assertEquals("bioregistry.io/ncbitaxon:9606", pr.getOrganism().getUri());
+		assertEquals("http://bioregistry.io/ncbitaxon:9606", pr.getOrganism().getUri());
 
-		pr = (ProteinReference) model.getByID("bioregistry.io/uniprot:P0DP23");
+		pr = (ProteinReference) model.getByID("http://bioregistry.io/uniprot:P0DP23");
 		assertNotNull(pr);
 		assertTrue(pr.getName().contains("CALM"));
 		assertTrue(pr.getName().contains("CALM1"));
@@ -70,32 +70,7 @@ public class UniprotConverterTest {
 		assertTrue(pr.getXref().toString().contains("1J7P")); // has that PDB xref too
 		//we don't convert/add features anymore
 		assertTrue(pr.getEntityFeature().isEmpty());
-//		assertEquals(11, pr.getEntityFeature().size());
-//		//check for a feature object by using URI generated the same way as it's in the converter:
-//		String mfUri = Normalizer.uri(model.getXmlBase(), null, pr.getDisplayName() + "_1", ModificationFeature.class);
-//		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
-//		assertNotNull(mf);
-//		assertTrue(pr.getEntityFeature().contains(mf));
-//		SequenceLocation sl = mf.getFeatureLocation();
-//		assertTrue(sl instanceof SequenceSite);
-//		assertEquals(2, ((SequenceSite)sl).getSequencePosition());
-//		assertEquals("N-acetylalanine", mf.getModificationType().getTerm().iterator().next());
-//		//test for the following FT entry was correctly parsed/converted:
-//		//		FT   MOD_RES         45
-//		//		FT                   /note="Phosphothreonine; by CaMK4"
-//		//		FT                   /evidence="ECO:0000250|UniProtKB:P0DP29"
-//		ModificationFeature f = null;
-//		for(EntityFeature ef : pr.getEntityFeature()) {
-//			if((ef instanceof ModificationFeature) && ((ModificationFeature)ef).getModificationType().getTerm().contains("Phosphothreonine")) {
-//				f = (ModificationFeature) ef;
-//			}
-//		}
-//		assertNotNull(f);
-//		assertTrue(f.getModificationType() instanceof SequenceModificationVocabulary);
-//		Set<String> terms = f.getModificationType().getTerm();
-//		assertTrue(terms.contains("Phosphothreonine"));
-//		assertTrue(f.getFeatureLocation() instanceof SequenceSite);
-		
+
 		//this is just to test for a bug in the DR text format parser...
 		boolean rel = false;
 		for(Xref x : pr.getXref()) {

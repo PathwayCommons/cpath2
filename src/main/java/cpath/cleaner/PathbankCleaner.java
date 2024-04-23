@@ -38,7 +38,7 @@ final class PathbankCleaner implements Cleaner {
 
     //since Apr-2018, top pathway URIs are "normalized" like: http://identifiers.org/smpdb/...
     //let's fix pathway uris base - use bioregistry.io/pathbank: instead
-    CPathUtils.rebaseUris(model, "http://identifiers.org/smpdb/", "bioregistry.io/pathbank:");
+    CPathUtils.rebaseUris(model, "http://identifiers.org/smpdb/", "http://bioregistry.io/pathbank:");
 
     //remove pathways that have "SubPathway" name;
     //though all these could be merged to become more informative pathways (once all the datafiles get merged),

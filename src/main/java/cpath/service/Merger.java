@@ -599,7 +599,7 @@ public final class Merger {
 		}
 		final Set<String> hgncSymbols = new HashSet<>();
 		for (String ac : accessions) {
-			ProteinReference canonicalPR = (ProteinReference) warehouseModel.getByID("bioregistry.io/uniprot:" + ac);
+			ProteinReference canonicalPR = (ProteinReference) warehouseModel.getByID("http://bioregistry.io/uniprot:" + ac);
 			if (canonicalPR != null) {
 				for (Xref x : canonicalPR.getXref())
 					if (x.getDb().equalsIgnoreCase("hgnc.symbol")) {

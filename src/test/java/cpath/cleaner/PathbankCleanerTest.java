@@ -22,12 +22,12 @@ public class PathbankCleanerTest {
 	@Test
 	public final void testClean() throws IOException {	
 		Cleaner cleaner = new PathbankCleaner();
-		String uri1 = "bioregistry.io/pathbank:SMP0000040"; //was "http://identifiers.org/smpdb/SMP0000040";
+		String uri1 = "http://bioregistry.io/pathbank:SMP0000040"; //was "http://identifiers.org/smpdb/SMP0000040";
 		String f1 = getClass().getClassLoader().getResource("").getPath() + File.separator + "PW000146.cleaned.owl";
 		cleaner.clean(new FileInputStream(getClass().getResource("/PW000146.owl").getFile()), new FileOutputStream(f1));
 		Model m1 = new SimpleIOHandler().convertFromOWL(new FileInputStream(f1));
 		Pathway p1 = (Pathway)m1.getByID(uri1);
-		String uri2 = "bioregistry.io/pathbank:SMP0000057"; //was "http://identifiers.org/smpdb/SMP0000057";
+		String uri2 = "http://bioregistry.io/pathbank:SMP0000057"; //was "http://identifiers.org/smpdb/SMP0000057";
 		String f2 = getClass().getClassLoader().getResource("").getPath() + File.separator + "PW000005.cleaned.owl";
 		cleaner.clean(new FileInputStream(getClass().getResource("/PW000005.owl").getFile()), new FileOutputStream(f2));
 		Model m2 = new SimpleIOHandler().convertFromOWL(new FileInputStream(f2));
