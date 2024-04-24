@@ -248,7 +248,7 @@ public class IndexImpl implements Index, Mappings {
 				}	
 			}
 						
-			// extract organisms (URI only) 
+			// extract organisms (URIs only)
 			if(doc.get(FIELD_ORGANISM) != null) {
 				Set<String> uniqueVals = new TreeSet<>();
 				for(String o : doc.getValues(FIELD_ORGANISM)) {
@@ -360,19 +360,19 @@ public class IndexImpl implements Index, Mappings {
 
 		// create a new document
 		final Document doc = new Document();
-		// using StringField and KeywordAnalyser for this field
+		// using StringField and KeywordAnalyser (when searching) for 'uri' field
 		final String uri = bpe.getUri();
-        // save URI: indexed, not analyzed, stored
+    // save URI: indexed, not analyzed, stored
 		doc.add(new StringField(FIELD_URI, uri, Field.Store.YES));
-        //extract and index the last part of the uri (e.g., 'hsa00010' or like 'ProteinReference_ca123bd44...')
-        if(uri.startsWith("http://")) {
-        	String id = (uri.endsWith("/")) ? uri.substring(0, uri.length()-1) : uri;
-            id = id.replaceAll(".*[/#]", "").trim();
-            doc.add(new StringField(FIELD_URI, id, Field.Store.NO));
-        }
 
-		// index and store but not analyze/tokenize the biopax class name:
+		//index the last part of the uri (e.g., 'hsa00010' or like 'ProteinReference_ca123bd44...'); todo: why?..
+		String luri = (uri.endsWith("/")) ? uri.substring(0, uri.length()-1) : uri;
+		luri = luri.replaceAll(".*[/#]", "").trim();
+		doc.add(new StringField(FIELD_URI, luri, Field.Store.NO));
+
+		// index and store but not analyze/tokenize biopax class name (lowcase as we use StandardAnalyzer for searching/filtering in this field):
 		doc.add(new StringField(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), Field.Store.YES));
+
 		// extra index fields
 		addPathways(ModelUtils.getParentPathways(bpe), doc);
 		addOrganisms(ModelUtils.getOrganisms(bpe), doc);
@@ -394,11 +394,10 @@ public class IndexImpl implements Index, Mappings {
 		}
 
 		// Add more xref IDs to the index using id-mapping
-		Set<String> ids = CPathUtils.getXrefIds(bpe);
+		final Set<String> ids = CPathUtils.getXrefIds(bpe);
 		Pattern isoformIdPattern = Pattern.compile(Resolver.getNamespace("uniprot.isoform", true).getPattern());
-		Pattern uniprotIdPattern = Pattern.compile(Resolver.getNamespace("uniprot", true).getPattern()); //"uniprot protein" is the preferred name
-		// in addition, collect ChEBI and UniProt IDs and then
-		// use id-mapping to associate the bpe with more IDs:
+		Pattern uniprotIdPattern = Pattern.compile(Resolver.getNamespace("uniprot", true).getPattern());
+		// also collect ChEBI and UniProt IDs and then use id-mapping to associate the bpe with more IDs:
 		final List<String> uniprotIds = new ArrayList<>();
 		final List<String> chebiIds = new ArrayList<>();
 		for(String id : ids) {
@@ -407,16 +406,17 @@ public class IndexImpl implements Index, Mappings {
 				chebiIds.add(id);
 			} else if(isoformIdPattern.matcher(id).find()) {
 				//cut the isoform num. suffix
-				id = id.replaceFirst("-\\d+$", "");
-				uniprotIds.add(id);
+				uniprotIds.add(id.replaceFirst("-\\d+$", ""));
 			} else if(uniprotIdPattern.matcher(id).find()) {
 				uniprotIds.add(id);
 			}
 		}
+		//id-mapping to find some other ids that map to the chebi/uniprot ones that we collected from the bpe.
 		addSupportedIdsThatMapToChebi(chebiIds, ids);
 		addSupportedIdsThatMapToUniprotId(uniprotIds, ids);
-		for (String id : ids) {//index as: not analyzed, not tokenized
-//			doc.add(new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO)); // TODO: why did we do this? IDs are case-sensitive.
+		for (String id : ids) {
+			//index as: not analyzed, not tokenized; we use KeywordAnalyzer when searching this field...
+			//doc.add(new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO));//todo: why did we have it? (ID is normally case-sensitive)
 			doc.add(new StringField(FIELD_XREFID, id, Field.Store.NO));
 			//also store a lower-case prefix (banana, e.g. 'chebi:1234' version of the id)
 			if(StringUtils.contains(id,":")) {
@@ -452,7 +452,7 @@ public class IndexImpl implements Index, Mappings {
 		// save/update the lucene document
 		try {
 			indexWriter.updateDocument(new Term(FIELD_URI, uri), doc);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeException("Failed to index: " + bpe.getUri(), e);
 		}
 	}
@@ -523,30 +523,26 @@ public class IndexImpl implements Index, Mappings {
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			// Index (!) and store URI (untokenized) -
-			// required to accurately calculate no. entities or to filter by data source
-			// (different data sources might share same names)
+			//store but do not index/tokenize the URI
+			doc.add(new StoredField(FIELD_DATASOURCE, p.getUri()));
+
+			//index the last/local (collection prefix) part of the normalized Provenance uri
 			String u = p.getUri();
-			doc.add(new StringField(FIELD_DATASOURCE, u, Field.Store.YES));
+			if (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+			u = u.replaceAll(".*[/#]", "");
+			doc.add(new TextField(FIELD_DATASOURCE, u.toLowerCase(), Field.Store.NO));
 
-            //index the identifier part of uri as well
-			if(u.startsWith("http://")) {
-				if (u.endsWith("/"))
-					u = u.substring(0, u.length() - 1);
-				u = u.replaceAll(".*/", "");
-				doc.add(new StringField(FIELD_DATASOURCE, u.toLowerCase(), Field.Store.NO));
-			}
-
-			// index names
+			//index names (including the datasource identifier from metadata json config; see premerge/merge)
+			//different data sources can have the same name e.g. 'intact'; tokenized - to search by partial name
 			for (String s : p.getName()) {
-				doc.add(new StringField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
+				doc.add(new TextField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
 			}
 		}
 	}
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
-			// store URI as is (not indexed, not tokinized)
+			// store but do not index URI (see transform method above, where the organism URIs are added to search hits)
 			doc.add(new StoredField(FIELD_ORGANISM, bs.getUri()));
 				
 			// add organism names

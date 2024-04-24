@@ -112,6 +112,7 @@ public final class Datasource {
     String displayName = getName().iterator().next();
     pro.setDisplayName(displayName);
     pro.setStandardName(standardName());
+    pro.addName(identifier);
 
     if (getName().size() > 2)
       for (int i = 2; i < getName().size(); i++)

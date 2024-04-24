@@ -96,12 +96,18 @@ public class IndexIT {
     response = index.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
     assertEquals(1, response.getSearchHit().size());
 
-    //datasource filter using a URI (required for -update-counts console command and datasources.html page to work)
+    //datasource filter using Provenance absolute URI - not needed anymore - still stored but not indexed anymore
     response = index.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
+    assertTrue(response.isEmpty());
+
+    //using the local/last part of the URI (standard bio collection prefix/name)
+    response = index.search("*", 0, Pathway.class, new String[] {"kegg.pathway"}, null);
     assertFalse(response.isEmpty());
     assertEquals(1, response.getSearchHit().size());
-    //using metadata identifier
-    response = index.search("*", 0, Pathway.class, new String[] {"kegg.pathway"}, null);
+    assertTrue(response.getSearchHit().stream().anyMatch(h -> h.getDataSource().contains("http://identifiers.org/kegg.pathway/")));
+
+    //find by partial name of a datasource - "pathway" of "KEGG Pathway"...
+    response = index.search("*", 0, Pathway.class, new String[] {"pathway"}, null);
     assertFalse(response.isEmpty());
     assertEquals(1, response.getSearchHit().size());
 

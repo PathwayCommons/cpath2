@@ -90,7 +90,7 @@ public class ConsoleApplication implements CommandLineRunner {
       .hasArg().argName("filename").build();
     options.addOption(o);
     o = Option.builder("F").longOpt("F")
-      .desc("filters for the export option, e.g., -Furis=<uri,..> -Fdatasources=<nameOrUri,..> -Ftypes=<interface,..> " +
+      .desc("filters for the export option, e.g., -Furis=<uri,..> -Fdatasources=<name,..> -Ftypes=<interface,..> " +
         "(when 'uris' is defined, other options are ignored)")
       .argName("property=value").hasArgs().valueSeparator().numberOfArgs(2).build();
     options.addOption(o);
@@ -219,7 +219,7 @@ public class ConsoleApplication implements CommandLineRunner {
    *
    * @param output      - output BioPAX file name (path)
    * @param uris        - optional, the list of valid (existing) URIs to extract a sub-model
-   * @param datasources filter by datasource if 'uris' is not empty
+   * @param datasources filter by datasource (name or identifier) if 'uris' is not empty
    * @param types       filter by BioPAX type if 'uris' is not empty
    * @throws IOException, IllegalStateException (in maintenance mode)
    */

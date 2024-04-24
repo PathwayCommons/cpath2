@@ -150,7 +150,7 @@ public final class Merger {
 			ModelUtils.normalizeGenerics(providerModel);
 
 			//for (already normalized) BioSource, also add the name from
-			//application.properties (it helps full-text search)
+			//application.properties (it helps full-text search in case the orig. BioSource had no names but taxon ref...)
 			Map<String,String> orgMap = service.settings().getOrganismsAsTaxonomyToNameMap();
 			for(BioSource org : providerModel.getObjects(BioSource.class)) {
 				for(UnificationXref x : new ClassFilterSet<>(org.getXref(), UnificationXref.class)) {
@@ -510,7 +510,7 @@ public final class Merger {
      * This step won't much improve full-text index/search and graph queries
      * (where id-mapping is used again anyway), but may help improve export to SIF and GSEA formats.
      * This method is called only for original PEs or their ERs that were not mapped/merged
-     * with a warehouse canonical ERs for various known reasons (no match for a ID or no ID, ambiguous ID, etc.)
+     * with a warehouse canonical ERs for various known reasons (no match for an ID or no ID, ambiguous ID, etc.)
      *
      * This method won't add additional xrefs if a UniProt/HGNC one is already present despite it'd map
      * to many canonical ERs/IDs (in fact, it'd even map to hundreds (Trembl) IDs, e.g., in cases like 'ND5',
