@@ -95,16 +95,14 @@ public class IndexIT {
     assertEquals(2, response.getSearchHit().size());
     response = index.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
     assertEquals(1, response.getSearchHit().size());
-
     //datasource filter using Provenance absolute URI - not needed anymore - still stored but not indexed anymore
-    response = index.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
-    assertTrue(response.isEmpty());
-
+    assertTrue(index.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/reactome/"}, null).isEmpty());
+    assertTrue(index.search("*", 0, Pathway.class, new String[] {"test:kegg_test"}, null).isEmpty());
     //using the local/last part of the URI (standard bio collection prefix/name)
-    response = index.search("*", 0, Pathway.class, new String[] {"kegg.pathway"}, null);
+    response = index.search("*", 0, Pathway.class, new String[] {"kegg_test"}, null);
     assertFalse(response.isEmpty());
     assertEquals(1, response.getSearchHit().size());
-    assertTrue(response.getSearchHit().stream().anyMatch(h -> h.getDataSource().contains("http://identifiers.org/kegg.pathway/")));
+    assertTrue(response.getSearchHit().stream().anyMatch(h -> h.getDataSource().contains("test:kegg_test")));
 
     //find by partial name of a datasource - "pathway" of "KEGG Pathway"...
     response = index.search("*", 0, Pathway.class, new String[] {"pathway"}, null);

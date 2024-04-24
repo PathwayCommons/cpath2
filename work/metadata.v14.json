@@ -260,7 +260,8 @@
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/drugbanklogo.png",
       "availability": "academic",
       "type": "BIOPAX",
-      "pubmedId": "29126136"
+      "pubmedId": "29126136",
+      "cleanerClass": "cpath.cleaner.DrugbankCleaner"
     },
     {
       "dataUrl": "http://www.ebi.ac.uk/biomodels-main/MODEL1109130000",

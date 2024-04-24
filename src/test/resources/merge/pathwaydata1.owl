@@ -31,7 +31,7 @@
 		</bp:comment>
 	</bp:ChemicalStructure>
 
-	<bp:Provenance rdf:about="http://identifiers.org/kegg.pathway/">
+	<bp:Provenance rdf:about="test:kegg_test">
 		<bp:standardName rdf:datatype="xsd:string">KEGG Pathway</bp:standardName>
 		<bp:displayName rdf:datatype="xsd:string">KEGG</bp:displayName>
 	</bp:Provenance>
@@ -101,7 +101,7 @@
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glu + ATP =&gt;
 			beta-D-glu-6-p + ADP</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:BiochemicalReaction>
 
 	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:28">
@@ -161,7 +161,7 @@
 		</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose-6-phosphate</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:SmallMolecule>
 
 	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/pubchem.substance/14438">
@@ -207,7 +207,7 @@
 		<bp:displayName rdf:datatype="xsd:string">catalysis of (alpha-D-glu
 			&lt;=&gt; alpha-D-glu-6-p)</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:Catalysis>
 
 	<bp:BiochemicalReaction rdf:ID="phosphoglucoisomerase">
@@ -227,7 +227,7 @@
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glu-6-p &lt;=&gt;
 			beta-D-fru-6-p</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:BiochemicalReaction>
 
 	<bp:UnificationXref rdf:about="UnificationXref:KEGG_R01786">
@@ -244,7 +244,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-diphosphate</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:SmallMolecule>
 
 	<bp:Protein rdf:ID="Protein_54">
@@ -272,7 +272,7 @@
 		<bp:displayName rdf:datatype="xsd:string">phosphoglucose isomerase
 		</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 		<bp:feature rdf:resource="#O_phospho_L_serine_at_5" />
 	</bp:Protein>
 
@@ -297,7 +297,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Glycolysis Pathway</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">glycolysis</bp:standardName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 		<bp:pathwayComponent
 			rdf:resource="#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p" />
 	</bp:Pathway>
@@ -356,7 +356,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-triphosphate</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:SmallMolecule>
 
 	<bp:UnificationXref rdf:about="UnificationXref:PUBCHEM_14438">
@@ -383,7 +383,7 @@
 		<bp:displayName rdf:datatype="xsd:string">catalysis of
 			(beta-D-glu-6-p &lt;=&gt; beta-D-fruc-6-p)</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:Catalysis>
 
 	<bp:UnificationXref rdf:about="UnificationXref:PUBCHEM_14439">
@@ -404,7 +404,7 @@
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose 6-phosphate
 		</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:SmallMolecule>
 
 	<bp:BiochemicalPathwayStep rdf:ID="BiochemicalPathwayStep_3">
@@ -425,7 +425,7 @@
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose
 		</bp:displayName>
 		<bp:dataSource rdf:resource="http://identifiers.org/reactome/" />
-		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
+		<bp:dataSource rdf:resource="test:kegg_test" />
 	</bp:SmallMolecule>
 
 	<bp:UnificationXref

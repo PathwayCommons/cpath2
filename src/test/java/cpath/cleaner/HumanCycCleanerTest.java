@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HumanCycCleanerTest {
     @Test
-    public void deleteHtmlFromNames() throws Exception
+    public void deleteHtmlFromNames()
     {
         HumanCycCleaner humanCycCleaner = new HumanCycCleaner();
 

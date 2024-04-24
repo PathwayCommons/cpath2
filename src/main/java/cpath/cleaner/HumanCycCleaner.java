@@ -107,13 +107,19 @@ public class HumanCycCleaner implements Cleaner
 					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getUri());
 			}
 			else if(xr.getDb().startsWith("Entrez")) {
-				xr.setDb("genpept"); //Protein GenBank Identifier
+				xr.setDb("genpept"); //aka Protein GenBank Identifier
 			}
 			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) {
 				xr.setDb("ncbitaxon");
 			}
 			else if(xr.getDb().equalsIgnoreCase("Ensembl Human")) {
 				xr.setDb("ensembl");
+			}
+			else if(xr.getDb().equalsIgnoreCase("kegg ligand")) {
+				xr.setDb("kegg.compound");
+			}
+			else if(xr.getDb().equalsIgnoreCase("PubChem (CID)")) {
+				xr.setDb("pubchem.compound");
 			}
 		}
 	}

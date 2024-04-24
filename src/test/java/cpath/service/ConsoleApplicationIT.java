@@ -279,7 +279,7 @@ public class ConsoleApplicationIT
     assertMerge(mainModel);
 
     //pid, reactome,humancyc,.. were there in the test
-    assertEquals(4, mainModel.getObjects(Provenance.class).size());
+    assertEquals(5, mainModel.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
     Datasource md = new Datasource("test", Collections.singletonList("Reactome"),

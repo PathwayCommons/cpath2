@@ -526,10 +526,10 @@ public class IndexImpl implements Index, Mappings {
 			//store but do not index/tokenize the URI
 			doc.add(new StoredField(FIELD_DATASOURCE, p.getUri()));
 
-			//index the last/local (collection prefix) part of the normalized Provenance uri
+			//index the last/local (collection prefix) part of the Provenance uri
 			String u = p.getUri();
 			if (u.endsWith("/")) u = u.substring(0, u.length() - 1);
-			u = u.replaceAll(".*[/#]", "");
+			u = u.replaceAll(".*[/#:]", "");
 			doc.add(new TextField(FIELD_DATASOURCE, u.toLowerCase(), Field.Store.NO));
 
 			//index names (including the datasource identifier from metadata json config; see premerge/merge)
@@ -572,15 +572,13 @@ public class IndexImpl implements Index, Mappings {
 
 	private void addPathways(Set<Pathway> set, Document doc) {
 		for(Pathway pw : set) {
-            final String uri = pw.getUri();
-			//URI, index=yes, analyze=no, store=yes (this is to find child objects by pathway URI)
-            // we want searching by URI or its ending part (id) be case-sensitive
+      final String uri = pw.getUri();
+			//URI, index=yes, analyze=no, store=yes (this is to find child objects, participants or processes, by pathway URI/name/id)
+      // we want searching by URI or its ending part (id) be case-sensitive
 			doc.add(new StringField(FIELD_PATHWAY, uri, Field.Store.YES));
 			//also, extract and index the last part of the uri (e.g., 'hsa00010' or 'r-hsa-201451')
-            if(uri.startsWith("http://")) {
-                String id = uri.replaceAll(".*[/#]", "").trim();
-                doc.add(new StringField(FIELD_PATHWAY, id, Field.Store.NO));
-            }
+			String id = uri.replaceAll(".*[/#:]", "").trim();
+			doc.add(new StringField(FIELD_PATHWAY, id, Field.Store.NO));
 			// add names to the 'pathway' (don't store); will be case-insensitive (if using StandardAnalyser)
 			// (this allows to find a biopax element, e.g., protein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
@@ -595,7 +593,6 @@ public class IndexImpl implements Index, Mappings {
 		}
 	}
 
-	
 	private String getTaxonId(BioSource bioSource) {
 		String id = null;
 		if(!bioSource.getXref().isEmpty()) {
