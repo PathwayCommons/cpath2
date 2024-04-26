@@ -95,9 +95,9 @@ the final BioPAX models to SIF, GMT, TXT formats.
 
     cd downloads
     
-Copy the latest paxtools.jar into this current directory and run -
+Copy the latest paxtools.jar into this directory and run -
 
-    sh export.sh 2>&1 >console.out & 
+    sh export.sh 2>&1 >export.log & 
     
 (- which takes overnight or a day and night); upload/copy/move (but keep at least blacklist.txt, *All.BIOPAX.owl.gz)
 all the files from this here and ../data/ directories to the file server, or configure so that they can be downloaded 

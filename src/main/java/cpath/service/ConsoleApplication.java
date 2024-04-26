@@ -368,10 +368,10 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.println(String.format("gzip %s.*.txt %s.*.sif %s.*.gmt %s.*.xml",
       commonPrefix, commonPrefix, commonPrefix, commonPrefix));
     //generate pathways.txt (parent-child) and physical_entities.json (URI-to-IDs mapping) files
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "summarize",
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1", JAVA_PAXTOOLS, "summarize",
       service.settings().biopaxFileName("All"), "pathways.txt", "--pathways"));
     //generate the list of physical entities (some uri, names, ids) as json array:
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "summarize",
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1", JAVA_PAXTOOLS, "summarize",
       service.settings().biopaxFileName("All"), "physical_entities.json", "--uri-ids"));
     //filter and convert just created above file to the json map of only "generic" PEs:
     writer.println("""
@@ -389,16 +389,15 @@ public class ConsoleApplication implements CommandLineRunner {
     final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
     final String commaSepTaxonomyIds = String.join(",", service.settings().getOrganismTaxonomyIds());
     if (exportToGSEA) {
-      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toGSEA", bpFilename,
+      writer.println(String.format("%s %s '%s' '%s' %s 2>&1", JAVA_PAXTOOLS, "toGSEA", bpFilename,
         prefix + "hgnc.gmt", "'hgnc.symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc.symbol' - important
-//      writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toGSEA", bpFilename,
+//      writer.println(String.format("%s %s '%s' '%s' %s 2>&1", JAVA_PAXTOOLS, "toGSEA", bpFilename,
 //        prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
-//      writer.println("wait"); //important if JAVA_PAXTOOLS command starts with "nohup"
       writer.println("echo \"Converted " + bpFilename + " to GSEA.\"");
     }
-    writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", JAVA_PAXTOOLS, "toSIF", bpFilename,
+    writer.println(String.format("%s %s '%s' '%s' %s 2>&1", JAVA_PAXTOOLS, "toSIF", bpFilename,
       prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));
-    //UniProt based extended SIF files can be huge, take too long (2 days) to generate; skip for now.
+    //UniProt based xSIF files can be huge and take too long (2 days) to generate; skip for now.
     writer.println("echo \"Converted " + bpFilename + " to SIF.\"");
   }
 
