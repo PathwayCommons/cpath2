@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+    xml:base="pc14:">
+  <owl:Ontology rdf:about="">
+    <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+  </owl:Ontology>
+
+  <bp:Provenance rdf:ID="bind">
+    <bp:standardName rdf:datatype = "xsd:string">BIND</bp:standardName>
+    <bp:displayName rdf:datatype = "xsd:string">BIND</bp:displayName>
+    <bp:name rdf:datatype = "xsd:string">Biomolecular Interaction Network Database</bp:name>
+    <bp:name rdf:datatype = "xsd:string">bind</bp:name>
+    <bp:comment rdf:datatype = "xsd:string">Source http://download.baderlab.org/BINDTranslation/release1_0/PSIMI25_XML/taxid9606_PSIMI25.xml type: PSI_MI, BIND (human), 15-Dec-2010</bp:comment>
+  </bp:Provenance>
+
+  <bp:Protein rdf:about="bind:Protein_rcsb_pdb_1ZDT_see-also_1713944180538">
+    <bp:displayName rdf:datatype = "xsd:string">1ZDT_B</bp:displayName>
+    <bp:entityReference rdf:resource="bind:ProteinReference_rcsb_pdb_1ZDT_see-also" />
+    <bp:comment rdf:datatype = "xsd:string">Protein Chain B, NR5A1[221-461]. This residue range is taken from the PDB file and may not match the GI given.</bp:comment>
+    <bp:comment rdf:datatype = "xsd:string">experimental form entity</bp:comment>
+    <bp:dataSource rdf:resource="#bind" />
+  </bp:Protein>
+
+  <bp:ProteinReference rdf:about="bind:ProteinReference_rcsb_pdb_1ZDT_see-also">
+    <bp:xref rdf:resource="#RX_genbank_indentifier_67463979_see-also" />
+    <bp:xref rdf:resource="#RX_pdb_1ZDT_see-also" />
+    <bp:xref rdf:resource="#RX_hgnc_symbol_NCOA2_see-also" />
+    <bp:xref rdf:resource="#RX_uniprot_Q15596_see-also" />
+    <bp:xref rdf:resource="#RX_hgnc_symbol_NR5A1_see-also" />
+    <bp:xref rdf:resource="#RX_uniprot_Q13285_see-also" />
+    <bp:organism rdf:resource="bind:BIO_ncbitaxon_0" />
+    <bp:displayName rdf:datatype = "xsd:string">Nuclear Receptor Coactivator 2</bp:displayName>
+    <bp:name rdf:datatype = "xsd:string">Chain P; The Crystal Structure Of Human Steroidogenic Factor-1</bp:name>
+  </bp:ProteinReference>
+
+  <bp:BioSource rdf:about="bind:BIO_ncbitaxon_0">
+  </bp:BioSource>
+
+  <bp:RelationshipXref rdf:ID="RX_genbank_indentifier_67463979_see-also">
+    <bp:relationshipType rdf:resource="http://bioregistry.io/mi:0361" />
+    <bp:id rdf:datatype = "xsd:string">67463979</bp:id>
+    <bp:db rdf:datatype = "xsd:string">genbank indentifier</bp:db><!-- kept the original (mis)spelling (BIND) -->
+  </bp:RelationshipXref>
+
+
+
+</rdf:RDF>

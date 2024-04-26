@@ -27,7 +27,7 @@
     <paxtools.version>6.0.0-SNAPSHOT</paxtools.version>
     <validator.version>6.0.0-SNAPSHOT</validator.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <lucene.version>9.7.0</lucene.version>
+    <lucene.version>9.10.0</lucene.version>
     <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</jvm.options>
     <agent>${settings.localRepository}/org/springframework/spring-instrument/${spring-framework.version}/spring-instrument-${spring-framework.version}.jar</agent>
     <!-- this copy is created by maven-dependency-plugin -->

@@ -524,13 +524,8 @@ public class IndexImpl implements Index, Mappings {
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
 			//store but do not index/tokenize the URI
-			doc.add(new StoredField(FIELD_DATASOURCE, p.getUri()));
-
-			//index the last/local (collection prefix) part of the Provenance uri
-			String u = p.getUri();
-			if (u.endsWith("/")) u = u.substring(0, u.length() - 1);
-			u = u.replaceAll(".*[/#:]", "");
-			doc.add(new TextField(FIELD_DATASOURCE, u.toLowerCase(), Field.Store.NO));
+//			doc.add(new StoredField(FIELD_DATASOURCE, p.getUri()));
+			doc.add(new TextField(FIELD_DATASOURCE, p.getUri(), Field.Store.YES));
 
 			//index names (including the datasource identifier from metadata json config; see premerge/merge)
 			//different data sources can have the same name e.g. 'intact'; tokenized - to search by partial name
@@ -542,8 +537,8 @@ public class IndexImpl implements Index, Mappings {
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
-			// store but do not index URI (see transform method above, where the organism URIs are added to search hits)
-			doc.add(new StoredField(FIELD_ORGANISM, bs.getUri()));
+			//doc.add(new StoredField(FIELD_ORGANISM, bs.getUri()));
+			doc.add(new TextField(FIELD_ORGANISM,  bs.getUri(), Field.Store.YES));
 				
 			// add organism names
 			for(String s : bs.getName()) {
@@ -558,8 +553,9 @@ public class IndexImpl implements Index, Mappings {
 			}
 			// include tissue type terms
 			if (bs.getTissue() != null) {
-				for (String s : bs.getTissue().getTerm())
+				for (String s : bs.getTissue().getTerm()) {
 					doc.add(new TextField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
+				}
 			}
 			// include cell type terms
 			if (bs.getCellType() != null) {
