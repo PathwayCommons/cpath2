@@ -45,7 +45,9 @@ import java.util.zip.GZIPOutputStream;
 public class ConsoleApplication implements CommandLineRunner {
   private static final Logger LOG = LoggerFactory.getLogger(ConsoleApplication.class);
   private static final String JAVA_PAXTOOLS = "$JAVA_HOME/bin/java -Xmx64g " +
-      "-Dpaxtools.normalizer.use-latest-registry=true -Dpaxtools.core.use-latest-genenames=true -jar paxtools.jar";
+      "-Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider " +
+      "-Dpaxtools.normalizer.use-latest-registry=true " +
+      "-Dpaxtools.core.use-latest-genenames=true -jar paxtools.jar";
 
   @Autowired
   private Service service;
