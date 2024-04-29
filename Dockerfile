@@ -14,5 +14,6 @@ ENTRYPOINT ["java", "-server", "-Djava.security.egd=file:/dev/./urandom", \
 "-Dlogback.configurationFile=logback.xml", \
 "-Dpaxtools.normalizer.use-latest-registry=true", \
 "-Dpaxtools.core.use-latest-genenames=true", \
+"-Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider", \
 "-jar", "/cpath2.war", "--server"]
 EXPOSE 8080
