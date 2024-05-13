@@ -62,7 +62,7 @@ public class ChebiConvertersTest {
 
 		// check some props
 		assertEquals("(S)-lactic acid", smallMoleculeReference.getDisplayName());
-		assertEquals(13, smallMoleculeReference.getName().size()); //now includes Wikipedia, SMILES(CHEBI) names
+		assertEquals(13, smallMoleculeReference.getName().size()); //includes Wikipedia, SMILES names
 		assertEquals("C3H6O3", smallMoleculeReference.getChemicalFormula());
 		int relationshipXrefCount = 0;
 		int unificationXrefCount = 0;
@@ -78,27 +78,29 @@ public class ChebiConvertersTest {
 
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
 		assertTrue(model.containsID("http://bioregistry.io/chebi:20"));
-		EntityReference er20 = (EntityReference) model.getByID("http://bioregistry.io/chebi:20");
+		SmallMoleculeReference er20 = (SmallMoleculeReference) model.getByID("http://bioregistry.io/chebi:20");
 		assertTrue(model.containsID("http://bioregistry.io/chebi:28"));
-//		EntityReference er28 = (EntityReference) model.getByID("http://bioregistry.io/chebi:28");
 		assertTrue(model.containsID("http://bioregistry.io/chebi:422"));
 		EntityReference er422 = (EntityReference) model.getByID("http://bioregistry.io/chebi:422");
 
 		assertTrue(er20.getMemberEntityReferenceOf().isEmpty());
-		assertTrue(er422.getMemberEntityReferenceOf().isEmpty());
-		assertTrue(model.containsID("RX_chebi_CHEBI_422_multiple_parent_reference"));
+		assertNotNull(er20.getStructure());
+		assertTrue(StringUtils.isNotBlank(er20.getChemicalFormula()));
 
-		// check new elements (created by the OBO converter) exist in the model;
-		// (particularly, these assertions are important to test within the persistent model (DAO) session)
+		assertTrue(er422.getMemberEntityReferenceOf().isEmpty());
+
+		assertTrue(model.containsID("RX_chebi_CHEBI_422_multiple_parent_reference"));
 		assertTrue(model.containsID("RX_chebi_CHEBI_20_see-also"));
 		assertTrue(model.containsID("RX_chebi_CHEBI_422_see-also"));
-
 
 		//after refactoring, make sure there are no CHEBI:* xref.id anymore (only unprefixed)
 		model.getObjects(Xref.class).stream().filter(x -> StringUtils.contains(x.getUri(),"chebi"))
 				.forEach(x -> assertTrue(StringUtils.containsIgnoreCase(x.getId(),"CHEBI:")));
-
 		model.getObjects(Xref.class).stream().filter(x -> StringUtils.contains(x.getUri(),"chebi"))
 				.forEach(x -> assertEquals("chebi", x.getDb()));
+
+		SmallMoleculeReference smr28 = (SmallMoleculeReference) model.getByID("http://bioregistry.io/chebi:28");
+		assertNotNull(smr28);
+		assertEquals(8, smr28.getXref().size());
 	}
 }

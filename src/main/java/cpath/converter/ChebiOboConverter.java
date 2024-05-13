@@ -42,8 +42,9 @@ class ChebiOboConverter extends BaseConverter
 	private final String _NAME = "name: ";
 	private final String _DEF = "def: ";
 	private final String _SYNONYM = "synonym: ";
+	private final String _PROPERTY_VALUE = "property_value: "; //new fields in recent chebi.obo
 
-	//to extract a text value between quotation marks from 'def:' and 'synonym:' lines:
+	//to extract a text value between quotation marks in the 'def:', 'synonym:', 'property_value:' lines:
 	private final Pattern namePattern = Pattern.compile("\"(.+?)\"");
 	//to extract ID, DB values from 'xref:' lines:
 	//(since ChEBI OBO format has been slightly changed in 2017, pattern was updated)
@@ -94,6 +95,9 @@ class ChebiOboConverter extends BaseConverter
 					}
 					else if (line.startsWith(_SYNONYM)) {
 						updateMapEntry(chebiEntryMap, _SYNONYM, line);
+					}
+					else if (line.startsWith(_PROPERTY_VALUE)) {
+						updateMapEntry(chebiEntryMap, _PROPERTY_VALUE, line);
 					}
 					else if (line.startsWith(_XREF)) {
 						updateMapEntry(chebiEntryMap, _XREF, line);
@@ -168,18 +172,18 @@ class ChebiOboConverter extends BaseConverter
 				String name = matcher.group(1);
 				if (sy.contains("IUPAC_NAME")) {
 					smr.setStandardName(name);
-				} else if (sy.contains("InChIKey")) {
+				} else if (sy.contains("InChIKey")) { //not the case with new chebi.obo - moved to _PROPERTY_VALUE, e.g.: property_value: http://purl.obolibrary.org/obo/chebi/inchikey "CRPUJAZIXJMDBK-DTWKUNHWSA-N" xsd:string
 					if (name.startsWith("InChIKey=")) {
 						//exclude the prefix
 						name = name.substring(9);
 					}
 					//add RX because a InChIKey can map to several CHEBI IDs
 					RelationshipXref rx = CPathUtils
-						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
+							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
 					smr.addXref(rx);
 				} else if (sy.contains("InChI=")) {
 					String structureUri = Normalizer
-						.uri(xmlBase, null, name, ChemicalStructure.class);
+							.uri(xmlBase, null, name, ChemicalStructure.class);
 					ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
 					if (structure == null) {
 						structure = model.addNew(ChemicalStructure.class, structureUri);
@@ -187,13 +191,49 @@ class ChebiOboConverter extends BaseConverter
 						structure.setStructureData(name); //contains "InChI=" prefix
 					}
 					smr.setStructure(structure);
-				} else if (sy.contains("FORMULA")) {
+				} else if (sy.contains("FORMULA")) {//in new chebi.obo, this also moved from synonym:... to e.g. property_value: http://purl.obolibrary.org/obo/chebi/formula "C10H16" xsd:string
 					smr.setChemicalFormula(name);
 					smr.addName(name); //helps to map/search by name
-				} else if (sy.contains("MASS")) {
+				} else if (sy.contains("MASS")) {//in new chebi.obo, this also moved from synonym:... to e.g. property_value: http://purl.obolibrary.org/obo/chebi/mass "136.23404" xsd:string
 					smr.setMolecularWeight(Float.parseFloat(name));
 				} else {
-					smr.addName(name); //incl. for SMILES
+					smr.addName(name); //incl. for SMILES (in older chebi.obo data)
+				}
+			}
+		}
+
+		//use property_value data to add names, structure, formula, InChIKey rel.xref, if the field is present
+		final String propvals = chebiEntryMap.get(_PROPERTY_VALUE);
+		if(propvals != null && !propvals.isEmpty()) {
+			String[] entries = propvals.split("\t");
+			for (String sy : entries) {
+				Matcher matcher = namePattern.matcher(sy);
+				if (!matcher.find()) {
+					throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);
+				}
+				String name = matcher.group(1);
+				if (sy.contains("purl.obolibrary.org/obo/chebi/inchikey")) {//e.g.: property_value: http://purl.obolibrary.org/obo/chebi/inchikey "CRPUJAZIXJMDBK-DTWKUNHWSA-N" xsd:string
+					if (name.startsWith("InChIKey=")) {
+						name = name.substring(9);
+					}
+					RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
+					smr.addXref(rx);
+				} else if (sy.contains("InChI=")) { //e.g. http://purl.obolibrary.org/obo/chebi/inchi "InChI=1S/C10H16/c1-7-8-4-5-9(6-8)10(7,2)3/h8-9H,1,4-6H2,2-3H3/t8-,9+/m0/s1" xsd:string
+					String structureUri = Normalizer.uri(xmlBase, null, name, ChemicalStructure.class);
+					ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
+					if (structure == null) {
+						structure = model.addNew(ChemicalStructure.class, structureUri);
+						structure.setStructureFormat(StructureFormatType.InChI);
+						structure.setStructureData(name); //keep "InChI=" prefix
+					}
+					smr.setStructure(structure);
+				} else if (sy.contains("purl.obolibrary.org/obo/chebi/formula")) {//e.g. property_value: http://purl.obolibrary.org/obo/chebi/formula "C10H16" xsd:string
+					smr.setChemicalFormula(name);
+					smr.addName(name); //helps to map/search by name
+				} else if (sy.contains("purl.obolibrary.org/obo/chebi/mass")) {//e.g. property_value: http://purl.obolibrary.org/obo/chebi/mass "136.23404" xsd:string
+					smr.setMolecularWeight(Float.parseFloat(name));
+				} else if (sy.contains("purl.obolibrary.org/obo/chebi/smiles")) {//e.g. property_value: http://purl.obolibrary.org/obo/chebi/smiles "CC1(C)[C@@H]2CC[C@@H](C2)C1=C" xsd:string
+					smr.addName(name);
 				}
 			}
 		}

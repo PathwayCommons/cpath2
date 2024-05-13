@@ -182,9 +182,9 @@ public class ConsoleApplicationIT
     assertTrue(service.settings().getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
     assertEquals("Homo sapiens", service.settings().getOrganismsAsTaxonomyToNameMap().get("9606"));
 
-    Datasource ds = service.metadata().findByIdentifier("TEST_UNIPROT");
+    Datasource ds = service.metadata().findByIdentifier("TESTUNIPROT");
     assertNotNull(ds);
-    ds = service.metadata().findByIdentifier("TEST_CHEBI");
+    ds = service.metadata().findByIdentifier("TESTCHEBI");
     assertNotNull(ds);
     ds = service.metadata().findByIdentifier("TEST_MAPPING");
     assertNotNull(ds);

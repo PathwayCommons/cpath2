@@ -4,7 +4,7 @@
   "datasources": [
     {
       "dataUrl": "classpath:test_uniprot_data.dat.zip",
-      "identifier": "TEST_UNIPROT",
+      "identifier": "TESTUNIPROT",
       "homepageUrl": "http://www.uniprot.org",
       "name": [
         "UniProt"
@@ -18,13 +18,13 @@
     },
     {
       "dataUrl": "classpath:chebi.obo.zip",
-      "identifier": "TEST_CHEBI",
+      "identifier": "TESTCHEBI",
       "homepageUrl": "https://www.ebi.ac.uk/chebi/",
       "name": [
         "ChEBI"
       ],
       "converterClass": "cpath.converter.ChebiOboConverter",
-      "description": "Test ChEBI OBO",
+      "description": "Test ChEBI OBO (extracted from chebi.obo release v231 and modified for integration/merge tests!)",
       "iconUrl": "https://pathwaycommons.github.io/cpath2/logos/chebi.png",
       "availability": "free",
       "type": "WAREHOUSE",

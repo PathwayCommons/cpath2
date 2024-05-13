@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObjectBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -44,6 +44,8 @@ public abstract class BasicController
   private static final Logger log = LoggerFactory.getLogger(BasicController.class);
 
   protected Service service;
+
+  protected ObjectMapper jsonObjectMapper = new ObjectMapper();
 
   @Autowired
   public void setService(Service service) {
@@ -186,55 +188,24 @@ public abstract class BasicController
     return newImage;
   }
 
-
-  /*
-   * Extracts the client's IP from the request headers.
-   */
-//  private static String clientIpAddress(HttpServletRequest request)
-//  {
-//    String ip = request.getHeader("X-Forwarded-For");
-//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-//      ip = request.getHeader("Proxy-Client-IP");
-//    }
-//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-//      ip = request.getHeader("WL-Proxy-Client-IP");
-//    }
-//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-//      ip = request.getHeader("HTTP_CLIENT_IP");
-//    }
-//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-//      ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-//    }
-//    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-//      ip = request.getRemoteAddr();
-//    }
-//    return ip;
-//  }
-
   void audit(HttpServletRequest request, ServiceQuery command, Set<String> providers, ErrorResponse err)
   {
-    JsonObjectBuilder jb = Json.createObjectBuilder();
-
-//get user-agent, IP, status, etc. from nginx/apache logs instead of here in the app...
-//    jb.add("ip", clientIpAddress(request));
+    ObjectNode root = jsonObjectMapper.createObjectNode();
 
     if (err != null) {
-      jb.add("error", err.toString());
+      root.put("error", err.toString());
     }
 
     if(command != null) {
-      // TODO: change if there is any use (now we just add truncated string, not json object here
-      //(can be very large if many URIs or SIF patterns are submitted in the request)
-      jb.add("query", StringUtils.truncate(command.toString(),128));
+      //truncate as it can be very large when many URIs or SIF patterns were submitted with the request
+      root.put("query", StringUtils.truncate(command.toString(),128));
     }
 
     if (!CollectionUtils.isEmpty(providers)) {
-      jb.add("pro", Json.createArrayBuilder(providers));
+      root.put("pro", jsonObjectMapper.valueToTree(providers));
     }
 
-//    jb.add("accept", request.getHeader("Accept"));
-
-    log.info(jb.build().toString());
+    log.info(root.toString());
   }
 
 }

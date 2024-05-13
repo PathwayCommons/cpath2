@@ -18,6 +18,7 @@ import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.normalizer.ConfigurableIDFetcher;
 import org.biopax.paxtools.pattern.miner.*;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.slf4j.Logger;

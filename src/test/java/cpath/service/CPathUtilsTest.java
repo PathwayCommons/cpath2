@@ -74,7 +74,7 @@ public class CPathUtilsTest {
 		Metadata metadata = CPathUtils.readMetadata(url);
 		List<Datasource> datasources = metadata.getDatasources();
 		final Datasource datasource = datasources.stream()
-				.filter(m -> m.getIdentifier().equals("TEST_UNIPROT"))
+				.filter(m -> m.getIdentifier().equals("TESTUNIPROT"))
 				.findFirst().orElse(null);
 		assertAll(
 				() -> assertEquals(3, datasources.size()),
