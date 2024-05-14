@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -45,6 +46,7 @@ public final class Datasource {
     }
   }
 
+  //the order of fields here matters as the all-args Constructor will be auto-generated!
   private String identifier;
   private List<String> name; //data provider standard names
   private String description;
@@ -54,7 +56,7 @@ public final class Datasource {
   private METADATA_TYPE type;
   private String cleanerClass;
   private String converterClass;
-  private Set<String> files;
+  @JsonIgnore private Set<String> files;
   private String pubmedId;
   private String availability;
   private int numPathways;
