@@ -11,6 +11,7 @@ import cpath.service.metadata.Index;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.service.metadata.Mappings;
@@ -30,6 +31,10 @@ public interface Service {
   Model getModel();
 
   void setModel(Model paxtoolsModel);
+
+  Blacklist getBlacklist();
+
+  void setBlacklist(Blacklist blacklist);
 
   /**
    * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)

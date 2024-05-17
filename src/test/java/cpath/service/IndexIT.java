@@ -29,14 +29,14 @@ public class IndexIT {
     SimpleIOHandler reader = new SimpleIOHandler();
     Model model = reader.convertFromOWL(resourceLoader
       .getResource("classpath:merge/pathwaydata1.owl").getInputStream());
-    IndexImpl index = new IndexImpl(model, "target/work/idx", false);
+    IndexImpl index = new IndexImpl(model, "target/test-idx", false);
     index.save(model);
     index.refresh();
 
     //close index writer and re-open the index searcher in the read-only mode
     //(optional; tests should pass regardless; if you remove the following two lines, keep index.close() at the end)
     index.close();
-    index = new IndexImpl(model, "target/work/idx", true);
+    index = new IndexImpl(model, "target/test-idx", true);
 
     SearchResponse response = index.search("ATP", 0, null, null, null);
     assertNotNull(response);
@@ -215,7 +215,7 @@ public class IndexIT {
   @Test
   @DirtiesContext
   public void idMapping() {
-    Mappings mappings = new IndexImpl(null, "target/work/idx", false);
+    Mappings mappings = new IndexImpl(null, "target/test-idx", false);
     //capitalization is important in 99% of identifier types (we should not ignore it)
     //but, let's allow both chebi:1234 and CHEBI:1234 and 1234 for ChEBI IDs when searching...
 

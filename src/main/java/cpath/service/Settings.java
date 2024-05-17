@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.text.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -247,12 +247,14 @@ public class Settings
     return m;
   }
 
-  /**
-   * Gets the work directory (must exist).
-   * CPATH2_HOME system environment variable value overrides the JVM option if it's defined.
-   * @return CPATH2_HOME value (default 'target/work' is for unit tests)
+  // Internal/utility methods that rely on the app/env properties
+
+  /*
+   * The working directory path (must exist).
+   * CPATH2_HOME environment variable overrides the JVM option if defined.
+   * The default is 'target/work' (for unit tests.)
    */
-  public String homeDir() {
+  String homeDir() {
     String homedir = System.getProperty(HOME_DIR);
 
     if(homedir == null || homedir.isEmpty()) {
@@ -279,132 +281,49 @@ public class Settings
     return path.toString();
   }
 
-  /**
-   * Gets the full path to the local directory
+  /*
+   * Path to the local directory
    * where pathway and other data will be fetched and looked for.
-   *
-   * @return the data directory path
    */
-  public String dataDir() {
+  String dataDir() {
     return subDir(DATA_SUBDIR);
   }
 
-  /**
-   * A full path to the default Lucene index.
-   *
-   * @return
+  /*
+   * Path to the default Lucene index.
    */
-  public String indexDir() {
+  String indexDir() {
     return subDir(INDEX_SUBDIR);
   }
 
-  /**
-   * Gets the full path to the cpath2 query/converter
-   * blacklist (whether it exists or yet to be generated)
-   *
-   * @return
+  /*
+   * Path to the query/converter's blacklist (whether it exists or yet to be generated)
    */
-  public String blacklistFile() {
+  String blacklistFile() {
     return downloadsDir() + FileSystems.getDefault().getSeparator() + BLACKLIST_FILE;
   }
 
-
-  /**
-   * Gets the full path to the to-be-generated script.
-   *
-   * @return
+  /*
+   * Path to the local directory where output data archives are stored.
    */
-  public String exportScriptFile() {
-    return downloadsDir() + FileSystems.getDefault().getSeparator() + EXPORT_SCRIPT_FILE;
-  }
-
-
-  /**
-   * Gets the full path to the local directory
-   * where cpath2 (batch data downloads) archives are stored.
-   *
-   * @return
-   */
-  public String downloadsDir() {
+  String downloadsDir() {
     return subDir(DOWNLOADS_SUBDIR);
   }
 
-
-  /**
-   * Full path to the archive file where a BioPAX sub-model is exported.
-   *
-   * @param name - a Datasource's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
-   * @return
-   * @see #downloadsDir()
+  /*
+   * Path to a compressed BioPAX RDFXML file (e.g. intermediate/normalized source models or warehouse).
+   * @param name - a Datasource's identifier, organism name, or a special name, such as "Warehouse".
    */
-  public String biopaxFileNameFull(String name) {
-    return downloadsDir() + FileSystems.getDefault().getSeparator() + biopaxFileName(name);
+  String biopaxFileName(String name) {
+    return downloadsDir() + FileSystems.getDefault().getSeparator() + StringUtils.lowerCase(name) + ".owl.gz";
   }
 
-  /**
-   * Local name of the BioPAX sub-model file (in the batch downloads directory).
-   *
-   * @param name - a Datasource's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
-   * @return
-   * @see #downloadsDir()
-   */
-  public String biopaxFileName(String name) {
-    return exportArchivePrefix() + "." + name + ".BIOPAX.owl.gz";
+  String mainModelFile() {
+    return biopaxFileName("pc-biopax");
   }
 
-  /**
-   * Gets the common file name prefix (includes instance's provider
-   * name and version, i.e., that comes after the directory path
-   * and file separator but before source name and format)
-   * for all cpath2-generated export data archives.
-   *
-   * @return
-   */
-  public String exportArchivePrefix() {
-    return WordUtils.capitalize(getName() + getVersion())
-      .replaceAll("\\W+","");
+  String warehouseModelFile() {
+    return biopaxFileName("utility");
   }
 
-  /**
-   * Full path to the large archive where
-   * the complete merged BioPAX model is stored.
-   *
-   * @return
-   */
-  public String mainModelFile() {
-    return biopaxFileNameFull(Scope.ALL.toString());
-  }
-
-  /**
-   * Full path to the archive where
-   * the Warehouse BioPAX model is stored.
-   *
-   * @return
-   */
-  public String warehouseModelFile() {
-    return biopaxFileNameFull(Scope.WAREHOUSE.toString());
-  }
-
-  /**
-   * Predefined large pathway data submodels
-   * that are generated and used by the application.
-   * (toString method here is to get the part of the
-   * corresponding sub-model filename, such as 'All' in '*.All.*.gz').
-   *
-   * In addition, by-organism and by-source archives
-   * are also created in the batch downloads directory,
-   * but those filenames do not require this enum.
-   *
-   * @author rodche
-   */
-  enum Scope {
-      ALL,
-      DETAILED,
-      WAREHOUSE;
-
-      @Override
-      public String toString() { //e.g. "All"
-          return name().substring(0, 1).toUpperCase() + name().substring(1).toLowerCase();
-      }
-  }
 }

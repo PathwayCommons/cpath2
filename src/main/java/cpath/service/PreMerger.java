@@ -71,9 +71,9 @@ final class PreMerger {
       final String mid = datasource.getIdentifier();
 
       if(!Files.isDirectory(Paths.get(service.intermediateDataDir(datasource)))) {
-        service.clear(datasource); //empty the subdirectory and db entries
+        service.clear(datasource); //actually - create, init...
       } else {
-        datasource.getFiles().clear();  //clear the list of input file names
+        datasource.getFiles().clear(); //just clear the list of input files
       }
 
       //read and analyze the input data archive
@@ -159,12 +159,12 @@ final class PreMerger {
 
     //clear all id-mapping tables
     log.warn("buildWarehouse(), removing all previous id-mapping db entries...");
-    service.initIndex(null, service.settings().indexDir(), false);
+    service.initIndex(null, service.settings().indexDir(), false); //allow writing
 
     // Using the just built Warehouse BioPAX model, generate the id-mapping tables:
     buildIdMappingFromWarehouse(warehouse);
 
-    // Process all MAPPING data - save in the id-mapping repository
+    // Process all external/custom MAPPING data (also save in the id-mapping repository/index)
     for (Datasource datasource : service.metadata().getDatasources()) {
       //skip not "mapping" data
       if (datasource.getType() != METADATA_TYPE.MAPPING) {

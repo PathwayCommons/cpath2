@@ -83,8 +83,7 @@ public class ServiceImpl implements Service {
 
   /**
    * Loads the main BioPAX model, full-text index, blacklist.
-   * Call this only after the web service is up and running.
-   * (This is not called for the console app)
+   * Call this after the web service is up and running or from the console app.
    */
   synchronized public void init() {
     if(paxtoolsModel == null) {
@@ -102,7 +101,7 @@ public class ServiceImpl implements Service {
   }
 
   /**
-   * Init the index unless it's opened (if so, do nothing, ignore the parameters).
+   * Init or re-open the index.
    *
    * @param model
    * @param indexLocation
@@ -130,6 +129,14 @@ public class ServiceImpl implements Service {
     if(index != null) {
       index.setModel(paxtoolsModel);
     }
+  }
+
+  public Blacklist getBlacklist() {
+    return blacklist;
+  }
+
+  public void setBlacklist(Blacklist blacklist) {
+    this.blacklist = blacklist;
   }
 
   IndexImpl getIndex() {
@@ -765,7 +772,7 @@ public class ServiceImpl implements Service {
   }
 
   public Model loadBiopaxModelByDatasource(Datasource datasource) {
-    Path in = Paths.get(settings.biopaxFileNameFull(datasource.getIdentifier()));
+    Path in = Paths.get(settings.biopaxFileName(datasource.getIdentifier()));
     if (Files.exists(in)) {
       return CPathUtils.importFromTheArchive(in.toString());
     } else {

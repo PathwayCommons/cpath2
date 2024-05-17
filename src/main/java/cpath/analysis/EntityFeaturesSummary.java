@@ -19,13 +19,10 @@ import cpath.service.api.Analysis;
  * Prints out а summary of the main merged BioPAX model
  * (just for development and debugging).
  * 
- * This class is not an essential part of this system; 
- * it's to be optionally called using the cpath2.sh script,
- * i.e., via {@link ConsoleApplication} '-run-analysis' command.
+ * This can be used with {@link ConsoleApplication} '--analyze' ('-a') command.
  * 
  * This uses a Java option: cpath.analysis.filter.metadataids=id1,id2,.. 
- * (if not defined, all data are analyzed; IDs are cpath2 metadata/datasource identifiers,
- * i.e., not providers' names)
+ * if not defined, all data are analyzed; id1,id2,.. are datasource identifiers (see: metadata.json).
  * 
  * @author rodche
  */

@@ -66,9 +66,10 @@ Alternatively, can run/debug the demo/dev app as:
 
 ### Working directory
 
-Directory 'work' is where the configuration, data files and indices are saved.  
+Directory e.g. './work' is defined by CPATH2_HOME environment property; 
+this is where the configuration, data, and indices are or will be saved.
 
-    cd work
+    cd ./work
 
 The directory may contain: 
 - application.properties (to configure various server and model options);
@@ -80,35 +81,35 @@ The directory may contain:
 
 To see available commands and options, run: 
 
-    bash cpath2.sh
+    ./run.sh
 
-In order to create a new cpath2 instance, define or update the metadata.json, 
+In order to prepare/create a new app/data instance, edit metadata.json, 
 prepare input data archives (see below how), also install `jq`, `gunzip`, 
 and run:
 
-    bash cpath2.sh --build 2>&1 >build.log &
+    ./build.sh 2>&1 >build.log &
 
-, which normally takes a day or two - executes the following data integration steps: 
-import the metadata, clean, convert to BioPAX, normalize the data, build the BioPAX warehouse, 
-merge into the main BioPAX model, create Lucene index, several summary files and `export.sh` script to convert 
-the final BioPAX models to SIF, GMT, TXT formats. 
+which takes about half a day (and uses about 60Gb of RAM) 
+executing the integration steps (PREMERGE, MERGE, POSTMERGE):
+ - import the metadata
+ - transform (clean, convert, normalize) input data 
+ - build the intermediate BioPAX Warehouse model (from ChEBI, Uniprot and custom id-mapping files)
+ - merge all the preprocessed input BioPAX models into the main BioPAX model (pc-biopax)
+ - create full-text index of the pc-biopax model (index also includes id-mapping to chebi,uniprot for internal use)
+ - create uniprot.txt, datasources.txt, blacklist.txt (used for converting BioPAX to SIF)
 
-    cd downloads
+Run export.sh to convert the main pc-biopax model to SIF, GMT, TXT formats and also 
+generate summary files about the bio pathways and physical entities.
+
+    ./export.sh 2>&1 >export.log & 
     
-Copy the latest paxtools.jar into this directory and run -
+(- which takes a couple of days...). 
 
-    sh export.sh 2>&1 >export.log & 
-    
-(- which takes overnight or a day and night); upload/copy/move (but keep at least blacklist.txt, *All.BIOPAX.owl.gz)
-all the files from this here and ../data/ directories to the file server, or configure so that they can be downloaded 
-from e.g. `http://www.pathwaycommons.org/archives/PC2/v{version_number}` (or else).
+Once the instance is configured and data processed, run the web service e.g. as follows:
 
-Once the instance is configured and data processed, run the web service using the same 
-script as follows:
+    ./run.sh --server 2>&1 &
 
-    nohup bash cpath2.sh --server 2>&1 &
-
-(watch the `nohup.out` and `cpath2.log`)
+(watch `cpath2.log`)
 
 ### Metadata
 
@@ -141,8 +142,8 @@ only ZIP archive (can contain multiple files) is currently supported by cPath2 d
 
 Note: BioPAX L1, L2 models will be auto-converted to the BioPAX Level3. 
 
-Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the 'data' folder as follows:
- - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
+Prepare original BioPAX and PSI-MI/PSI-MITAB data archives in the './data' dir as follows:
+ - download an original file/archive from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
  - extract what you need (e.g. some species data only)
  - create a new zip archive using name like `<IDENTIFIER>.zip` (datasource identifier, e.g., `reactome_human.zip`).
 

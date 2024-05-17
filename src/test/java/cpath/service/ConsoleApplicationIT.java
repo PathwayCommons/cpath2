@@ -171,9 +171,9 @@ public class ConsoleApplicationIT
   @Test
   @DirtiesContext
   public void premergeAndMerge() throws IOException {
-    //test env. sanity quick-test
-    assertEquals("Pc0", service.settings().exportArchivePrefix());
-
+    //test configs sanity quick-test:
+    assertEquals("pc", service.settings().getName());
+    assertEquals("0", service.settings().getVersion());
     //should not fail:
     assertDoesNotThrow(
         () -> service.settings().getOrganismTaxonomyIds()
@@ -247,7 +247,7 @@ public class ConsoleApplicationIT
 
     // **** MERGE ***
     Merger merger = new Merger(service);
-    // For simplicity, we don't use Datasource and thus bypass some Merger methods
+    // For testing here, we don't use Datasource and thus bypass some Merger methods
     // (in production, we'd simply run as merger.merge())
     // Load the test models from classpath:resources/merge folder
     final List<Model> pathwayModels = initPathwayModels();
@@ -261,7 +261,7 @@ public class ConsoleApplicationIT
       // but it's not the case for our random test data files here...
       merger.merge(m.getName(), m, providerModel);
     }
-    Model mainModel = merger.getMainModel();
+    Model mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
     mainModel.setXmlBase(service.settings().getXmlBase());
     ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
     ModelUtils.normalizeGenerics(providerModel);
@@ -269,16 +269,15 @@ public class ConsoleApplicationIT
     merger.replaceConflictingUris(providerModel, mainModel);
     mainModel.merge(providerModel);
     ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
-    //export the main model (for manual check up)
-    //it's vital to save to and then read the model from file,
+    //it's vital to save to and then read the main model back from file,
     //because doing so repairs inverse properties (e.g. entityReferenceOf)!
-    merger.save();
+    merger.save(mainModel);
 
     //load back the integrated test data model from the archive and validate it...
     mainModel = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
     assertMerge(mainModel);
 
-    //pid, reactome,humancyc,.. were there in the test
+    //pid,reactome,humancyc,.. were there in the test
     assertEquals(5, mainModel.getObjects(Provenance.class).size());
 
     //additional 'test' metadata entry
@@ -295,12 +294,10 @@ public class ConsoleApplicationIT
 
     // SERVICE-TIER features tests
 
-    // Before next tests - update the main file due to changes to dataSource prop. above
-    // (persistent and in-memory models must be the same as the indexer/searcher reads the model from file)
+    // Before next tests, update/index the main file due to changes to dataSource prop. above
+    // (service.model must be the same one that we actually index and search...)
     new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel,
       new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
-
-    //index (it uses additional id-mapping service internally)
     service.setModel(mainModel);
     service.index().save(mainModel);
 

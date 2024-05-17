@@ -44,7 +44,7 @@ public class ServiceIT {
   public void idMapping() {
     //capitalization is important in 99% of identifier types (we should not ignore it)
     // we should be able to save it and not get 'duplicate key' exception here
-    final String indexDir = "target/work/idx";
+    final String indexDir = "target/test-idx";
     CPathUtils.cleanupDirectory(indexDir, false);
     service.initIndex(null, indexDir, false);
     //save(Mapping) in fact updates/overwrites, preventing duplicate id-mapping records in the index

@@ -39,65 +39,56 @@ public final class Merger {
 	private final Service service;
 	private final Set<String> supportedTaxonomyIds;
 	private final Model warehouseModel;
-  private final Model mainModel;
-
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param service cpath2 service
+	 *
+	 * Using cpath2.* application properties (via service.settings()),
+	 * resets service.model to an empty model using there provided xml:base,
+	 * loads Warehouse model from file, opens the index, etc.
+	 *
+	 * @param service cpath2 service impl.
 	 */
 	Merger(Service service)
 	{
 		this.service = service;
-		this.supportedTaxonomyIds = service.settings().getOrganismTaxonomyIds();
-		this.warehouseModel = service.loadWarehouseModel();
+		supportedTaxonomyIds = service.settings().getOrganismTaxonomyIds();
+		warehouseModel = service.loadWarehouseModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
-		log.info("Successfully imported Warehouse BioPAX archive.");
-		this.mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-		this.mainModel.setXmlBase(service.settings().getXmlBase());
-		log.info("Created a new empty main BioPAX model.");
+		log.info("Loaded Warehouse BioPAX archive: {}", service.settings().warehouseModelFile());
 	}
 
-	/**
-	 * Gets the main BioPAX model, where all other 
-	 * by-datasource models are to be (or have been already) merged.
-	 * @return the main BioPAX model
-	 */
-	Model getMainModel() {
-		return mainModel;
-	}
-
-	Model getWarehouseModel() {
-		return warehouseModel;
-	}
-	
 	public void merge() {
+		//set a new empty main model
+		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+		m.setXmlBase(service.settings().getXmlBase());
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, object -> true);
-		//init the lucene index
-		service.initIndex(mainModel, service.settings().indexDir(), false);
+		//init the lucene index (id-mapping is ready, but the biopax index is to be updated below)
+		service.initIndex(m, service.settings().indexDir(), false);
 		for (Datasource datasource : service.metadata().getDatasources()) {
 			if(datasource.getType().isNotPathwayData()) {
 				log.info("Skip Warehouse data: {}", datasource);
 				continue;
 			}
-			Model providerModel = merge(datasource);
+			Model providerModel = merge(datasource); //uses lucene index, via service.mapping() repo, for id-mapping
 			log.info("Replacing xml:base of non-generated/normalized URIs in {}", datasource.getIdentifier());
 			CPathUtils.rebaseUris(providerModel, null, datasource.getIdentifier()+":");
 			log.info("Replacing conflicting URIs in {} before merging into Main...", datasource.getIdentifier());
-			replaceConflictingUris(providerModel, mainModel);
+			replaceConflictingUris(providerModel, m);
 			save(providerModel, datasource);
 			log.info("Merging '{}' model into the Main BioPAX model...", datasource.getIdentifier());
-			simpleMerger.merge(mainModel, providerModel);
+			simpleMerger.merge(m, providerModel);
 		}
-		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
-		save();
-		service.setModel(mainModel);
-		log.info("All merged!");
+		ModelUtils.removeObjectsIfDangling(m, UtilityClass.class);
+		//m.repair(); //todo: check if we really need this call (unlikely)
+		save(m); //save the main model as rdfxml file
+		log.info("Merged, saved.");
+		log.info("Indexing...");
+		service.index().save(m); // create or update all the biopax elements index
 	}
 
 	//remove bad unification and relationship xrefs, if any;
-	//otherwise, just lowercase the xref.db (but not id, which is case-sensitive)
+	//otherwise, just lowercase the xref.db (but not id - case-sensitive)
 	private void cleanupXrefs(Model m) {
 		for(Xref x : new HashSet<>(m.getObjects(Xref.class))) {
 			if(!(x instanceof PublicationXref)) {
@@ -138,7 +129,6 @@ public final class Merger {
 					continue;
 				}
 				//merge each input file model with Warehouse model (using id-mapping too) and into providerModel (one-datasource)
-				//
 				Model oneFileModel =  (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
 				merge(fn, oneFileModel, providerModel);
 			}
@@ -168,7 +158,7 @@ public final class Merger {
 
 			log.info("Done merging {}", datasource);
 		} else {
-			log.info("Loaded BioPAX model from {}", service.settings().biopaxFileNameFull(datasource.getIdentifier()));
+			log.info("Loaded BioPAX model from {}", service.settings().biopaxFileName(datasource.getIdentifier()));
 		}
 
 		return providerModel;
@@ -196,24 +186,19 @@ public final class Merger {
 				breakPathwayComponentCycle(visited, rootPathway, (Pathway) proc);
 	}
 
-	/**
-	 * Exports the main model to the 'All' BioPAX archive
-	 * in the cpath2 downloads (in production) or tmp (tests)
-	 * directory.
-	 */
-	protected void save() {
+	protected void save(Model m) {
 		try {
-			log.info("Saving the main BioPAX Model to file: {}", service.settings().mainModelFile());
-			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel, 
+			log.info("Saving main BioPAX Model: {}", service.settings().mainModelFile());
+			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m,
 				new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
 		} catch (Exception e) {
-			throw new RuntimeException("Failed saving the main BioPAX archive.", e);
+			throw new RuntimeException("Failed saving main BioPAX archive.", e);
 		}
 	}
 
 	private void save(Model model, Datasource ds) {
 		try {
-			String path = service.settings().biopaxFileNameFull(ds.getIdentifier());
+			String path = service.settings().biopaxFileName(ds.getIdentifier());
 			log.info("Saving model:'{}' to file: {}", ds.getIdentifier(), path);
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, new GZIPOutputStream(new FileOutputStream(path)));
 		} catch (Exception e) {
@@ -238,6 +223,7 @@ public final class Merger {
 	protected void merge(final String description, final Model source, final Model target) {
 		final String srcModelInfo = "source: " + description;
 
+		//delete bad unification and relationship xrefs; lowercase xref.db values
 		cleanupXrefs(source);
 
 		log.info("Searching for canonical/existing ERs to replace the original ones in {}...", srcModelInfo);
@@ -858,7 +844,7 @@ public final class Merger {
 			// Normalizer.uri("", prefix, id, EntityReference.class); //alternative way (in case we generalize for more biopax types)
 			String uri = Resolver.getURI(collection, id); //e.g. id can be 'CHEBI:20' or '20' (no banana)
 			if(uri != null) {
-				EntityReference er = (EntityReference) getWarehouseModel().getByID(uri);
+				EntityReference er = (EntityReference) warehouseModel.getByID(uri);
 				if (er != null) {
 					toReturn.add(er);
 				}

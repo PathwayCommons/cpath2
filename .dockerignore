@@ -1,6 +1,0 @@
-work/data
-work/downloads
-work/*.sh
-!work/downloads/blacklist.txt
-!work/downloads/*.All.BIOPAX.owl.gz
-!work/downloads/*.All.hgnc.txt.gz
