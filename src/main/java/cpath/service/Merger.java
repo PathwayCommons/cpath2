@@ -85,6 +85,7 @@ public final class Merger {
 		log.info("Merged, saved.");
 		log.info("Indexing...");
 		service.index().save(m); // create or update all the biopax elements index
+		service.setModel(m);
 	}
 
 	//remove bad unification and relationship xrefs, if any;

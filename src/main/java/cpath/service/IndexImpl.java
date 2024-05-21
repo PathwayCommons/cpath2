@@ -477,6 +477,7 @@ public class IndexImpl implements Index, Mappings {
 		commit();
 		//force refreshing the index state (for new readers)
 		refresh();
+		setModel(model);
 		LOG.info("build(), all done.");
 	}
 

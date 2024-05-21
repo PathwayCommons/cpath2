@@ -201,9 +201,10 @@ public class ConsoleApplication implements CommandLineRunner {
       LOG.info("Found {}...", service.settings().mainModelFile());
     }
 
-    service.init(); // reload the model, index, blacklist if exists...
-
     if(service.getBlacklist() == null) {
+      if(service.getModel()==null) {
+        service.init();
+      }
       LOG.info("Generating the list of ubiquitous small molecules, {}...", service.settings().blacklistFile());
       //Generate the blacklist.txt to exclude/keep ubiquitous small molecules (e.g. ATP)
       //from graph query and output format converter results.
@@ -321,7 +322,9 @@ public class ConsoleApplication implements CommandLineRunner {
     writer.close();
     LOG.info("generated datasources.txt");
 
-    service.init(); // load/reload the main model, index, etc.
+    if(service.getModel() == null) {
+      service.init(); // load/reload the main model, index, etc.
+    }
 
     //this was to integrate with UniProt portal/data - to add/update their external links to PathwayCommons apps...
     LOG.info("creating the list of primary uniprot ACs...");
