@@ -14,7 +14,8 @@ $JAVA_HOME/bin/java -Xmx64g -Dpaxtools.CollectionProvider=org.biopax.paxtools.tr
 cat physical_entities.json | jq -cS 'map(select(.generic)) | reduce .[] as $o ({}; . + {($o.uri): {name: $o.name, label:$o.label, synonyms:$o."hgnc.symbol"}})' > generic-physical-entity-map.json
 
 rename 's/txt\.sif/sif/' *.txt.sif
-gzip *.txt *.sif *.gmt physical_entities.json
+#compress the generated files except: blacklist.txt, generic-physical-entity-map.json
+gzip pc-*.sif pc-*.gmt pc-*.txt datasources.txt pathways.txt uniprot.txt physical_entities.json
 
 cd ..
 echo "export.sh completed."
