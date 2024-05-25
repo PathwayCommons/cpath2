@@ -63,7 +63,7 @@ public class ApiControllerV2 extends BasicController {
 
   @PostMapping(path = "top_pathways", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-    summary = "Search for top-level bio pathways.",
+    summary = "Search for top-level bio pathways",
     description = "Find root/parent Pathway objects that are neither <code>controlled</code> " +
       "nor a <code>pathwayComponent</code> of another biological process; trivial pathways are excluded from the results;" +
       " can filter by <a href='/datasources'>datasource</a> and organism."
@@ -92,7 +92,7 @@ public class ApiControllerV2 extends BasicController {
 
   @PostMapping(path = "traverse", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-    summary = "Access properties of BioPAX elements using graph path expressions (xpath-like).",
+    summary = "Access properties of BioPAX elements using graph path expressions (xpath-like)",
     description = "To collect specific BioPAX property values, use the following path accessor format: " +
       "InitialClass/property[:filterClass]/[property][:filterClass]... A \"*\" sign after the property " +
       "instructs the path accessor to transitively traverse that property. For example, the following " +
@@ -173,7 +173,7 @@ public class ApiControllerV2 extends BasicController {
   @PostMapping(path = "neighborhood",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX Neighborhood graph query and optional converter to another output format.",
+      summary = "BioPAX Neighborhood graph query and optional converter to another output format",
       description = "Find the neighborhood network given the source bio entity URIs/IDs. " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
@@ -198,7 +198,7 @@ public class ApiControllerV2 extends BasicController {
   @PostMapping(path = "pathsbetween",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX PathsBetween graph query and optional converter to another output format.",
+      summary = "BioPAX PathsBetween graph query and optional converter to another output format",
       description = "Find the BioPAX subnetwork that includes all paths between given source bio entities (URIs/IDs). " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
@@ -223,7 +223,7 @@ public class ApiControllerV2 extends BasicController {
   @PostMapping(path = "pathsfromto",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX PathsFromTo graph query and optional converter to another output format.",
+      summary = "BioPAX PathsFromTo graph query and optional converter to another output format",
       description = "Find a subnetwork that includes entities on the paths from the source bio " +
           "entities (URIs/IDs) to the targets (if empty array, then PathsBetween algorithm is used). " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
@@ -249,7 +249,7 @@ public class ApiControllerV2 extends BasicController {
   @PostMapping(path = "commonstream",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX CommonStream graph query and optional converter to another output format.",
+      summary = "BioPAX CommonStream graph query and optional converter to another output format",
       description = "Find a BioPAX common stream subnetwork from the source bio entities (URIs/IDs). " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )

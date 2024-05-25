@@ -35,7 +35,7 @@ public class ApiControllerV1 extends BasicController {
   @GetMapping(path = "get",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format (query parameters must be URL-encoded and not too many).",
+      summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format (query parameters must be URL-encoded and not too many)",
       description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
           "optionally, convert the result to other <a href='/#formats'>output formats</a>."
   )
@@ -73,7 +73,7 @@ public class ApiControllerV1 extends BasicController {
   @GetMapping(path = "top_pathways",
       produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-      summary = "HTTP GET, search for top pathways.",
+      summary = "Search for top-level bio pathways",
       description = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
           "nor a 'pathwayComponent' of another biological process; trivial pathways are excluded from the results;" +
           " can filter by <a href='/datasources'>datasource</a> and organism."
@@ -88,7 +88,7 @@ public class ApiControllerV1 extends BasicController {
       consumes = {APPLICATION_FORM_URLENCODED_VALUE},
       produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-    summary = "Search for top-level bio pathways.",
+    summary = "Search for top-level bio pathways",
     description = "Find root/parent Pathway objects that are neither <code>controlled</code> " +
       "nor a <code>pathwayComponent</code> of another biological process; trivial pathways are excluded from the results;" +
       " can filter by <a href='/datasources'>datasource</a> and organism."
@@ -117,7 +117,7 @@ public class ApiControllerV1 extends BasicController {
 
   @GetMapping(path = "traverse", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-      summary = "Access properties of BioPAX elements using graph path expressions",
+      summary = "Access properties of BioPAX elements using graph path expressions (xpath-like)",
       description = "To collect specific BioPAX property values, use the following path accessor format: " +
           "InitialClass/property[:filterClass]/[property][:filterClass]... A \"*\" sign after the property " +
           "instructs the path accessor to transitively traverse that property. For example, the following " +
@@ -140,7 +140,7 @@ public class ApiControllerV1 extends BasicController {
       consumes = {APPLICATION_FORM_URLENCODED_VALUE},
       produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-    summary = "Access properties of BioPAX elements using graph path expressions (xpath-like).",
+    summary = "Access properties of BioPAX elements using graph path expressions (xpath-like)",
     description = "To collect specific BioPAX property values, use the following path accessor format: " +
       "InitialClass/property[:filterClass]/[property][:filterClass]... A \"*\" sign after the property " +
       "instructs the path accessor to transitively traverse that property. For example, the following " +
@@ -177,7 +177,7 @@ public class ApiControllerV1 extends BasicController {
   @GetMapping(path = "graph",
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-      summary = "BioPAX Graph Query and optional converter to another output format (parameters must be URL-encoded and not too many).",
+      summary = "A BioPAX graph query and optional converter to another output formats (parameters must be URL-encoded and not too many)",
       description = "Find connections of bio network elements, such as the shortest path between " +
           "two proteins or the neighborhood for a particular protein state or all states. " +
           "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
@@ -195,7 +195,7 @@ public class ApiControllerV1 extends BasicController {
       consumes = {APPLICATION_FORM_URLENCODED_VALUE},
       produces = {"application/vnd.biopax.rdf+xml", "application/ld+json", "application/json", "application/xml", "text/plain"})
   @Operation(
-    summary = "A BioPAX graph query and optional converter to another output format.",
+    summary = "A BioPAX graph query and optional converter to another output formats",
     description = "Find connections of bio network elements, such as the shortest path between " +
       "two proteins or the neighborhood for a particular protein state or all states. " +
       "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
@@ -249,7 +249,7 @@ public class ApiControllerV1 extends BasicController {
 
   @GetMapping(path = "search", produces = {APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE})
   @Operation(
-      summary = "Full-text search in the BioPAX database with Lucene query syntax",
+      summary = "Full-text search in the BioPAX model using Lucene query syntax",
       description = """
         <p>
         The index field names are: <var>uri, keyword, name, pathway, xrefid, datasource, organism</var>.
