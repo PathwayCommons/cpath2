@@ -24,8 +24,8 @@
     <start-class>cpath.Application</start-class>
     <license.licenseName>MIT</license.licenseName>
     <github.global.server>github</github.global.server>
-    <paxtools.version>6.0.0-SNAPSHOT</paxtools.version>
-    <validator.version>6.0.0-SNAPSHOT</validator.version>
+    <paxtools.version>6.0.0</paxtools.version>
+    <validator.version>6.0.0</validator.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <lucene.version>9.10.0</lucene.version>
     <jvm.options>-Xmx3g -Dfile.encoding=UTF-8 -ea -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</jvm.options>
