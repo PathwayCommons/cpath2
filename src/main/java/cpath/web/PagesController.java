@@ -69,6 +69,7 @@ public class PagesController extends BasicController {
     // deny robots access to logs, web services and data files,
     // but allow - to web page resources (css, js, images)
     return "User-agent: *\n" +
+      "Disallow: /v2\n" +
       "Disallow: /fetch\n" +
       "Disallow: /search\n" +
       "Disallow: /graph\n" +

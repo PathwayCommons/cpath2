@@ -5,8 +5,6 @@ import cpath.service.api.GraphType;
 import cpath.service.api.OutputFormat;
 import cpath.service.metadata.Datasource;
 import cpath.web.args.binding.*;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.pattern.miner.SIFEnum;
 import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
@@ -43,6 +41,5 @@ public class GlobalControllerAdvice {
     binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
     binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     binder.registerCustomEditor(SIFType.class, new SIFTypeEditor()); //also works for the SIFEnum subclass
-//    binder.registerCustomEditor(SIFEnum.class, new SIFTypeEditor());
   }
 }
