@@ -14,7 +14,7 @@
     "pubmedId" : "23180789",
     "availability" : "free"
   }, {
-    "identifier" : "uniprot_human",
+    "identifier" : "uniprot.human",
     "name" : [ "UniProt", "SwissProt", "UniProtKB" ],
     "description" : "UniProtKB/Swiss-Prot (human), release 2024_02",
     "dataUrl" : "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz",
@@ -26,7 +26,7 @@
     "pubmedId" : "24253303",
     "availability" : "free"
   }, {
-    "identifier" : "unichem_mapping",
+    "identifier" : "unichem.mapping",
     "name" : [ "UniChem" ],
     "description" : "Selected whole-source id-mapping files (to ChEBI) from UniChem, 13-May-2024",
     "dataUrl" : "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/",
@@ -146,7 +146,7 @@
     "pubmedId" : "24234451",
     "availability" : "free"
   }, {
-    "identifier" : "intact_complex",
+    "identifier" : "intact.complex",
     "name" : [ "IntAct" ],
     "description" : "IntAct Complex (human), 06-Oct-2023",
     "dataUrl" : "https://ftp.ebi.ac.uk/pub/databases/intact/complex/2023-10-06/psi25/Homo_sapiens.zip",
@@ -268,7 +268,7 @@
   }, {
     "identifier" : "netpath",
     "name" : [ "NetPath" ],
-    "description" : "NetPath 12/2011",
+    "description" : "NetPath 12/2011 (edited to fix several BioPAX/RDFXML syntax errors)",
     "dataUrl" : "http://www.netpath.org/download/zipped/BioPAX.zip",
     "homepageUrl" : "http://www.netpath.org",
     "iconUrl" : "https://pathwaycommons.github.io/cpath2/logos/netpath_logo.png",

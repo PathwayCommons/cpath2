@@ -72,6 +72,7 @@ public final class Merger {
 			}
 			Model providerModel = merge(datasource); //uses lucene index, via service.mapping() repo, for id-mapping
 			log.info("Replacing xml:base of non-generated/normalized URIs in {}", datasource.getIdentifier());
+			//todo: new URI must be valid (e.g. base/prefix cannot contain '_' or '-'; or start with a standard URI scheme, e.g. 'urn:' or 'http://')
 			CPathUtils.rebaseUris(providerModel, null, datasource.getIdentifier()+":");
 			log.info("Replacing conflicting URIs in {} before merging into Main...", datasource.getIdentifier());
 			replaceConflictingUris(providerModel, m);
@@ -79,7 +80,12 @@ public final class Merger {
 			log.info("Merging '{}' model into the Main BioPAX model...", datasource.getIdentifier());
 			simpleMerger.merge(m, providerModel);
 		}
+
+		//remove dangling SPEs (such non-participant/components molecules are not useful for pathway analyses...)
+    ModelUtils.removeObjectsIfDangling(m, SimplePhysicalEntity.class);
+		//now, remove dangling xrefs, CV et al. utility type individuals
 		ModelUtils.removeObjectsIfDangling(m, UtilityClass.class);
+
 		//m.repair(); //todo: check if we really need this call (unlikely)
 		save(m); //save the main model as rdfxml file
 		log.info("Merged, saved.");

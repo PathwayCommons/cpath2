@@ -20,7 +20,7 @@ do
     	    echo "SKIPPED $uri (no Interactions)"
         fi
     fi
-    ERR=$(curl -sS "$PC2/fetch?uri=$uri" > owl)
+    ERR=$(curl -sS "$PC2/get?uri=$uri" > owl)
     case "$ERR" in 
       *Exception* ) echo "FAILED $uri $ERR" ; continue ;;
     esac

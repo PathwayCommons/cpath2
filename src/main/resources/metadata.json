@@ -32,7 +32,7 @@
     },
     {
       "dataUrl": "classpath:test_mapping.zip",
-      "identifier": "TEST_MAPPING",
+      "identifier": "TESTMAPPING",
       "homepageUrl": "https://www.ebi.ac.uk/unichem/",
       "name": [
         "UniChem"

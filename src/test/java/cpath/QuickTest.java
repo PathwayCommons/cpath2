@@ -1,5 +1,6 @@
 package cpath;
 
+import org.apache.commons.lang3.RegExUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
@@ -21,7 +22,6 @@ public class QuickTest {
         SimpleIOHandler reader = new SimpleIOHandler();
         Model model = reader.convertFromOWL((new DefaultResourceLoader())
                 .getResource("classpath:test_merge_equiv_pe.owl").getInputStream());
-
 //        for(Protein p : model.getObjects(Protein.class)) {
 //            System.out.println(p.getUri() + ", equivalenceCode=" + p.equivalenceCode());
 //        }
@@ -47,4 +47,8 @@ public class QuickTest {
         assertTrue("merge:some_protein/foo/123".matches("^\\w+:.+$"));
     }
 
+    @Test
+    void replaceFirst() {
+        assertEquals("a.b:foo", RegExUtils.replaceFirst("a_b:foo", "a_b:", "a.b:"));
+    }
 }

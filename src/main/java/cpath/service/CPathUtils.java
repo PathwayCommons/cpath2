@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
@@ -21,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
-import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -89,27 +87,17 @@ public final class CPathUtils {
   }
 
   /**
-   * Replaces the URI of a BioPAX object
-   * using java reflection. Normally, one should avoid this;
-   * please use when absolutely necessary and with great care.
+   * Replaces the URI of a BioPAX object using java reflection.
+   * Please use when absolutely necessary and with great care.
    *
    * @param model model
    * @param el biopax object from the model
    * @param newUri new URI
    */
   public static void replaceUri(Model model, BioPAXElement el, String newUri) {
-    if (el.getUri().equals(newUri)) {
-      return; // no action required
+    if (!el.getUri().equals(newUri)) {
+      ModelUtils.updateUri(model, el, newUri);
     }
-    model.remove(el);
-    try {
-      Method m = BioPAXElementImpl.class.getDeclaredMethod("setUri", String.class);
-      m.setAccessible(true);
-      m.invoke(el, newUri);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-    model.add(el);
   }
 
   /**
@@ -154,7 +142,7 @@ public final class CPathUtils {
    * Replaces xml:base for the normalized model and updates the URis of all non-normalized objects
    * (mostly Entity, Evidence, etc.)
    * The model is already normalized, which means the URIs of many xrefs, CVs, entity reference start with
-   * bioregistry.io/ or are CURIEs like e.g. chebi:1234, pubmed:1234556.
+   * http://bioregistry.io/ or are CURIEs like e.g. chebi:1234, pubmed:1234556.
    */
   public static void rebaseUris(Model model, String fromBase, String toBase) {
     Assert.hasText(toBase, "Blank/null value is not allowed for xmlBase");

@@ -147,6 +147,8 @@
  <bp:db>hgnc.symbol</bp:db>
 </bp:RelationshipXref>
 
+<!-- the URI below is in fact invalid/bad due to "_" in the prefix
+(latest Jena parsers/converters and URI.create will fail) -->
 <bp:ChemicalStructure rdf:about="TEST_CHEBI:cs_26d67131a0608673ae6a683d1dad18f7">
  <bp:structureFormat>InChI</bp:structureFormat>
  <bp:structureData>InChI=1S/C10H18O/c1-5-10(4,11)8-6-7-9(2)3/h5,7,11H,1,6,8H2,2-4H3/t10-/m0/s1</bp:structureData>

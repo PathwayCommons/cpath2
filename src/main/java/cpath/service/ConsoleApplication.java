@@ -78,9 +78,14 @@ public class ConsoleApplication implements CommandLineRunner {
       .hasArg().argName("from-stage").optionalArg(true).type(Stage.class).build();
     options.addOption(o);
     o = Option.builder("a").longOpt("analyze")
-      .desc("use a class that implements cpath.service.api.Analysis<Model> interface to analyse the integrated " +
-        "BioPAX model (the class and its dependencies are expected to be found on the classpath)")
+      .desc("use a class that implements cpath.service.api.Analysis<Model> interface to analyse the " +
+        "BioPAX model (the class and its dependencies are expected to be on the classpath)")
       .hasArg().argName("class").build();
+    options.addOption(o);
+    o = Option.builder("m").longOpt("modify")
+        .desc("use a class that implements cpath.service.api.Analysis<Model> interface to modify the " +
+            "BioPAX model and re-index (the class and its dependencies are expected to be on the classpath)")
+        .hasArg().argName("class").build();
     options.addOption(o);
     o = Option.builder("e").longOpt("export")
       .desc("export the main BioPAX model or sub-model defined by additional filters (see: -F)")
@@ -134,20 +139,22 @@ public class ConsoleApplication implements CommandLineRunner {
       exportData(cmd.getOptionValue("export"), uris, datasources, types);
     }
     else if (cmd.hasOption("analyze")) {
-      executeAnalysis(cmd.getOptionValue("analyze"), true);
+      analyzeModel(cmd.getOptionValue("analyze"));
+    }
+    else if (cmd.hasOption("modify")) {
+      modifyModel(cmd.getOptionValue("modify"));
     }
     else {
       new HelpFormatter().printHelp("cPath2", options);
     }
   }
 
-  /**
-   * Runs a class that analyses or modifies the main BioPAX model.
+  /*
+   * Runs a class that analyses the main BioPAX model.
    *
    * @param analysisClass a class that implements {@link Analysis}
-   * @param readOnly      whether this is to modify and replace the BioPAX Model or not
    */
-  private void executeAnalysis(String analysisClass, boolean readOnly) {
+  private void analyzeModel(String analysisClass) {
     Analysis<Model> analysis;
     try {
       Class c = Class.forName(analysisClass);
@@ -155,22 +162,36 @@ public class ConsoleApplication implements CommandLineRunner {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-
     Model model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
     analysis.execute(model);
+  }
 
-    if (!readOnly) { //replace the main BioPAX model archive
-      try {
-        new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model,
-          new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
-      } catch (Exception e) {
-        throw new RuntimeException("Failed updating the main BioPAX archive!", e);
-      }
-
-      LOG.warn("The main BioPAX model was modified; "
-        + "do not forget to re-index, update counts, re-export other files, etc.");
+  /*
+   * Runs a class that analyses and modifies the main BioPAX model and index.
+   *
+   * @param analysisClass a class that implements {@link Analysis} and can edit the data.
+   */
+  private void modifyModel(String analysisClass) throws IOException {
+    Analysis<Model> analysis;
+    try {
+      Class c = Class.forName(analysisClass);
+      analysis = (Analysis<Model>) c.getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-
+    //load current model from the file
+    Model model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+    // and apply the changes
+    LOG.info("Running class: {}...", analysisClass);
+    analysis.execute(model);
+    // export the modified model to the file
+    LOG.info("Over-writing model: {}...", service.settings().mainModelFile());
+    new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model,
+        new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
+    //init the lucene index as read-write
+    service.initIndex(model, service.settings().indexDir(), false);
+    //re-index the model
+    service.index().save(model);
   }
 
   /*

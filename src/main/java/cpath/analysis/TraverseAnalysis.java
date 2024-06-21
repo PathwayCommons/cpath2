@@ -28,7 +28,7 @@ public final class TraverseAnalysis implements Analysis<Model> {
 		final String propertyPath = callback.getPropertyPath();
 		callback.getTraverseEntry().clear();
 		
-		PathAccessor pathAccessor = null; 
+		PathAccessor pathAccessor;
 		try {
 			pathAccessor = new PathAccessor(propertyPath, model.getLevel());
 		} catch (Exception e) {
@@ -43,7 +43,6 @@ public final class TraverseAnalysis implements Analysis<Model> {
 				TraverseEntry entry = new TraverseEntry();
 				entry.setUri(uri);
 				if(!pathAccessor.isUnknown(v)) {
-//					entry.getValue().addAll(v);
 					for(Object o : v) {
 						if(o instanceof BioPAXElement) 
 							entry.getValue().add(((BioPAXElement) o).getUri());

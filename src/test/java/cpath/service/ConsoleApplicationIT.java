@@ -1,5 +1,7 @@
 package cpath.service;
 
+import cpath.analysis.Fix319;
+import cpath.service.api.Analysis;
 import cpath.service.api.Service;
 import cpath.service.api.OutputFormat;
 import cpath.service.metadata.Mapping;
@@ -32,6 +34,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
@@ -186,7 +189,7 @@ public class ConsoleApplicationIT
     assertNotNull(ds);
     ds = service.metadata().findByIdentifier("TESTCHEBI");
     assertNotNull(ds);
-    ds = service.metadata().findByIdentifier("TEST_MAPPING");
+    ds = service.metadata().findByIdentifier("TESTMAPPING");
     assertNotNull(ds);
 
     PreMerger premerger = new PreMerger(service, validator);
@@ -268,13 +271,21 @@ public class ConsoleApplicationIT
     CPathUtils.rebaseUris(providerModel, null, DS_XML_BASE); //important (null)
     merger.replaceConflictingUris(providerModel, mainModel);
     mainModel.merge(providerModel);
+
+//    //in prod, we bremove dangling SPEs, but here/below we need them for merge assertions; so commented out...
+//    ModelUtils.removeObjectsIfDangling(mainModel, SimplePhysicalEntity.class);
     ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
+
     //it's vital to save to and then read the main model back from file,
     //because doing so repairs inverse properties (e.g. entityReferenceOf)!
     merger.save(mainModel);
 
     //load back the integrated test data model from the archive and validate it...
     mainModel = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+
+    //all URIs are valid
+    mainModel.getObjects().stream().forEach((e) -> assertDoesNotThrow(() -> URI.create(e.getUri())));
+
     assertMerge(mainModel);
 
     //pid,reactome,humancyc,.. were there in the test

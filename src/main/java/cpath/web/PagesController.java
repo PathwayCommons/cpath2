@@ -70,7 +70,7 @@ public class PagesController extends BasicController {
     // but allow - to web page resources (css, js, images)
     return "User-agent: *\n" +
       "Disallow: /v2\n" +
-      "Disallow: /fetch\n" +
+      "Disallow: /get\n" +
       "Disallow: /search\n" +
       "Disallow: /graph\n" +
       "Disallow: /top_pathways\n" +
