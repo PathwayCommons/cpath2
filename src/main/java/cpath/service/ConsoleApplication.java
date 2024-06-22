@@ -87,6 +87,9 @@ public class ConsoleApplication implements CommandLineRunner {
             "BioPAX model and re-index (the class and its dependencies are expected to be on the classpath)")
         .hasArg().argName("class").build();
     options.addOption(o);
+    o = Option.builder("i").longOpt("index")
+        .desc("re-index the BioPAX model").build();
+    options.addOption(o);
     o = Option.builder("e").longOpt("export")
       .desc("export the main BioPAX model or sub-model defined by additional filters (see: -F)")
       .hasArg().argName("filename").build();
@@ -144,6 +147,9 @@ public class ConsoleApplication implements CommandLineRunner {
     else if (cmd.hasOption("modify")) {
       modifyModel(cmd.getOptionValue("modify"));
     }
+    else if (cmd.hasOption("index")) {
+      reindex();
+    }
     else {
       new HelpFormatter().printHelp("cPath2", options);
     }
@@ -191,6 +197,12 @@ public class ConsoleApplication implements CommandLineRunner {
     //init the lucene index as read-write
     service.initIndex(model, service.settings().indexDir(), false);
     //re-index the model
+    service.index().save(model);
+  }
+
+  private void reindex() throws IOException {
+    Model model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+    service.initIndex(model, service.settings().indexDir(), false);
     service.index().save(model);
   }
 
