@@ -180,7 +180,7 @@ public class IndexImpl implements Index, Mappings {
 		}
 		SearchResponse response = new SearchResponse();
 		response.setMaxHitsPerPage(getMaxHitsPerPage());
-		long numTotalHits = topDocs.totalHits.value; //todo: call searcher.count(q) instead or it's the same?
+		long numTotalHits = searcher.count(query);
 		response.setNumHits(numTotalHits);
 		List<SearchHit> hits = response.getSearchHit();//empty list to be filled from top docs
 		assert hits!=null && hits.isEmpty();
