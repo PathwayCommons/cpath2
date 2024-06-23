@@ -139,14 +139,6 @@ public class ServiceImpl implements Service {
     this.blacklist = blacklist;
   }
 
-  IndexImpl getIndex() {
-    return index;
-  }
-
-  void setIndex(IndexImpl index) {
-    this.index = index;
-  }
-
   public ServiceResponse search(String queryStr,
                                 int page, Class<? extends BioPAXElement> biopaxClass,
                                 String[] dsources, String[] organisms) {

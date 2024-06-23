@@ -179,10 +179,10 @@ public class IndexImpl implements Index, Mappings {
 			throw new IllegalArgumentException("topDocs is null");
 		}
 		SearchResponse response = new SearchResponse();
-		response.setMaxHitsPerPage(maxHitsPerPage);
-		long numTotalHits = topDocs.totalHits.value; //todo: call searcher.count(q) instead or it's same?..
+		response.setMaxHitsPerPage(getMaxHitsPerPage());
+		long numTotalHits = topDocs.totalHits.value; //todo: call searcher.count(q) instead or it's the same?
 		response.setNumHits(numTotalHits);
-		List<SearchHit> hits = response.getSearchHit();//empty list
+		List<SearchHit> hits = response.getSearchHit();//empty list to be filled from top docs
 		assert hits!=null && hits.isEmpty();
 		LOG.debug("transform, no. TopDocs to process:" + topDocs.scoreDocs.length);
 		for(ScoreDoc scoreDoc : topDocs.scoreDocs) {
@@ -459,6 +459,7 @@ public class IndexImpl implements Index, Mappings {
 
 	@Override
 	public void save(Model model) {
+		setModel(model);
 		final int numObjectsToIndex = model.getObjects(Entity.class).size()
 				+ model.getObjects(EntityReference.class).size()
 				+ model.getObjects(Provenance.class).size();
@@ -477,7 +478,6 @@ public class IndexImpl implements Index, Mappings {
 		commit();
 		//force refreshing the index state (for new readers)
 		refresh();
-		setModel(model);
 		LOG.info("build(), all done.");
 	}
 
@@ -485,7 +485,6 @@ public class IndexImpl implements Index, Mappings {
 	public void commit() {
 		try {
 			indexWriter.commit();
-			indexWriter.flush();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -495,7 +494,7 @@ public class IndexImpl implements Index, Mappings {
 	public void close() {
 		try {
 			if (indexWriter != null && indexWriter.isOpen()) {
-				indexWriter.flush();
+				indexWriter.commit();
 				indexWriter.close();
 			}
 		} catch (Exception e) {
@@ -513,21 +512,25 @@ public class IndexImpl implements Index, Mappings {
 	}
 
 	@Override
-	public boolean isClosed() {
-		return indexWriter == null || !indexWriter.isOpen();
-	}
-
-	@Override
-	public long count(String queryString) {
-		return 0;
+	public void drop() {
+		if(indexWriter==null) {
+			throw new IllegalStateException("read-only index");
+		}
+		try {
+			Query q = new FieldExistsQuery(FIELD_KEYWORD);
+			indexWriter.deleteDocuments(q);
+			indexWriter.commit();
+			indexWriter.deleteUnusedFiles();
+			setModel(null);
+			LOG.info("dropped (deleted) BioPAX index");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			//store but do not index/tokenize the URI
-//			doc.add(new StoredField(FIELD_DATASOURCE, p.getUri()));
 			doc.add(new TextField(FIELD_DATASOURCE, p.getUri(), Field.Store.YES));
-
 			//index names (including the datasource identifier from metadata json config; see premerge/merge)
 			//different data sources can have the same name e.g. 'intact'; tokenized - to search by partial name
 			for (String s : p.getName()) {
@@ -538,7 +541,6 @@ public class IndexImpl implements Index, Mappings {
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
-			//doc.add(new StoredField(FIELD_ORGANISM, bs.getUri()));
 			doc.add(new TextField(FIELD_ORGANISM,  bs.getUri(), Field.Store.YES));
 				
 			// add organism names
@@ -815,6 +817,6 @@ public class IndexImpl implements Index, Mappings {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		//call commit(), refresh() after one or several save(mapping)
+		//call commit(), refresh() after several save(mapping)
 	}
 }

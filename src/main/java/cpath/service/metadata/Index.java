@@ -37,7 +37,7 @@ public interface Index {
 	/**
 	* Full-text search for an object.
 	* 
-    * @param query String (keywords or Lucene query string)
+  * @param query String (keywords or Lucene query string)
 	* @param page hits page number (when the number of hits exceeds a threshold)
 	* @param type - filter by class
 	* @param datasources  - filter by datasource
@@ -56,5 +56,5 @@ public interface Index {
 
 	void refresh();
 
-	boolean isClosed();
+	void drop();
 }

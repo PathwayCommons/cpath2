@@ -194,16 +194,22 @@ public class ConsoleApplication implements CommandLineRunner {
     LOG.info("Over-writing model: {}...", service.settings().mainModelFile());
     new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model,
         new GZIPOutputStream(new FileOutputStream(service.settings().mainModelFile())));
-    //init the lucene index as read-write
-    service.initIndex(model, service.settings().indexDir(), false);
-    //re-index the model
-    service.index().save(model);
+    //re-index
+    reindex(model);
   }
 
-  private void reindex() throws IOException {
+  private void reindex() {
     Model model = CPathUtils.importFromTheArchive(service.settings().mainModelFile());
+    reindex(model);
+  }
+
+  private void reindex(Model model) {
     service.initIndex(model, service.settings().indexDir(), false);
+    //remove biopax but not id-mapping docs
+    service.index().drop();
+    //re-index
     service.index().save(model);
+    service.index().close();
   }
 
   /*

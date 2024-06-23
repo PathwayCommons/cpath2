@@ -31,7 +31,6 @@ public class IndexIT {
       .getResource("classpath:merge/pathwaydata1.owl").getInputStream());
     IndexImpl index = new IndexImpl(model, "target/test-idx", false);
     index.save(model);
-    index.refresh();
 
     //close index writer and re-open the index searcher in the read-only mode
     //(optional; tests should pass regardless; if you remove the following two lines, keep index.close() at the end)
@@ -208,6 +207,13 @@ public class IndexIT {
     response =  index.search("name:fructose", 0, SmallMoleculeReference.class, null, null);
     assertFalse(response.getSearchHit().isEmpty());
     assertEquals(1, response.getSearchHit().size());
+
+    //re-open to write
+    index.close();
+    index = new IndexImpl(model, "target/test-idx", false);
+    index.drop();
+    response = index.search("*", 1, null, null, null);
+    assertTrue(response.getSearchHit().isEmpty());
 
     index.close();
   }

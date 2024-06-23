@@ -81,8 +81,9 @@ public final class Merger {
 			simpleMerger.merge(m, providerModel);
 		}
 
-		//remove dangling SPEs (such non-participant/components molecules are not useful for pathway analyses...)
+		//remove dangling SPEs and Genes (such non-participant/components are not useful for pathway analyses...)
     ModelUtils.removeObjectsIfDangling(m, SimplePhysicalEntity.class);
+		ModelUtils.removeObjectsIfDangling(m, Gene.class);
 		//now, remove dangling xrefs, CV et al. utility type individuals
 		ModelUtils.removeObjectsIfDangling(m, UtilityClass.class);
 

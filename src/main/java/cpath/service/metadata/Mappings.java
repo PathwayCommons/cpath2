@@ -27,12 +27,4 @@ public interface Mappings {
 
 	void close();
 
-	boolean isClosed();
-
-	/**
-	 * Total number of search hits for the given lucene query.
-	 * @param queryString
-	 * @return
-	 */
-	long count(String queryString);
 }

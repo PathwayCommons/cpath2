@@ -272,8 +272,7 @@ public class ConsoleApplicationIT
     merger.replaceConflictingUris(providerModel, mainModel);
     mainModel.merge(providerModel);
 
-//    //in prod, we bremove dangling SPEs, but here/below we need them for merge assertions; so commented out...
-//    ModelUtils.removeObjectsIfDangling(mainModel, SimplePhysicalEntity.class);
+    //in prod, we also remove dangling SPEs and Genes but here below we need them for merge assertions...
     ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 
     //it's vital to save to and then read the main model back from file,
