@@ -26,8 +26,8 @@ public class Graph extends BaseGraph {
   private GraphType kind;
 
   @Schema(
-      description = "Graph search direction (default: UNDIRECTED)",
-      example = "undirected"
+      description = "Graph search direction (only for 'neighborhood' and 'commonstream' graph query types; the latter only accepts: 'upstream' or 'downstream')",
+      example = "downstream"
   )
   private Direction direction;
 
@@ -47,7 +47,6 @@ public class Graph extends BaseGraph {
   public Graph() {
     super();
     limitType = LimitType.NORMAL; //for pathsfromto only
-    direction = Direction.UNDIRECTED;
   }
 
   public GraphType getKind() {
@@ -63,8 +62,7 @@ public class Graph extends BaseGraph {
   }
 
   public void setDirection(String direction) {
-    Direction dir = Direction.typeOf(direction); //null when illegal value (also handles empty/null and register/case)
-    this.direction = (dir != null) ? dir : Direction.UNDIRECTED;
+    this.direction = Direction.typeOf(direction); //null when illegal value (also handles empty/null and register/case)
   }
 
   public String[] getTarget() {

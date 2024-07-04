@@ -378,8 +378,8 @@ public class ServiceImpl implements Service {
       return new ErrorResponse(MAINTENANCE, "Waiting for the initialization to complete (try again later)...");
     }
 
-    if (direction == Direction.BOTHSTREAM) {
-      return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
+    if (direction == Direction.BOTHSTREAM || direction == Direction.UNDIRECTED) {
+      return new ErrorResponse(BAD_REQUEST, "COMMONSTREAM graph query direction must be either UPSTREAM or DOWNSTREAM (default)");
     } else if(direction == null) {
       direction = Direction.DOWNSTREAM;
     }

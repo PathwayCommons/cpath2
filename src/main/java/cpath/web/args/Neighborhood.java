@@ -13,7 +13,6 @@ public class Neighborhood extends BaseGraph {
 
   public Neighborhood() {
     super();
-    direction = Direction.UNDIRECTED;
   }
 
   public Direction getDirection() {
@@ -21,15 +20,15 @@ public class Neighborhood extends BaseGraph {
   }
 
   public void setDirection(String direction) {
-    Direction dir = Direction.typeOf(direction); //null when illegal value (also handles empty/null and register/case)
-    this.direction = (dir != null) ? dir : Direction.UNDIRECTED;
+    this.direction = Direction.typeOf(direction); //null when illegal value (also handles empty/null and register/case)
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(super.toString());
-    if (direction != null)
+    if (direction != null) {
       sb.append("; dir:").append(direction);
+    }
     return sb.toString();
   }
 
