@@ -27,7 +27,7 @@ public class Search extends ServiceQuery {
 
   @Schema(
     description = """
-        BioPAX class filter (<a href="/home#biopax_types">values</a>; case-insensitive).
+        BioPAX class filter (<a href="../home#biopax_types">values</a>; case-insensitive).
         Note that some query filters, such as <code>&amp;type=biosource</code>
         (for most BioPAX UtilityClass, such as Score, Evidence), will not return any hits.
         So, use Entity (e.g., Pathway, Control, Protein) or EntityReference types
@@ -54,7 +54,7 @@ public class Search extends ServiceQuery {
         <var>homo sapiens</var> or NCBI Taxon IDs, <var>9606</var>. If multiple values
         are provided, then the union of hits is returned; e.g.,
         <code>organism=9606&amp;organism=10016</code> results in both human and mouse related hits.
-        See also: <a href="/home#organisms">supported species</a> (other organisms data,
+        See also: <a href="../home#organisms">supported species</a> (other organisms data,
         such as viruses and model organisms, can go together with e.g. human models that we integrated).
         """,
     example = "[\"9606\"]"
@@ -64,7 +64,7 @@ public class Search extends ServiceQuery {
   @Schema(
     description = """
         filter by data source (an array of names, URIs
-        of the <a href="/datasources">data sources</a> or any <var>Provenance</var>).
+        of the <a href="../datasources">data sources</a> or any <var>Provenance</var>).
         If multiple data source values are specified, a union of hits from specified sources is returned;
         e.g., <code>datasource=reactome&amp;datasource=pid</code>.
         """,

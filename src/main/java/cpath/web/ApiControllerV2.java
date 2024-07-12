@@ -41,7 +41,7 @@ public class ApiControllerV2 extends BasicController {
   @Operation(
     summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format",
     description = "Retrieve pathways/interactions/entities by their BioPAX URIs; " +
-        "optionally, convert the result to other <a href='/#formats'>output formats</a>."
+        "optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void fetchQuery(@Valid @RequestBody Fetch args, BindingResult bindingResult,
                          HttpServletRequest request, HttpServletResponse response)
@@ -66,7 +66,7 @@ public class ApiControllerV2 extends BasicController {
     summary = "Search for top-level bio pathways",
     description = "Find root/parent Pathway objects that are neither <code>controlled</code> " +
       "nor a <code>pathwayComponent</code> of another biological process; trivial pathways are excluded from the results;" +
-      " can filter by <a href='/datasources'>datasource</a> and organism."
+      " can filter by <a href='../datasources'>datasource</a> and organism."
   )
   public SearchResponse topPathwaysQuery(@Valid @RequestBody TopPathways args, BindingResult bindingResult,
                                     HttpServletRequest request, HttpServletResponse response)
@@ -139,7 +139,7 @@ public class ApiControllerV2 extends BasicController {
         </p>
         <p>
         Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or 
-        <a href="/help/schema">XML</a> depending on 'Accept: application/json' or 
+        <a href="../help/schema">XML</a> depending on 'Accept: application/json' or 
         'Accept: application/xml' request header.
         </p>
         """
@@ -175,7 +175,7 @@ public class ApiControllerV2 extends BasicController {
   @Operation(
       summary = "BioPAX Neighborhood graph query and optional converter to another output format",
       description = "Find the neighborhood network given the source bio entity URIs/IDs. " +
-          "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
+          "Optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void neighborhoodQuery(@Valid @RequestBody Neighborhood args, BindingResult bindingResult,
                          HttpServletRequest request, HttpServletResponse response)
@@ -200,7 +200,7 @@ public class ApiControllerV2 extends BasicController {
   @Operation(
       summary = "BioPAX PathsBetween graph query and optional converter to another output format",
       description = "Find the BioPAX subnetwork that includes all paths between given source bio entities (URIs/IDs). " +
-          "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
+          "Optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void pathsbetweenQuery(@Valid @RequestBody PathsBetween args, BindingResult bindingResult,
                                 HttpServletRequest request, HttpServletResponse response)
@@ -226,7 +226,7 @@ public class ApiControllerV2 extends BasicController {
       summary = "BioPAX PathsFromTo graph query and optional converter to another output format",
       description = "Find a subnetwork that includes entities on the paths from the source bio " +
           "entities (URIs/IDs) to the targets (if empty array, then PathsBetween algorithm is used). " +
-          "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
+          "Optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void pathsfromtoQuery(@Valid @RequestBody PathsFromTo args, BindingResult bindingResult,
                                 HttpServletRequest request, HttpServletResponse response)
@@ -251,7 +251,7 @@ public class ApiControllerV2 extends BasicController {
   @Operation(
       summary = "BioPAX CommonStream graph query and optional converter to another output format",
       description = "Find a BioPAX common stream subnetwork from the source bio entities (URIs/IDs). " +
-          "Optionally, convert the result to other <a href='/#formats'>output formats</a>."
+          "Optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void commonstreamQuery(@Valid @RequestBody CommonStream args, BindingResult bindingResult,
                                HttpServletRequest request, HttpServletResponse response)

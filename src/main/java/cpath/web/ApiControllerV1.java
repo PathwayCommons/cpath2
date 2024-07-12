@@ -37,7 +37,7 @@ public class ApiControllerV1 extends BasicController {
   @Operation(
       summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format (query parameters must be URL-encoded and not too many)",
       description = "Retrieve BioPAX pathways, interactions, physical entities from the db by URIs; " +
-          "optionally, convert the result to other <a href='/#formats'>output formats</a>."
+          "optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void fetchQueryGet(@Valid Fetch args, BindingResult bindingResult,
                              HttpServletRequest request, HttpServletResponse response) {
@@ -50,7 +50,7 @@ public class ApiControllerV1 extends BasicController {
   @Operation(
     summary = "Fetch a BioPAX sub-model by URIs/IDs and optionally convert to another output format",
     description = "Retrieve pathways/interactions/entities by their BioPAX URIs; " +
-        "optionally, convert the result to other <a href='/#formats'>output formats</a>."
+        "optionally, convert the result to other <a href='../home#formats'>output formats</a>."
   )
   public void fetchQuery(@Valid Fetch args, BindingResult bindingResult,
                          HttpServletRequest request, HttpServletResponse response)
@@ -76,7 +76,7 @@ public class ApiControllerV1 extends BasicController {
       summary = "Search for top-level bio pathways",
       description = "Find root/parent Pathway objects, i.e, ones that are neither 'controlled' " +
           "nor a 'pathwayComponent' of another biological process; trivial pathways are excluded from the results;" +
-          " can filter by <a href='/datasources'>datasource</a> and organism."
+          " can filter by <a href='../datasources'>datasource</a> and organism."
   )
   public SearchResponse topPathwaysQueryGet(@Valid TopPathways args, BindingResult bindingResult,
                                     HttpServletRequest request, HttpServletResponse response)
@@ -91,7 +91,7 @@ public class ApiControllerV1 extends BasicController {
     summary = "Search for top-level bio pathways",
     description = "Find root/parent Pathway objects that are neither <code>controlled</code> " +
       "nor a <code>pathwayComponent</code> of another biological process; trivial pathways are excluded from the results;" +
-      " can filter by <a href='/datasources'>datasource</a> and organism."
+      " can filter by <a href='../datasources'>datasource</a> and organism."
   )
   public SearchResponse topPathwaysQuery(@Valid TopPathways args, BindingResult bindingResult,
                                     HttpServletRequest request, HttpServletResponse response)
@@ -180,7 +180,7 @@ public class ApiControllerV1 extends BasicController {
       summary = "A BioPAX graph query and optional converter to another output formats (parameters must be URL-encoded and not too many)",
       description = "Find connections of bio network elements, such as the shortest path between " +
           "two proteins or the neighborhood for a particular protein state or all states. " +
-          "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
+          "Optionally, convert the result to other <a href='../home#formats'>output formats</a>." +
           "Graph searches consider detailed BioPAX semantics, such as generics, nested complexes, " +
           "and traverse the graph accordingly."
   )
@@ -198,7 +198,7 @@ public class ApiControllerV1 extends BasicController {
     summary = "A BioPAX graph query and optional converter to another output formats",
     description = "Find connections of bio network elements, such as the shortest path between " +
       "two proteins or the neighborhood for a particular protein state or all states. " +
-      "Optionally, convert the result to other <a href='/#formats'>output formats</a>." +
+      "Optionally, convert the result to other <a href='../home#formats'>output formats</a>." +
       "Graph searches consider detailed BioPAX semantics, such as generics, nested complexes, " +
       "and traverse the graph accordingly."
   )
@@ -260,7 +260,7 @@ public class ApiControllerV1 extends BasicController {
         </p>
         <p>
         Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or
-        <a href="/help/schema">XML</a> depending on 'Accept: application/json' or
+        <a href="../help/schema">XML</a> depending on 'Accept: application/json' or
         'Accept: application/xml' request header.
         </p>
         """
@@ -286,7 +286,7 @@ public class ApiControllerV1 extends BasicController {
         </p>
         <p>
         Returns an ordered list of hits (<var>maxHitsPerPage</var> is configured on the server) as JSON or 
-        <a href="/help/schema">XML</a> depending on 'Accept: application/json' or 
+        <a href="../help/schema">XML</a> depending on 'Accept: application/json' or 
         'Accept: application/xml' request header.
         </p>
         """
